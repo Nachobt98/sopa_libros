@@ -125,10 +125,8 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
     # -------------------
     # Fuentes: título (bold) y lista de palabras (regular)
     # -------------------
-    # Si tienes dos rutas (regular / bold), puedes separarlas:
-    # FONT_PATH = r"...Montserrat-Regular.ttf"
-    # FONT_PATH_BOLD = r"...Montserrat-SemiBold.ttf"
-    FONT_PATH_BOLD = FONT_PATH  # si de momento solo tienes una
+    FONT_PATH_BOLD = "C:/Users/nacho/Documents/Fonts/MONTSERRAT/static/Montserrat-Medium.ttf"
+ # si tienes Montserrat-SemiBold, cámbialo aquí
 
     try:
         font_title = ImageFont.truetype(FONT_PATH_BOLD, TITLE_FONT_SIZE)
@@ -138,7 +136,7 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
         font_words = ImageFont.load_default()
 
     # -------------------
-    # TÍTULO CENTRADO ARRIBA
+    # TÍTULO CENTRADO ARRIBA + LÍNEA DECORATIVA
     # -------------------
     title = f"Puzzle #{idx}" if not is_solution else f"Solution #{idx}"
     bbox_title = draw.textbbox((0, 0), title, font=font_title)
@@ -149,13 +147,22 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
     title_y = TOP_PX + 40
     draw.text((title_x, title_y), title, fill="black", font=font_title)
 
+    # Línea fina horizontal bajo el título (look más editorial)
+    line_margin_side = int(PAGE_W_PX * 0.15)
+    line_y = title_y + th + 30
+    draw.line(
+        (line_margin_side, line_y, PAGE_W_PX - line_margin_side, line_y),
+        fill="#777777",
+        width=1
+    )
+
     # -------------------
     # CÁLCULO DEL GRID (centrado)
     # -------------------
     grid_rows = len(grid)
     grid_cols = len(grid[0])
 
-    max_grid_height = SAFE_BOTTOM - (title_y + th + 200)
+    max_grid_height = SAFE_BOTTOM - (line_y + 160)
     max_grid_width = SAFE_RIGHT - SAFE_LEFT
 
     cell_size = min(max_grid_width // grid_cols, max_grid_height // grid_rows)
@@ -164,7 +171,7 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
     grid_total_h = cell_size * grid_rows
 
     grid_left = (PAGE_W_PX - grid_total_w) // 2
-    grid_top = title_y + th + 160
+    grid_top = line_y + 120
 
     # Fuente de las letras del grid, dinámica
     try:
@@ -175,7 +182,8 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
 
     grid_line_width = 1
     grid_line_color = "#444444"
-    highlight_color = (220, 235, 255)
+    # Gris muy suave (pensado para B/N)
+    highlight_color = (230, 235, 240)
 
     # -------------------
     # DIBUJAR GRID + LETRAS (centradas con anchor="mm")
@@ -204,11 +212,9 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
             cx = x + cell_size / 2
             cy = y + cell_size / 2
 
-            # Intentamos centrar con anchor='mm'; si Pillow es antiguo, fallback manual
             try:
                 draw.text((cx, cy), letter, fill="black", font=font_letter, anchor="mm")
             except TypeError:
-                # Fallback: usando bbox para centrar
                 bbox_letter = draw.textbbox((0, 0), letter, font=font_letter)
                 lw = bbox_letter[2] - bbox_letter[0]
                 lh = bbox_letter[3] - bbox_letter[1]
@@ -217,7 +223,7 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
                 draw.text((lx, ly), letter, fill="black", font=font_letter)
 
     # -------------------
-    # LISTA DE PALABRAS EN DOS COLUMNAS, CENTRADAS
+    # LISTA DE PALABRAS EN DOS COLUMNAS, CENTRADA EN EL HUECO INFERIOR
     # -------------------
     words_upper = [w.upper() for w in words]
 
@@ -225,30 +231,32 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
     col1 = words_upper[:half]
     col2 = words_upper[half:]
 
-    # Aseguramos que la fuente exista
     try:
         font_words = ImageFont.truetype(FONT_PATH, WORDLIST_FONT_SIZE)
     except Exception:
         font_words = ImageFont.load_default()
 
-    # Distancia vertical entre líneas
-    # Usamos bbox para calcular una altura de línea razonable
+    # Altura de línea a partir de la fuente
     sample_bbox = draw.textbbox((0, 0), "AY", font=font_words)
     base_line_height = sample_bbox[3] - sample_bbox[1]
-    line_height = base_line_height + 40
+    line_height = base_line_height + 20  # un poco más de aire
 
-    # Punto de partida vertical
-    bottom_margin = BOTTOM_PX + 80
     max_lines = max(len(col1), len(col2))
+    block_height = max_lines * line_height
 
-    start_y = PAGE_H_PX - bottom_margin - max_lines * line_height
+    # Zona disponible debajo del grid
+    top_area = grid_top + grid_total_h + 80
+    bottom_area = PAGE_H_PX - (BOTTOM_PX + 80)
 
-    # Que quede por debajo del grid con aire
-    min_start_y = grid_top + grid_total_h + 140
-    if start_y < min_start_y:
-        start_y = min_start_y
+    available_space = bottom_area - top_area
+    if available_space < block_height:
+        # Si no cabe centrado, anclamos arriba con un pequeño margen
+        start_y = top_area + 10
+    else:
+        # Centramos el bloque de palabras en el hueco inferior
+        start_y = top_area + (available_space - block_height) / 2
 
-    # Calculamos ancho máximo de cada columna
+    # Función auxiliar para ancho máximo
     def max_width(word_list):
         if not word_list:
             return 0
@@ -262,9 +270,8 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
     max_w_col2 = max_width(col2)
 
     center_x = PAGE_W_PX / 2
-    gap = 160  # espacio entre columnas
+    gap = 180  # separación entre columnas
 
-    # Centros de cada columna
     col1_center_x = center_x - (gap / 2) - (max_w_col1 / 2)
     col2_center_x = center_x + (gap / 2) + (max_w_col2 / 2)
 
@@ -303,6 +310,7 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
 
 
 
+
 # =========================================================
 # GENERAR EL LIBRO COMPLETO (PUZZLES + SOLUCIONES)
 # =========================================================
@@ -310,25 +318,52 @@ def generate_pdf(puzzle_imgs, solution_imgs, outname="wordsearch_book_kdp.pdf"):
     pdf_path = os.path.join(OUTPUT_DIR, outname)
     c = canvas.Canvas(pdf_path, pagesize=(TRIM_W_IN * inch, TRIM_H_IN * inch))
 
-    def add_page(image_path):
+    # Parámetros footer
+    footer_font = "Helvetica"
+    footer_size = 10
+    footer_y = 0.35 * inch  # distancia desde la parte baja
+
+    def add_page(image_path, page_number=None, section_label=None):
+        # Dibuja imagen a página completa
         c.drawImage(image_path, 0, 0, width=TRIM_W_IN * inch, height=TRIM_H_IN * inch)
+
+        # Footer (número de página y texto opcional)
+        if page_number is not None:
+            c.setFont(footer_font, footer_size)
+            # número centrado
+            c.drawCentredString(TRIM_W_IN * inch / 2, footer_y, str(page_number))
+
+            # sección opcional (por ejemplo "Puzzles" / "Solutions")
+            if section_label:
+                c.drawRightString(TRIM_W_IN * inch - 0.4 * inch, footer_y, section_label)
+
         c.showPage()
+
+    page_num = 1
 
     # Páginas de puzzles
     for img in puzzle_imgs:
-        add_page(img)
+        add_page(img, page_number=page_num, section_label="Puzzles")
+        page_num += 1
 
-    # Página separadora de soluciones
+    # Página separadora de soluciones (sin imagen, solo texto)
     c.setFont("Helvetica-Bold", 32)
     c.drawCentredString(TRIM_W_IN * inch / 2, TRIM_H_IN * inch / 2, "SOLUTIONS")
+    # Footer en página de título de soluciones
+    c.setFont(footer_font, footer_size)
+    c.drawCentredString(TRIM_W_IN * inch / 2, footer_y, str(page_num))
+    c.drawRightString(TRIM_W_IN * inch - 0.4 * inch, footer_y, "Solutions")
     c.showPage()
+    page_num += 1
 
     # Páginas de soluciones
     for img in solution_imgs:
-        add_page(img)
+        add_page(img, page_number=page_num, section_label="Solutions")
+        page_num += 1
 
     c.save()
     return pdf_path
+
 
 
 # =========================================================
