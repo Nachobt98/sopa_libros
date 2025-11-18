@@ -179,3 +179,14 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# --- KDP Wordsearch Project ---
+output_puzzles_kdp/
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
+# Ignore fonts (licensing)
+*.ttf
+*.otf
