@@ -159,7 +159,7 @@ def render_page(
     # -------------------
     # TÍTULO + LÍNEA DECORATIVA
     # -------------------
-    title = f"Puzzle #{idx}" if not is_solution else f"Solution #{idx}"
+    title = f"Puzzle {idx}" if not is_solution else f"Solution {idx}"
     bbox_title = draw.textbbox((0, 0), title, font=font_title)
     tw_hi = bbox_title[2] - bbox_title[0]
     th_hi = bbox_title[3] - bbox_title[1]
@@ -402,53 +402,84 @@ def render_page(
 # =========================================================
 def generate_pdf(puzzle_imgs, solution_imgs, outname="wordsearch_book_kdp.pdf"):
     pdf_path = os.path.join(OUTPUT_DIR, outname)
-    c = canvas.Canvas(pdf_path, pagesize=(TRIM_W_IN * inch, TRIM_H_IN * inch))
+    c = canvas.Canvas(pdf_path, pagesize=(TRIM_W_IN*inch, TRIM_H_IN*inch))
 
-    # Parámetros footer
-    footer_font = "Helvetica"
-    footer_size = 10
-    footer_y = 0.35 * inch  # distancia desde la parte baja
+    page_num = 1  # contador de página
 
-    def add_page(image_path, page_number=None, section_label=None):
-        # Dibuja imagen a página completa
-        c.drawImage(image_path, 0, 0, width=TRIM_W_IN * inch, height=TRIM_H_IN * inch)
+    # ---------------------------
+    # PÁGINAS DE PUZZLES
+    # ---------------------------
+    for img in puzzle_imgs:
+        # fondo blanco implícito
+        c.drawImage(
+            img,
+            0,
+            0,
+            width=TRIM_W_IN * inch,
+            height=TRIM_H_IN * inch
+        )
 
-        # Footer (número de página y texto opcional)
-        if page_number is not None:
-            c.setFont(footer_font, footer_size)
-            # número centrado
-            c.drawCentredString(TRIM_W_IN * inch / 2, footer_y, str(page_number))
-
-            # sección opcional (por ejemplo "Puzzles" / "Solutions")
-            if section_label:
-                c.drawRightString(TRIM_W_IN * inch - 0.4 * inch, footer_y, section_label)
+        # número de página centrado abajo
+        c.setFont("Helvetica", 10)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawCentredString(
+            TRIM_W_IN * inch / 2,
+            0.35 * inch,
+            str(page_num)
+        )
 
         c.showPage()
-
-    page_num = 1
-
-    # Páginas de puzzles
-    for img in puzzle_imgs:
-        add_page(img, page_number=page_num, section_label="Puzzles")
         page_num += 1
 
-    # Página separadora de soluciones (sin imagen, solo texto)
-    c.setFont("Helvetica-Bold", 32)
-    c.drawCentredString(TRIM_W_IN * inch / 2, TRIM_H_IN * inch / 2, "SOLUTIONS")
-    # Footer en página de título de soluciones
-    c.setFont(footer_font, footer_size)
-    c.drawCentredString(TRIM_W_IN * inch / 2, footer_y, str(page_num))
-    c.drawRightString(TRIM_W_IN * inch - 0.4 * inch, footer_y, "Solutions")
+    # ---------------------------
+    # PORTADA DE SOLUCIONES
+    # ---------------------------
+    # página completamente blanca con solo el título "SOLUTIONS"
+    c.setFont("Helvetica-Bold", 36)
+    c.setFillColorRGB(0, 0, 0)
+    c.drawCentredString(
+        TRIM_W_IN * inch / 2,
+        TRIM_H_IN * inch / 2,
+        "SOLUTIONS"
+    )
+
+    # número de página centrado abajo en la portada de soluciones
+    c.setFont("Helvetica", 10)
+    c.drawCentredString(
+        TRIM_W_IN * inch / 2,
+        0.35 * inch,
+        str(page_num)
+    )
+
     c.showPage()
     page_num += 1
 
-    # Páginas de soluciones
+    # ---------------------------
+    # PÁGINAS DE SOLUCIONES
+    # ---------------------------
     for img in solution_imgs:
-        add_page(img, page_number=page_num, section_label="Solutions")
+        c.drawImage(
+            img,
+            0,
+            0,
+            width=TRIM_W_IN * inch,
+            height=TRIM_H_IN * inch
+        )
+
+        c.setFont("Helvetica", 10)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawCentredString(
+            TRIM_W_IN * inch / 2,
+            0.35 * inch,
+            str(page_num)
+        )
+
+        c.showPage()
         page_num += 1
 
     c.save()
     return pdf_path
+
 
 
 
