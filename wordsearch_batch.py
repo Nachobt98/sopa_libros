@@ -148,7 +148,7 @@ def render_page(
     # -------------------
     # Fuentes (hi-res)
     # -------------------
-    FONT_PATH_BOLD = FONT_PATH  # si más adelante tienes un TTF bold separado, cámbialo aquí
+    FONT_PATH_BOLD = "C:/Users/nacho/Documents/Fonts/MONTSERRAT/static/Montserrat-Medium.ttf"
 
     try:
         font_title = ImageFont.truetype(FONT_PATH_BOLD, TITLE_FONT_SIZE * SCALE)
@@ -169,7 +169,9 @@ def render_page(
     draw.text((title_x_hi, title_y_hi), title, fill="black", font=font_title)
 
     line_margin_side_hi = int(PAGE_W_HI * 0.15)
-    line_y_hi = title_y_hi + th_hi + 30 * SCALE
+    # Aumentar la separación entre el título y la línea decorativa
+    extra_space = 60 * SCALE  # puedes ajustar este valor para más o menos separación
+    line_y_hi = title_y_hi + th_hi + extra_space
     draw.line(
         (line_margin_side_hi, line_y_hi, PAGE_W_HI - line_margin_side_hi, line_y_hi),
         fill="#777777",
