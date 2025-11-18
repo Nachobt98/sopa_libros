@@ -118,146 +118,219 @@ def place_words_on_grid(words, size=GRID_SIZE, max_attempts=500):
 # =========================================================
 # FUNCIÓN PARA RENDERIZAR UNA PÁGINA COMPLETA (PUZZLE O SOLUCIÓN)
 # =========================================================
-def render_page(grid, words, idx, is_solution=False, solution_positions=None, filename=None):
-    img = Image.new('RGB', (PAGE_W_PX, PAGE_H_PX), 'white')
+def render_page(
+    grid,
+    words,
+    idx,
+    is_solution=False,
+    solution_positions=None,  # se mantiene por compatibilidad, aunque ya no lo usamos
+    filename=None,
+    placed_words=None,        # lista de (word, (r, c, dr, dc))
+):
+    # ============================================================
+    # SUPERSAMPLING – Dibujar a 3x y luego reducir (antialiasing)
+    # ============================================================
+    SCALE = 3
+
+    PAGE_W_HI = PAGE_W_PX * SCALE
+    PAGE_H_HI = PAGE_H_PX * SCALE
+
+    # Márgenes / área segura escalados
+    TOP_PX_HI = TOP_PX * SCALE
+    BOTTOM_PX_HI = BOTTOM_PX * SCALE
+    SAFE_LEFT_HI = SAFE_LEFT * SCALE
+    SAFE_RIGHT_HI = SAFE_RIGHT * SCALE
+    SAFE_BOTTOM_HI = SAFE_BOTTOM * SCALE
+
+    img = Image.new('RGBA', (PAGE_W_HI, PAGE_H_HI), (255, 255, 255, 255))
     draw = ImageDraw.Draw(img)
 
     # -------------------
-    # Fuentes: título (bold) y lista de palabras (regular)
+    # Fuentes (hi-res)
     # -------------------
-    FONT_PATH_BOLD = "C:/Users/nacho/Documents/Fonts/MONTSERRAT/static/Montserrat-Medium.ttf"
- # si tienes Montserrat-SemiBold, cámbialo aquí
+    FONT_PATH_BOLD = FONT_PATH  # si más adelante tienes un TTF bold separado, cámbialo aquí
 
     try:
-        font_title = ImageFont.truetype(FONT_PATH_BOLD, TITLE_FONT_SIZE)
-        font_words = ImageFont.truetype(FONT_PATH, WORDLIST_FONT_SIZE)
+        font_title = ImageFont.truetype(FONT_PATH_BOLD, TITLE_FONT_SIZE * SCALE)
+        font_words = ImageFont.truetype(FONT_PATH, WORDLIST_FONT_SIZE * SCALE)
     except Exception:
-        font_title = ImageFont.load_default()
-        font_words = ImageFont.load_default()
+        font_title = font_words = ImageFont.load_default()
 
     # -------------------
-    # TÍTULO CENTRADO ARRIBA + LÍNEA DECORATIVA
+    # TÍTULO + LÍNEA DECORATIVA
     # -------------------
     title = f"Puzzle #{idx}" if not is_solution else f"Solution #{idx}"
     bbox_title = draw.textbbox((0, 0), title, font=font_title)
-    tw = bbox_title[2] - bbox_title[0]
-    th = bbox_title[3] - bbox_title[1]
+    tw_hi = bbox_title[2] - bbox_title[0]
+    th_hi = bbox_title[3] - bbox_title[1]
 
-    title_x = (PAGE_W_PX - tw) // 2
-    title_y = TOP_PX + 40
-    draw.text((title_x, title_y), title, fill="black", font=font_title)
+    title_y_hi = TOP_PX_HI + 40 * SCALE
+    title_x_hi = (PAGE_W_HI - tw_hi) // 2
+    draw.text((title_x_hi, title_y_hi), title, fill="black", font=font_title)
 
-    # Línea fina horizontal bajo el título (look más editorial)
-    line_margin_side = int(PAGE_W_PX * 0.15)
-    line_y = title_y + th + 30
+    line_margin_side_hi = int(PAGE_W_HI * 0.15)
+    line_y_hi = title_y_hi + th_hi + 30 * SCALE
     draw.line(
-        (line_margin_side, line_y, PAGE_W_PX - line_margin_side, line_y),
+        (line_margin_side_hi, line_y_hi, PAGE_W_HI - line_margin_side_hi, line_y_hi),
         fill="#777777",
-        width=1
+        width=1 * SCALE
     )
 
     # -------------------
-    # CÁLCULO DEL GRID (centrado)
+    # CÁLCULO DEL GRID (hi-res)
     # -------------------
     grid_rows = len(grid)
     grid_cols = len(grid[0])
 
-    max_grid_height = SAFE_BOTTOM - (line_y + 160)
-    max_grid_width = SAFE_RIGHT - SAFE_LEFT
+    max_grid_height_hi = SAFE_BOTTOM_HI - (line_y_hi + 160 * SCALE)
+    max_grid_width_hi = SAFE_RIGHT_HI - SAFE_LEFT_HI
 
-    cell_size = min(max_grid_width // grid_cols, max_grid_height // grid_rows)
+    cell_size_hi = min(max_grid_width_hi // grid_cols, max_grid_height_hi // grid_rows)
 
-    grid_total_w = cell_size * grid_cols
-    grid_total_h = cell_size * grid_rows
+    grid_total_w_hi = cell_size_hi * grid_cols
+    grid_total_h_hi = cell_size_hi * grid_rows
 
-    grid_left = (PAGE_W_PX - grid_total_w) // 2
-    grid_top = line_y + 120
+    grid_left_hi = (PAGE_W_HI - grid_total_w_hi) // 2
+    grid_top_hi = line_y_hi + 120 * SCALE
 
-    # Fuente de las letras del grid, dinámica
+    # Fuente de letras del grid (normal + bold)
     try:
-        letter_font_size = int(cell_size * 0.75)
-        font_letter = ImageFont.truetype(FONT_PATH, letter_font_size)
+        letter_font_size_hi = int(cell_size_hi * 0.75)
+        font_letter = ImageFont.truetype(FONT_PATH, letter_font_size_hi)
+        font_letter_bold = ImageFont.truetype(FONT_PATH_BOLD, letter_font_size_hi)
     except Exception:
-        font_letter = ImageFont.load_default()
+        font_letter = font_letter_bold = ImageFont.load_default()
 
-    grid_line_width = 1
+    grid_line_width_hi = 1 * SCALE
     grid_line_color = "#444444"
-    # Gris muy suave (pensado para B/N)
-    highlight_color = (230, 235, 240)
+
+    # Colores del resaltado
+    highlight_fill = (230, 235, 240, 210)  # gris claro semitransparente
+    border_color = (190, 195, 200, 255)    # borde algo más oscuro
 
     # -------------------
-    # DIBUJAR GRID + LETRAS (centradas con anchor="mm")
+    # CAPA DE RESALTADO (solo soluciones)
+    # -------------------
+    overlay = Image.new('RGBA', (PAGE_W_HI, PAGE_H_HI), (0, 0, 0, 0))
+    odraw = ImageDraw.Draw(overlay)
+
+    if is_solution and placed_words:
+        # Para cada palabra: primero borde oscuro, luego interior claro
+        for w, (r, c, dr, dc) in placed_words:
+            wlen = len(w)
+            if wlen < 2:
+                continue
+            centers = []
+            rr, cc = r, c
+            for _ in range(wlen):
+                cx = grid_left_hi + cc * cell_size_hi + cell_size_hi / 2
+                cy = grid_top_hi + rr * cell_size_hi + cell_size_hi / 2
+                centers.append((cx, cy))
+                rr += dr
+                cc += dc
+            if len(centers) < 2:
+                continue
+            inner_width = max(4 * SCALE, int(cell_size_hi * 0.8))
+            border_thickness = max(2 * SCALE, int(cell_size_hi * 0.1))
+            outer_width = inner_width + 3 * border_thickness
+            # Borde oscuro
+            try:
+                odraw.line(centers, fill=border_color, width=outer_width, joint="curve")
+            except TypeError:
+                odraw.line(centers, fill=border_color, width=outer_width)
+            (sx, sy) = centers[0]
+            (ex, ey) = centers[-1]
+            r_out = outer_width / 2.0
+            for (cx, cy) in [(sx, sy), (ex, ey)]:
+                odraw.ellipse([cx - r_out, cy - r_out, cx + r_out, cy + r_out], fill=border_color)
+            # Interior claro
+            try:
+                odraw.line(centers, fill=highlight_fill, width=inner_width, joint="curve")
+            except TypeError:
+                odraw.line(centers, fill=highlight_fill, width=inner_width)
+            r_in = inner_width / 2.0
+            for (cx, cy) in [(sx, sy), (ex, ey)]:
+                odraw.ellipse([cx - r_in, cy - r_in, cx + r_in, cy + r_in], fill=highlight_fill)
+
+    # Combinar overlay de resaltado con la imagen base
+    img = Image.alpha_composite(img, overlay)
+    draw = ImageDraw.Draw(img)
+
+    # -------------------
+    # POSICIONES DESTACADAS (para poner letras en negrita)
+    # -------------------
+    highlight_positions = set()
+    if is_solution and placed_words:
+        for w, (r, c, dr, dc) in placed_words:
+            rr, cc = r, c
+            for _ in range(len(w)):
+                highlight_positions.add((rr, cc))
+                rr += dr
+                cc += dc
+
+    # -------------------
+    # DIBUJAR GRID + LETRAS
     # -------------------
     for r in range(grid_rows):
         for c in range(grid_cols):
-            x = grid_left + c * cell_size
-            y = grid_top + r * cell_size
+            x0 = grid_left_hi + c * cell_size_hi
+            y0 = grid_top_hi + r * cell_size_hi
+            x1 = x0 + cell_size_hi
+            y1 = y0 + cell_size_hi
 
-            # fondo de solución
-            if is_solution and solution_positions and (r, c) in solution_positions:
-                draw.rectangle(
-                    [x + 2, y + 2, x + cell_size - 2, y + cell_size - 2],
-                    fill=highlight_color
-                )
+            # borde celda
+            draw.rectangle([x0, y0, x1, y1], outline=grid_line_color, width=grid_line_width_hi)
 
-            # borde de celda
-            draw.rectangle(
-                [x, y, x + cell_size, y + cell_size],
-                outline=grid_line_color,
-                width=grid_line_width
-            )
-
-            # letra centrada
+            # letra centrada (bold si está dentro de una palabra resaltada)
             letter = grid[r][c]
-            cx = x + cell_size / 2
-            cy = y + cell_size / 2
+            cx = x0 + cell_size_hi / 2
+            cy = y0 + cell_size_hi / 2
+
+            chosen_font = font_letter_bold if (r, c) in highlight_positions else font_letter
 
             try:
-                draw.text((cx, cy), letter, fill="black", font=font_letter, anchor="mm")
+                draw.text((cx, cy), letter, fill="black", font=chosen_font, anchor="mm")
             except TypeError:
-                bbox_letter = draw.textbbox((0, 0), letter, font=font_letter)
-                lw = bbox_letter[2] - bbox_letter[0]
-                lh = bbox_letter[3] - bbox_letter[1]
-                lx = x + (cell_size - lw) // 2
-                ly = y + (cell_size - lh) // 2
-                draw.text((lx, ly), letter, fill="black", font=font_letter)
+                bbox = draw.textbbox((0, 0), letter, font=chosen_font)
+                lw = bbox[2] - bbox[0]
+                lh = bbox[3] - bbox[1]
+                draw.text(
+                    (cx - lw / 2, cy - lh / 2),
+                    letter,
+                    fill="black",
+                    font=chosen_font
+                )
 
     # -------------------
-    # LISTA DE PALABRAS EN DOS COLUMNAS, CENTRADA EN EL HUECO INFERIOR
+    # LISTA DE PALABRAS EN DOS COLUMNAS
     # -------------------
     words_upper = [w.upper() for w in words]
-
     half = (len(words_upper) + 1) // 2
     col1 = words_upper[:half]
     col2 = words_upper[half:]
 
     try:
-        font_words = ImageFont.truetype(FONT_PATH, WORDLIST_FONT_SIZE)
+        font_words = ImageFont.truetype(FONT_PATH, WORDLIST_FONT_SIZE * SCALE)
     except Exception:
         font_words = ImageFont.load_default()
 
-    # Altura de línea a partir de la fuente
     sample_bbox = draw.textbbox((0, 0), "AY", font=font_words)
-    base_line_height = sample_bbox[3] - sample_bbox[1]
-    line_height = base_line_height + 20  # un poco más de aire
+    base_line_height_hi = sample_bbox[3] - sample_bbox[1]
+    line_height_hi = base_line_height_hi + 20 * SCALE
 
     max_lines = max(len(col1), len(col2))
-    block_height = max_lines * line_height
+    block_height_hi = max_lines * line_height_hi
 
-    # Zona disponible debajo del grid
-    top_area = grid_top + grid_total_h + 80
-    bottom_area = PAGE_H_PX - (BOTTOM_PX + 80)
+    top_area_hi = grid_top_hi + grid_total_h_hi + 80 * SCALE
+    bottom_area_hi = PAGE_H_HI - (BOTTOM_PX_HI + 80 * SCALE)
 
-    available_space = bottom_area - top_area
-    if available_space < block_height:
-        # Si no cabe centrado, anclamos arriba con un pequeño margen
-        start_y = top_area + 10
+    available_space_hi = bottom_area_hi - top_area_hi
+    if available_space_hi < block_height_hi:
+        start_y_hi = top_area_hi + 10 * SCALE
     else:
-        # Centramos el bloque de palabras en el hueco inferior
-        start_y = top_area + (available_space - block_height) / 2
+        start_y_hi = top_area_hi + (available_space_hi - block_height_hi) / 2
 
-    # Función auxiliar para ancho máximo
-    def max_width(word_list):
+    def max_width_hi(word_list):
         if not word_list:
             return 0
         widths = []
@@ -266,48 +339,59 @@ def render_page(grid, words, idx, is_solution=False, solution_positions=None, fi
             widths.append(bb[2] - bb[0])
         return max(widths)
 
-    max_w_col1 = max_width(col1)
-    max_w_col2 = max_width(col2)
+    max_w_col1_hi = max_width_hi(col1)
+    max_w_col2_hi = max_width_hi(col2)
 
-    center_x = PAGE_W_PX / 2
-    gap = 180  # separación entre columnas
+    center_x_hi = PAGE_W_HI / 2
+    gap_hi = 180 * SCALE
 
-    col1_center_x = center_x - (gap / 2) - (max_w_col1 / 2)
-    col2_center_x = center_x + (gap / 2) + (max_w_col2 / 2)
+    col1_center_x_hi = center_x_hi - (gap_hi / 2) - (max_w_col1_hi / 2)
+    col2_center_x_hi = center_x_hi + (gap_hi / 2) + (max_w_col2_hi / 2)
 
-    # Dibuja columna 1
-    y = start_y
+    # Columna 1
+    y_hi = start_y_hi
     for w in col1:
         try:
-            draw.text((col1_center_x, y), w, fill="black", font=font_words, anchor="mm")
+            draw.text((col1_center_x_hi, y_hi), w, fill="black", font=font_words, anchor="mm")
         except TypeError:
             bb = draw.textbbox((0, 0), w, font=font_words)
             ww = bb[2] - bb[0]
             hh = bb[3] - bb[1]
-            draw.text((col1_center_x - ww / 2, y - hh / 2), w, fill="black", font=font_words)
-        y += line_height
+            draw.text(
+                (col1_center_x_hi - ww / 2, y_hi - hh / 2),
+                w,
+                fill="black",
+                font=font_words
+            )
+        y_hi += line_height_hi
 
-    # Dibuja columna 2
-    y = start_y
+    # Columna 2
+    y_hi = start_y_hi
     for w in col2:
         try:
-            draw.text((col2_center_x, y), w, fill="black", font=font_words, anchor="mm")
+            draw.text((col2_center_x_hi, y_hi), w, fill="black", font=font_words, anchor="mm")
         except TypeError:
             bb = draw.textbbox((0, 0), w, font=font_words)
             ww = bb[2] - bb[0]
             hh = bb[3] - bb[1]
-            draw.text((col2_center_x - ww / 2, y - hh / 2), w, fill="black", font=font_words)
-        y += line_height
+            draw.text(
+                (col2_center_x_hi - ww / 2, y_hi - hh / 2),
+                w,
+                fill="black",
+                font=font_words
+            )
+        y_hi += line_height_hi
 
     # -------------------
-    # GUARDAR
+    # GUARDAR (reducido a tamaño final KDP)
     # -------------------
     if filename is None:
         filename = os.path.join(OUTPUT_DIR, f"puzzle_{idx}{'_sol' if is_solution else ''}.png")
 
-    img.save(filename, dpi=(DPI, DPI))
+    img_rgb = img.convert('RGB')
+    img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), resample=Image.LANCZOS)
+    img_final.save(filename, dpi=(DPI, DPI))
     return filename
-
 
 
 
@@ -400,7 +484,14 @@ if __name__ == "__main__":
                 cc += dc
 
         puzzle_img = render_page(grid, wl, i, is_solution=False)
-        solution_img = render_page(grid, wl, i, is_solution=True, solution_positions=sol_positions)
+        solution_img = render_page(
+            grid,
+            wl,
+            i,
+            is_solution=True,
+            solution_positions=sol_positions,
+            placed_words=placed,   # ← aquí le pasamos la info de cada palabra
+)
 
         puzzles.append(puzzle_img)
         solutions.append(solution_img)
