@@ -1,5 +1,6 @@
 import random
 import os
+import re
 from PIL import Image, ImageDraw, ImageFont
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
@@ -8,8 +9,10 @@ from reportlab.lib.units import inch
 # CONFIGURACIÓN PRINCIPAL
 # =========================================================
 
-OUTPUT_DIR = "output_puzzles_kdp"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+BASE_OUTPUT_DIR = "output_puzzles_kdp"
+OUTPUT_DIR = BASE_OUTPUT_DIR  # se redefinirá en main
+
+os.makedirs(BASE_OUTPUT_DIR, exist_ok=True)
 
 # Tamaño libro KDP: 6x9 pulgadas a 300 DPI
 TRIM_W_IN, TRIM_H_IN = 6.0, 9.0
@@ -52,6 +55,86 @@ DIRECTIONS = [
     (0, 1), (1, 0), (0, -1), (-1, 0),
     (1, 1), (1, -1), (-1, 1), (-1, -1)
 ]
+
+# =========================================================
+#  Convierte un título en un nombre seguro de carpeta/fichero.
+#   - Pasa a minúsculas
+#   - Sustituye espacios por guiones bajos
+#   - Elimina caracteres raros
+# =========================================================
+
+def slugify(name: str) -> str:
+    name = name.strip().lower()
+    name = re.sub(r"\s+", "_", name)
+    name = re.sub(r"[^a-z0-9_\-]", "", name)
+    return name or "book"
+
+
+
+
+# =========================================================
+#     CARGA LISTAS DE PALABRAS DESDE UN .txt
+# =========================================================
+
+def load_wordlists_from_txt(path: str):
+    """
+
+    """
+    wordlists = []
+    current = []
+
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                if current:
+                    wordlists.append(current)
+                    current = []
+            else:
+                current.append(line)
+    if current:
+        wordlists.append(current)
+
+    return wordlists
+
+
+# =========================================================
+#     Devuelve una lista de listas de palabras según la elección del usuario.
+# =========================================================
+
+def prompt_wordlists(default_wordlists):
+    print("\n=== Configuración de palabras ===")
+    print("1) Usar listas predefinidas del script")
+    print("2) Escribir una sola lista de palabras (se usará en todos los puzzles)")
+    print("3) Cargar listas desde un archivo .txt (una palabra por línea, listas separadas por líneas en blanco)")
+    choice = input("Elige opción [1/2/3, por defecto 1]: ").strip() or "1"
+
+    if choice == "2":
+        raw = input("Escribe las palabras separadas por comas: \n> ")
+        words = [w.strip() for w in raw.split(",") if w.strip()]
+        if not words:
+            print("No se han introducido palabras válidas. Uso las listas predefinidas.")
+            return default_wordlists
+        return [words]  # una sola lista para todos los puzzles
+
+    elif choice == "3":
+        path = input("Ruta del archivo .txt con las palabras: \n> ").strip()
+        try:
+            wl = load_wordlists_from_txt(path)
+            if not wl:
+                print("No se han encontrado listas válidas en el archivo. Uso las listas predefinidas.")
+                return default_wordlists
+            print(f"Se han cargado {len(wl)} listas de palabras desde el archivo.")
+            return wl
+        except Exception as e:
+            print(f"No se pudo leer el archivo: {e}")
+            print("Uso las listas predefinidas.")
+            return default_wordlists
+
+    else:
+        # Opción 1 o cualquier otra cosa → listas predefinidas
+        return default_wordlists
+
 
 
 # =========================================================
@@ -488,13 +571,49 @@ def generate_pdf(puzzle_imgs, solution_imgs, outname="wordsearch_book_kdp.pdf"):
 # =========================================================
 if __name__ == "__main__":
 
-    # EJEMPLO: listas de palabras
-    wordlists = [
+    # =========================================================
+    # 1. Preguntar título del libro y preparar carpeta
+    # =========================================================
+    book_title = input("Título del libro (p.ej. 'Wordsearch Animals Vol 1'): ").strip()
+    if not book_title:
+        book_title = "Wordsearch Book"
+
+    slug = slugify(book_title)
+    OUTPUT_DIR = os.path.join(BASE_OUTPUT_DIR, slug)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    print(f"\nLos archivos se guardarán en: {OUTPUT_DIR}")
+
+    # =========================================================
+    # 2. Listas de palabras (predefinidas + elección usuario)
+    # =========================================================
+    # Listas predefinidas que puedes seguir editando aquí:
+    predefined_wordlists = [
         ["gato", "perro", "casa", "luna", "sol", "arbol", "cielo", "mar"],
         ["python", "codigo", "amazon", "kdp", "libro", "puzzle", "print"],
     ]
 
-    total = 6  # CUÁNTOS PUZZLES QUIERES GENERAR
+    wordlists = prompt_wordlists(predefined_wordlists)
+
+    # =========================================================
+    # 3. Número de puzzles
+    # =========================================================
+    while True:
+        total_raw = input("\n¿Cuántos puzzles quieres generar? [por defecto 20]: ").strip()
+        if not total_raw:
+            total = 20
+            break
+        try:
+            total = int(total_raw)
+            if total <= 0:
+                raise ValueError
+            break
+        except ValueError:
+            print("Introduce un número entero positivo, por favor.")
+
+    # =========================================================
+    # 4. Generación de puzzles + soluciones
+    # =========================================================
     puzzles = []
     solutions = []
 
@@ -502,32 +621,51 @@ if __name__ == "__main__":
         wl = random.choice(wordlists).copy()
         random.shuffle(wl)
 
+        # Colocar palabras en el grid
         while True:
             placed_result = place_words_on_grid(wl)
             if placed_result:
                 grid, placed = placed_result
                 break
 
+        # Posiciones de solución para la versión antigua (ya no las usamos para pintar,
+        # pero se pueden mantener si en algún momento quieres debug)
         sol_positions = set()
         for w, (r, c, dr, dc) in placed:
             rr, cc = r, c
-            for ch in w:
+            for _ in w:
                 sol_positions.add((rr, cc))
                 rr += dr
                 cc += dc
 
-        puzzle_img = render_page(grid, wl, i, is_solution=False)
+        # Generar imágenes
+        puzzle_img = render_page(
+            grid,
+            wl,
+            i,
+            is_solution=False,
+            solution_positions=None,
+            filename=None,
+            placed_words=None,
+        )
+
         solution_img = render_page(
             grid,
             wl,
             i,
             is_solution=True,
             solution_positions=sol_positions,
-            placed_words=placed,   # ← aquí le pasamos la info de cada palabra
-)
+            filename=None,
+            placed_words=placed,
+        )
 
         puzzles.append(puzzle_img)
         solutions.append(solution_img)
 
-    pdf_final = generate_pdf(puzzles, solutions)
-    print("PDF generado:", pdf_final)
+    # =========================================================
+    # 5. Generar PDF final con nombre basado en el título
+    # =========================================================
+    pdf_name = f"{slug}.pdf"
+    pdf_final = generate_pdf(puzzles, solutions, outname=pdf_name)
+    print("\nPDF generado:", pdf_final)
+
