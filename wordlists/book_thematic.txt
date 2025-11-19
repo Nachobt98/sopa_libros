@@ -1,0 +1,209 @@
+[Puzzle]
+title: Black Inventors
+fact: Garrett Morgan invented both the traffic light and a type of gas mask, saving countless lives.
+words:
+Garrett Morgan
+Traffic Light
+Gas Mask
+Innovation
+Patent
+Safety
+Invention
+Engineer
+Design
+Experiment
+Prototype
+Progress
+Impact
+Technology
+Creativity
+[/Puzzle]
+
+[Puzzle]
+title: Civil Rights Leaders
+fact: The Civil Rights Movement fought to end racial segregation and secure equal rights for Black Americans.
+words:
+Martin Luther King
+Rosa Parks
+Malcolm X
+Freedom
+Equality
+Justice
+Boycott
+March
+Protest
+Nonviolence
+Speech
+Voting Rights
+Segregation
+Courage
+Movement
+[/Puzzle]
+
+[Puzzle]
+title: Jazz Legends
+fact: Jazz was born in Black communities in New Orleans and became one of the most influential music styles in history.
+words:
+Louis Armstrong
+Duke Ellington
+Ella Fitzgerald
+Improvisation
+Swing
+Blues
+Trumpet
+Saxophone
+Piano
+Rhythm
+Syncopation
+Club
+Big Band
+Solo
+Melody
+[/Puzzle]
+
+[Puzzle]
+title: Black Women Pioneers
+fact: Black women have broken barriers in science, politics, sports, and the arts despite facing double discrimination.
+words:
+Harriet Tubman
+Sojourner Truth
+Maya Angelou
+Shirley Chisholm
+Katherine Johnson
+Resilience
+Leadership
+Courage
+Trailblazer
+Justice
+Education
+Poetry
+Votes
+Freedom
+History
+[/Puzzle]
+
+[Puzzle]
+title: The Harlem Renaissance
+fact: The Harlem Renaissance was a cultural explosion of Black art, music, and literature in 1920s Harlem, New York.
+words:
+Harlem
+Renaissance
+Poetry
+Jazz
+Culture
+Art
+Literature
+Langston Hughes
+Zora Neale Hurston
+Nightclub
+Cotton Club
+Creativity
+Identity
+Pride
+Migration
+[/Puzzle]
+
+[Puzzle]
+title: Black Authors & Poets
+fact: Black writers have used literature and poetry to speak about identity, racism, love, and freedom for generations.
+words:
+James Baldwin
+Toni Morrison
+Langston Hughes
+Alice Walker
+Maya Angelou
+Novel
+Poem
+Essay
+Storytelling
+Resistance
+Voice
+Freedom
+Heritage
+Narrative
+Inspiration
+[/Puzzle]
+
+[Puzzle]
+title: Sports Legends
+fact: Black athletes have shattered records and challenged stereotypes in almost every major sport around the world.
+words:
+Michael Jordan
+Serena Williams
+Usain Bolt
+Simone Biles
+Muhammad Ali
+Champion
+Record
+Gold Medal
+Olympics
+Teamwork
+Training
+Discipline
+Victory
+Game
+Legacy
+[/Puzzle]
+
+[Puzzle]
+title: Hip Hop Icons
+fact: Hip hop was born in the 1970s in the Bronx and became a global culture of music, dance, and storytelling.
+words:
+DJ
+MC
+Breakdance
+Graffiti
+Beat
+Rap
+Lyrics
+Flow
+Rhythm
+Turntable
+Microphone
+Stage
+Crowd
+Street
+Culture
+[/Puzzle]
+
+[Puzzle]
+title: Historically Black Colleges
+fact: Historically Black Colleges and Universities were created to give Black students access to higher education.
+words:
+HBCU
+Education
+Campus
+Scholarship
+Graduation
+Dormitory
+Library
+Professor
+Student
+Degree
+History
+Pride
+Tradition
+Community
+Alumni
+[/Puzzle]
+
+[Puzzle]
+title: African Kingdoms
+fact: Powerful African kingdoms like Mali, Ghana, and Songhai were centers of trade, learning, and culture.
+words:
+Mali
+Ghana
+Songhai
+Timbuktu
+Gold
+Trade
+Caravan
+King
+Empire
+Scholar
+Desert
+River
+Market
+Culture
+History
+[/Puzzle]

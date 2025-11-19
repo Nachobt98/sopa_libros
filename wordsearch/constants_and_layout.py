@@ -31,8 +31,9 @@ TOP_PX = top_px
 BOTTOM_PX = bottom_px
 
 # Rutas de fuentes (ajusta a tu sistema)
-FONT_PATH = "C:/Users/nacho/Documents/Fonts/MONTSERRAT/static/Montserrat-Regular.ttf"
-FONT_PATH_BOLD = "C:/Users/nacho/Documents/Fonts/MONTSERRAT/static/Montserrat-Medium.ttf"
+FONT_PATH = "fonts/montserrat/static/Montserrat-Regular.ttf"
+FONT_PATH_BOLD = "fonts/montserrat/static/Montserrat-Medium.ttf"
+FONT_TITLE = "fonts/abril_fatface/AbrilFatface-Regular.ttf"
 
 # Tamaños base
 title_font_size = 130
