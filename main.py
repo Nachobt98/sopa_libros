@@ -4,7 +4,7 @@ Script principal para generar libros de sopas de letras con niveles de dificulta
 
 import os
 from wordsearch.constants_and_layout import BASE_OUTPUT_DIR
-from wordsearch.wordlist_utils import slugify, load_wordlists_from_txt
+from wordsearch.wordlist_utils import slugify, prompt_wordlists, validate_wordlists_for_grid
 from wordsearch.grid_generation import place_words_on_grid
 from wordsearch.image_rendering import render_page
 from wordsearch.pdf_book_generation import generate_pdf
@@ -34,21 +34,68 @@ def main():
     settings = difficulty_settings[diff]
     grid_size = ask_grid_size(settings)
 
-    # Listas de palabras
+    # -------------------------------------------------
+    # 4) Listas de palabras
+    # -------------------------------------------------
     predefined_wordlists = [
         ["gato", "perro", "casa", "luna", "sol", "arbol", "cielo", "mar"],
         ["python", "codigo", "amazon", "kdp", "libro", "puzzle", "print"],
     ]
-    wordlists = predefined_wordlists  # Puedes añadir lógica para cargar desde txt
 
-    # Número de puzzles
-    total = 10
-    try:
-        total_raw = input("\n¿Cuántos puzzles quieres generar? [por defecto 10]: ").strip()
-        if total_raw:
-            total = int(total_raw)
-    except Exception:
-        pass
+    wordlists, source_type = prompt_wordlists(predefined_wordlists)
+
+    # -------------------------------------------------
+    # 5) Validar que todas las palabras caben en el grid
+    # -------------------------------------------------
+    problems = validate_wordlists_for_grid(wordlists, grid_size, remove_spaces=True)
+
+    if problems:
+        print("\n[ERROR] Se han encontrado palabras que no caben en el grid seleccionado.")
+        print(f"Tamaño del grid: {grid_size}x{grid_size}")
+        print("Revisa y corrige estas palabras en tus listas (o aumenta el tamaño del grid):\n")
+
+        # Agrupar por lista para que sea más legible
+        by_list = {}
+        for p in problems:
+            by_list.setdefault(p["list_index"], []).append(p)
+
+        for li, items in by_list.items():
+            print(f"  - Lista #{li + 1}:")
+            for p in items:
+                print(
+                    f"      • '{p['word']}' (limpia: '{p['clean_word']}') "
+                    f"tiene longitud {p['length']} > {grid_size}"
+                )
+            print()
+
+        print("Corrige el archivo de palabras (o el tamaño de grid) y vuelve a ejecutar el script.")
+        # Salir sin intentar generar nada
+        return
+
+
+    # -------------------------------------------------
+    # 6) Número de puzzles
+    # -------------------------------------------------
+    if source_type == "txt":
+        # Un puzzle por cada lista en el archivo
+        total = len(wordlists)
+        print(f"\nOrigen TXT detectado: se generarán {total} sopas de letras (una por lista).")
+    else:
+        default_total = 10
+        while True:
+            total_raw = input(f"\n¿Cuántos puzzles quieres generar? [por defecto {default_total}]: ").strip()
+            if not total_raw:
+                total = default_total
+                break
+            try:
+                total = int(total_raw)
+                if total <= 0:
+                    raise ValueError
+                break
+            except ValueError:
+                print("Introduce un número entero positivo, por favor.")
+
+
 
     puzzles = []
     solutions = []
@@ -56,11 +103,19 @@ def main():
         wl = wordlists[(i-1) % len(wordlists)].copy()
         import random
         random.shuffle(wl)
-        while True:
+        max_tries = 10
+        placed_result = None
+        for attempt in range(1, max_tries + 1):
             placed_result = place_words_on_grid(wl, difficulty=diff, grid_size=grid_size)
             if placed_result:
-                grid, placed = placed_result
                 break
+            if not placed_result:
+                print(f"[Aviso] Puzzle #{i}: no se ha podido generar un grid válido tras {max_tries} intentos.")
+                print("Probablemente hay demasiadas palabras o la lista es muy densa para este tamaño de grid.")
+                print("Ajusta manualmente la lista o el tamaño y vuelve a intentarlo.")
+            continue
+        grid, placed = placed_result
+
         sol_positions = set()
         for w, (r, c, dr, dc) in placed:
             rr, cc = r, c
