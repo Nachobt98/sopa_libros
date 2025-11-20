@@ -199,8 +199,10 @@ def render_page(
 
     text_color = (0, 0, 0, 255)
     # FUN FACT
-    fact_bg = (230, 230, 230, 255)
-    fact_border = (0, 0, 0, 255)
+    fact_bg = (245, 245, 245, 245)          # fondo de la tarjeta
+    fact_border = (170, 170, 170, 255)      # borde suave
+    fact_header_bg = (30, 30, 30, 255)      # cabecera casi negra
+    fact_header_text = (255, 255, 255, 255) # texto "FUN FACT"
     pill_bg = (230, 230, 230, 255)
     pill_border = (120, 120, 120, 255)
 
@@ -234,55 +236,97 @@ def render_page(
     y_cursor_hi = y_after_title + int(80 * SCALE)
 
     # --------------------------------------------------------
-    # FUN FACT compacto
+    # FUN FACT – tarjeta con cabecera
     # --------------------------------------------------------
     if (not is_solution) and fun_fact:
-        fact_label_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.8) * SCALE)
-        fact_text_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.7) * SCALE)
+        # Tipos de letra
+        fact_label_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.9) * SCALE)
+        fact_text_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75) * SCALE)
 
-        left_hi = SAFE_LEFT_HI
-        right_hi = SAFE_RIGHT_HI
-        max_width_hi = int(right_hi - left_hi - 24 * SCALE)
+        # La tarjeta vive dentro del panel, con margen interior
+        left_hi = panel_left + int(40 * SCALE)
+        right_hi = panel_right - int(40 * SCALE)
 
-        fact_label = "FUN FACT:"
+        # Anchura disponible para texto dentro de la tarjeta
+        inner_horizontal_pad = int(18 * SCALE)
+        max_text_width_hi = int((right_hi - left_hi) - 2 * inner_horizontal_pad)
+
+        # Etiqueta de cabecera
+        fact_label = "FUN FACT"
         label_w, label_h = _text_size(draw, fact_label, fact_label_font)
-        line_height_hi = int(fact_text_font.size * 1.05)
 
-        fact_lines = _wrap_text(draw, fun_fact, fact_text_font, max_width_hi)
+        # Texto envuelto
+        line_height_hi = int(fact_text_font.size * 1.10)
+        fact_lines = _wrap_text(draw, fun_fact, fact_text_font, max_text_width_hi)
 
-        padding_v_hi = int(14 * SCALE)
-        padding_h_hi = int(14 * SCALE)
+        # Medidas tarjeta
+        header_pad_v_hi = int(8 * SCALE)    # padding vertical cabecera
+        text_pad_v_hi = int(10 * SCALE)     # padding vertical del bloque de texto
+
+        header_height_hi = label_h + 2 * header_pad_v_hi
+        fact_text_height_hi = len(fact_lines) * line_height_hi
 
         box_top_hi = y_cursor_hi
-        fact_text_height_hi = len(fact_lines) * line_height_hi
         box_bottom_hi = (
             box_top_hi
-            + padding_v_hi * 2
-            + label_h
-            + int(4 * SCALE)
+            + header_height_hi
+            + text_pad_v_hi            # espacio entre cabecera y texto
             + fact_text_height_hi
+            + text_pad_v_hi            # padding inferior
         )
 
+        # Tarjeta principal
         _rounded_rectangle(
             draw,
             (int(left_hi), int(box_top_hi), int(right_hi), int(box_bottom_hi)),
-            radius=int(12 * SCALE),
+            radius=int(18 * SCALE),
             fill=fact_bg,
             outline=fact_border,
             width=max(1, int(2 * SCALE)),
         )
 
-        tx_hi = left_hi + padding_h_hi
-        ty_hi = box_top_hi + padding_v_hi
-        draw.text((tx_hi, ty_hi), fact_label, font=fact_label_font, fill=text_color)
-        ty_hi += label_h + int(4 * SCALE)
+        # Cabecera oscura pegada a la parte superior de la tarjeta
+        header_left_hi = left_hi
+        header_right_hi = right_hi
+        header_top_hi = box_top_hi
+        header_bottom_hi = header_top_hi + header_height_hi
+
+        _rounded_rectangle(
+            draw,
+            (int(header_left_hi), int(header_top_hi), int(header_right_hi), int(header_bottom_hi)),
+            radius=int(18 * SCALE),
+            fill=fact_header_bg,
+            outline=None,
+            width=0,
+        )
+
+        # Texto "FUN FACT" centrado en la cabecera
+        header_cx = (header_left_hi + header_right_hi) / 2
+        header_cy = (header_top_hi + header_bottom_hi) / 2
+        try:
+            draw.text(
+                (header_cx, header_cy),
+                fact_label,
+                font=fact_label_font,
+                fill=fact_header_text,
+                anchor="mm",
+            )
+        except TypeError:
+            hx = header_cx - label_w / 2
+            hy = header_cy - label_h / 2
+            draw.text((hx, hy), fact_label, font=fact_label_font, fill=fact_header_text)
+
+        # Texto del fact, alineado a la izquierda dentro de la tarjeta
+        text_x_hi = left_hi + inner_horizontal_pad
+        text_y_hi = header_bottom_hi + text_pad_v_hi
 
         for line in fact_lines:
-            draw.text((tx_hi, ty_hi), line, font=fact_text_font, fill=text_color)
-            ty_hi += line_height_hi
+            draw.text((text_x_hi, text_y_hi), line, font=fact_text_font, fill=text_color)
+            text_y_hi += line_height_hi
 
-        # Más separación fact → grid
-        y_cursor_hi = box_bottom_hi + int(40 * SCALE)
+        # Más separación FUN FACT → GRID
+        y_cursor_hi = box_bottom_hi + int(50 * SCALE)
+
 
     # --------------------------------------------------------
     # GRID (protagonista)
