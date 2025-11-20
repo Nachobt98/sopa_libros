@@ -497,9 +497,12 @@ def render_page(
         )
 
         # Centrar texto dentro de la pastilla usando el tamaño medido
-        tx = pill_x + (box_w - tw_pill) / 2
-        ty = pill_y + (box_h - th_pill) / 2
-        draw.text((tx, ty), pill_text, font=pill_font, fill=text_color)
+        tx = pill_x + box_w / 2
+        ty = pill_y + box_h / 2
+        try:
+            draw.text((tx, ty), pill_text, font=pill_font, fill=text_color, anchor="mm")
+        except TypeError:
+            draw.text((tx - tw_pill / 2, ty - th_pill / 2), pill_text, font=pill_font, fill=text_color)
 
     # Ahora sí, área de palabras empieza un poco POR DEBAJO de la pill
     words_top_hi = pill_y + pill_box_h + int(30 * SCALE)
