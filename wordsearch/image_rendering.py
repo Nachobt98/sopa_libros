@@ -276,10 +276,11 @@ def render_page(
         )
 
         # Tarjeta principal
+        card_radius = int(18 * SCALE)
         _rounded_rectangle(
             draw,
             (int(left_hi), int(box_top_hi), int(right_hi), int(box_bottom_hi)),
-            radius=int(18 * SCALE),
+            radius=card_radius,
             fill=fact_bg,
             outline=fact_border,
             width=max(1, int(2 * SCALE)),
@@ -291,13 +292,25 @@ def render_page(
         header_top_hi = box_top_hi
         header_bottom_hi = header_top_hi + header_height_hi
 
+        header_radius = min(card_radius, header_height_hi // 2)
         _rounded_rectangle(
             draw,
             (int(header_left_hi), int(header_top_hi), int(header_right_hi), int(header_bottom_hi)),
-            radius=int(18 * SCALE),
+            radius=header_radius,
             fill=fact_header_bg,
             outline=None,
             width=0,
+        )
+        # Rectificamos la base para que quede recta dentro de la caja principal
+        draw.rectangle(
+            (
+                int(header_left_hi),
+                int(header_top_hi + header_radius),
+                int(header_right_hi),
+                int(header_bottom_hi),
+            ),
+            fill=fact_header_bg,
+            outline=None,
         )
 
         # Texto "FUN FACT" centrado en la cabecera
