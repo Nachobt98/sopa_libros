@@ -36,5 +36,5 @@ FONT_PATH_BOLD = "fonts/montserrat/static/Montserrat-Medium.ttf"
 FONT_TITLE = "fonts/abril_fatface/AbrilFatface-Regular.ttf"
 
 # Tamaños base
-title_font_size = 130
+title_font_size = 100
 wordlist_font_size = 80

@@ -5,6 +5,7 @@ y lista de palabras en columnas, manteniendo el resaltado elegante para solucion
 """
 
 import os
+import math
 from typing import Iterable, List, Optional, Sequence, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
@@ -176,6 +177,11 @@ def render_page(
     panel_top = TOP_PX_HI - panel_pad_top
     panel_bottom = SAFE_BOTTOM_HI + panel_pad_bottom
 
+    # Altura máxima permitida para título + FUN FACT
+    TITLE_FACT_AREA_HI = int(500 * SCALE)  # ajustable y fijo en todo el libro
+    GRID_TOP_BASE = panel_top + TITLE_FACT_AREA_HI
+
+
     # Nos aseguramos de no salirnos de la página
     panel_left = max(0, panel_left)
     panel_top = max(0, panel_top)
@@ -190,6 +196,12 @@ def render_page(
         outline=(0, 0, 0, 60),             # borde muy suave
         width=max(1, int(3 * SCALE)),
     )
+
+    # Área común de contenido dentro del panel (para alinear todo)
+    content_margin_x = int(40 * SCALE)
+    CONTENT_LEFT_HI = panel_left + content_margin_x
+    CONTENT_RIGHT_HI = panel_right - content_margin_x
+    min_gap_hi = int(30 * SCALE)
 
 
     # Fuentes
@@ -241,11 +253,11 @@ def render_page(
     if (not is_solution) and fun_fact:
         # Tipos de letra
         fact_label_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.9) * SCALE)
-        fact_text_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75) * SCALE)
+        fact_text_font_size_hi = int(WORDLIST_FONT_SIZE * 0.5) * SCALE  # fijo para todo el libro
 
         # La tarjeta vive dentro del panel, con margen interior
-        left_hi = panel_left + int(40 * SCALE)
-        right_hi = panel_right - int(40 * SCALE)
+        left_hi = CONTENT_LEFT_HI
+        right_hi = CONTENT_RIGHT_HI
 
         # Anchura disponible para texto dentro de la tarjeta
         inner_horizontal_pad = int(18 * SCALE)
@@ -255,25 +267,39 @@ def render_page(
         fact_label = "FUN FACT"
         label_w, label_h = _text_size(draw, fact_label, fact_label_font)
 
-        # Texto envuelto
-        line_height_hi = int(fact_text_font.size * 1.10)
-        fact_lines = _wrap_text(draw, fun_fact, fact_text_font, max_text_width_hi)
-
-        # Medidas tarjeta
+        # Texto envuelto dentro de una altura máxima fija para que el grid no se mueva.
+        # Aquí NO reducimos el tamaño de fuente; si no cabe, truncamos con “…”.
         header_pad_v_hi = int(8 * SCALE)    # padding vertical cabecera
         text_pad_v_hi = int(10 * SCALE)     # padding vertical del bloque de texto
-
         header_height_hi = label_h + 2 * header_pad_v_hi
+
+        fact_text_font = _load_font(FONT_PATH, fact_text_font_size_hi)
+        line_height_hi = int(fact_text_font.size * 1.10)
+
+        # Altura máxima disponible; garantizamos al menos espacio para 1 línea
+        min_fact_block_hi = header_height_hi + 2 * text_pad_v_hi + line_height_hi
+        max_fact_height_hi = max(min_fact_block_hi, GRID_TOP_BASE - y_cursor_hi - min_gap_hi)
+
+        fact_lines = _wrap_text(draw, fun_fact, fact_text_font, max_text_width_hi)
+
+        available_text_h = max(0, max_fact_height_hi - header_height_hi - 2 * text_pad_v_hi)
+        max_lines_fit = max(1, available_text_h // line_height_hi)
+        if len(fact_lines) > max_lines_fit:
+            fact_lines = fact_lines[:max_lines_fit]
+            last_line = fact_lines[-1] if fact_lines else ""
+            ellipsis = "..."
+            while last_line and _text_size(draw, last_line + ellipsis, fact_text_font)[0] > max_text_width_hi:
+                last_line = last_line[:-1].rstrip()
+            if last_line:
+                fact_lines[-1] = last_line + ellipsis
+            else:
+                fact_lines[-1] = ellipsis
+
         fact_text_height_hi = len(fact_lines) * line_height_hi
+        box_height_hi = header_height_hi + text_pad_v_hi + fact_text_height_hi + text_pad_v_hi
 
         box_top_hi = y_cursor_hi
-        box_bottom_hi = (
-            box_top_hi
-            + header_height_hi
-            + text_pad_v_hi            # espacio entre cabecera y texto
-            + fact_text_height_hi
-            + text_pad_v_hi            # padding inferior
-        )
+        box_bottom_hi = box_top_hi + box_height_hi
 
         # Tarjeta principal
         card_radius = int(18 * SCALE)
@@ -347,30 +373,29 @@ def render_page(
     rows = len(grid)
     cols = len(grid[0]) if rows > 0 else 0
 
-    # Reservamos ~22% para wordlist
-    words_block_height_hi = int(PAGE_H_HI * 0.22)
-    max_grid_bottom_hi = SAFE_BOTTOM_HI - words_block_height_hi
-    max_grid_height_hi = max_grid_bottom_hi - y_cursor_hi - int(25 * SCALE)
-    max_grid_width_hi = SAFE_RIGHT_HI - SAFE_LEFT_HI
-
-    cell_size_hi = min(
-        max_grid_width_hi / max(cols, 1),
-        max_grid_height_hi / max(rows, 1),
-    )
-    cell_size_hi = int(cell_size_hi)
+    content_width_hi = CONTENT_RIGHT_HI - CONTENT_LEFT_HI
+    grid_width_target_hi = int(content_width_hi * 0.85)
+    cell_size_hi = int(grid_width_target_hi / max(cols, 1))
 
     grid_w_hi = cell_size_hi * cols
     grid_h_hi = cell_size_hi * rows
 
-    grid_left_hi = int((PAGE_W_HI - grid_w_hi) // 2)
-    grid_top_hi = int(y_cursor_hi)
+    # Posición fija del grid para que no se desplace con un FUN FACT alto
+    grid_top_hi = GRID_TOP_BASE
 
+    # Centramos en horizontal dentro del contenido
+    grid_left_hi = int((CONTENT_LEFT_HI + CONTENT_RIGHT_HI - grid_w_hi) // 2)
+
+
+    # Fuente de letras en función del tamaño de celda
     letter_font_size_hi = max(int(cell_size_hi * 0.9), int(18 * SCALE))
     font_letter = _load_font(FONT_PATH, letter_font_size_hi)
     font_letter_bold = _load_font(FONT_PATH_BOLD, letter_font_size_hi)
 
     grid_line_width_hi = max(1, int(1.2 * SCALE))
     grid_line_color = "#444444"
+
+
 
     # --------------------------------------------------------
     # CAPA DE RESALTADO (solo soluciones, con cápsula)
@@ -522,14 +547,16 @@ def render_page(
     # --------------------------------------------------------
     # Primero definimos un margen fijo desde el grid hacia abajo
     base_gap_hi = int(60 * SCALE)
-    temp_words_top_hi = grid_bottom_hi + base_gap_hi
+    gap_pill_to_words_hi = int(70 * SCALE)  # separación fija pastilla → palabras
+    words_area_height_hi = int(850 * SCALE)  # banda fija para la lista de palabras
     words_bottom_hi = SAFE_BOTTOM_HI - int(8 * SCALE)
+    words_top_hi = max(0, words_bottom_hi - words_area_height_hi)
 
     # --------------------------------------------------------
     # PASTILLA "Solution on page X" entre grid y palabras
     # --------------------------------------------------------
     pill_box_h = 0
-    pill_y = temp_words_top_hi
+    pill_y = grid_bottom_hi + base_gap_hi
     if (not is_solution) and solution_page_number is not None:
         pill_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75) * SCALE)
         pill_text = f"Solution on page {solution_page_number}"
@@ -541,8 +568,11 @@ def render_page(
         box_h = th_pill + 2 * pad_h
         pill_box_h = box_h
 
-        pill_x = int((panel_left + panel_right - box_w) // 2)
-        pill_y = temp_words_top_hi  # justo después del hueco desde el grid
+        pill_x = int((CONTENT_LEFT_HI + CONTENT_RIGHT_HI - box_w) // 2)
+        # Colocamos la pastilla para dejar un gap constante con la lista de palabras
+        target_pill_y = words_top_hi - gap_pill_to_words_hi - box_h
+        min_pill_y = grid_bottom_hi + base_gap_hi
+        pill_y = max(min_pill_y, target_pill_y)
 
         _rounded_rectangle(
             draw,
@@ -561,48 +591,73 @@ def render_page(
         except TypeError:
             draw.text((tx - tw_pill / 2, ty - th_pill / 2), pill_text, font=pill_font, fill=text_color)
 
-    # Ahora sí, área de palabras empieza un poco POR DEBAJO de la pill
-    words_top_hi = pill_y + pill_box_h + int(30 * SCALE)
+    # Ajustamos words_top_hi para mantener el gap fijo con la pastilla
+    desired_words_top_hi = pill_y + pill_box_h + gap_pill_to_words_hi
+    if desired_words_top_hi > words_top_hi:
+        words_top_hi = desired_words_top_hi
     if words_top_hi > words_bottom_hi:
         words_top_hi = words_bottom_hi
     words_height_hi = max(0, words_bottom_hi - words_top_hi)
 
     # --------------------------------------------------------
-    # LISTA DE PALABRAS (pequeñas, pegadas al final)
+    # LISTA DE PALABRAS (todas deben caber)
     # --------------------------------------------------------
     words_upper = [str(w).upper() for w in words]
     if words_upper and words_height_hi > 0:
-        col_count = 3 if len(words_upper) >= 18 else 2
-        area_left_hi = SAFE_LEFT_HI
-        area_right_hi = SAFE_RIGHT_HI
+        words_inner_margin_hi = int(35 * SCALE)  # margen interior similar al FUN FACT
+        area_left_hi = CONTENT_LEFT_HI + words_inner_margin_hi
+        area_right_hi = CONTENT_RIGHT_HI - words_inner_margin_hi
         total_w_hi = area_right_hi - area_left_hi
-        col_w_hi = total_w_hi / col_count
 
-        col_words: List[List[str]] = [[] for _ in range(col_count)]
-        for i, w in enumerate(words_upper):
-            col_idx = i % col_count
-            col_words[col_idx].append(w)
-
-        # aún más pequeñas para ganar aire
+        # Fuente fija para todas las páginas
         font_words_real = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.6) * SCALE)
         line_h_hi = int(font_words_real.size * 1.12)
 
-        for ci in range(col_count):
-            cw = col_words[ci]
+        max_lines_per_col = max(1, words_height_hi // line_h_hi)
+        word_max_w = max(_text_size(draw, w, font_words_real)[0] for w in words_upper)
+
+        best_layout = None
+        # Probamos de 2 a 5 columnas para cumplir alto y ancho sin cambiar tamaño de letra
+        for col_count in range(2, 6):
+            if col_count * max_lines_per_col < len(words_upper):
+                continue
+            col_w_hi = total_w_hi / col_count
+            if word_max_w <= col_w_hi * 0.92:
+                best_layout = (col_count, col_w_hi)
+                break
+
+        if best_layout is None:
+            # Fallback: usa las columnas mínimas necesarias por alto, aunque alguna palabra quede justa.
+            col_count = max(2, min(5, math.ceil(len(words_upper) / max_lines_per_col)))
+            col_w_hi = total_w_hi / col_count
+            best_layout = (col_count, col_w_hi)
+
+        col_count, col_w_hi = best_layout
+
+        # Repartimos las palabras por columnas, balanceando tamaños
+        base_len = len(words_upper) // col_count
+        remainder = len(words_upper) % col_count
+        col_sizes = [base_len + (1 if i < remainder else 0) for i in range(col_count)]
+
+        col_words: List[List[str]] = []
+        idx = 0
+        for size in col_sizes:
+            col_words.append(words_upper[idx : idx + size])
+            idx += size
+
+        # Altura usada por la columna más alta para alinear filas
+        max_used_h = max(len(cw) * line_h_hi for cw in col_words) if col_words else 0
+        group_y_start = words_top_hi + (words_height_hi - max_used_h) // 2
+
+        # Dibujamos cada columna centrada horizontalmente en su bloque, con texto alineado por filas
+        for ci, cw in enumerate(col_words):
             if not cw:
                 continue
 
             col_center_x = int(area_left_hi + (ci + 0.5) * col_w_hi)
+            y_hi = int(group_y_start)
 
-            used_h = len(cw) * line_h_hi
-            y_start = words_bottom_hi - used_h
-            if y_start < words_top_hi:
-                y_start = words_top_hi
-
-            y_hi = int(y_start)
             for w in cw:
-                if y_hi + line_h_hi > words_bottom_hi:
-                    break
                 try:
                     draw.text(
                         (col_center_x, y_hi),
@@ -620,6 +675,7 @@ def render_page(
                         font=font_words_real,
                     )
                 y_hi += line_h_hi
+
 
     # --------------------------------------------------------
     # Guardar
