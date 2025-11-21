@@ -1,0 +1,160 @@
+[Block]
+name: Black History Foundations
+background: assets/history.png
+[/Block]
+
+[Puzzle]
+title: Early Black Pioneers
+fact: Many early African-descendant pioneers shaped communities across the Americas despite harsh conditions.
+words:
+Pioneer
+Legacy
+Heritage
+Community
+Freedom
+Strength
+[/Puzzle]
+
+[Puzzle]
+title: African Cultural Symbols
+fact: Adinkra symbols from Ghana represent concepts such as wisdom, unity, and strength.
+words:
+Adinkra
+Wisdom
+Unity
+Tribe
+Symbol
+Culture
+[/Puzzle]
+
+[Puzzle]
+title: African Heritage Landmarks
+fact: Sites like Timbuktu were once centers of knowledge and scholarship.
+words:
+Timbuktu
+Heritage
+Empire
+Scholar
+Trade
+Legacy
+[/Puzzle]
+
+[Puzzle]
+title: Black Historical Firsts
+fact: Many African Americans were pioneers in science, aviation, medicine, and civil service.
+words:
+Pioneer
+Aviation
+Science
+Medicine
+Achievement
+Trailblazer
+[/Puzzle]
+
+
+[Block]
+name: Black Leaders & Civil Rights
+background: assets/black.png
+[/Block]
+
+[Puzzle]
+title: Civil Rights Movement
+fact: The Civil Rights Movement sought legal equality and inspired global human rights struggles.
+words:
+Justice
+Freedom
+Equality
+Rights
+Movement
+Protest
+[/Puzzle]
+
+[Puzzle]
+title: Martin Luther King Jr.
+fact: MLK delivered his iconic "I Have a Dream" speech in 1963 during the March on Washington.
+words:
+Dream
+Peace
+March
+King
+Speech
+Justice
+[/Puzzle]
+
+[Puzzle]
+title: Rosa Parks & Montgomery
+fact: Rosa Parks ignited the Montgomery Bus Boycott by refusing to surrender her seat.
+words:
+Rosa Parks
+Boycott
+Montgomery
+Courage
+Rights
+Bus
+[/Puzzle]
+
+[Puzzle]
+title: Voting Rights Activists
+fact: Activists fought for fair voting access, leading to the Voting Rights Act of 1965.
+words:
+Ballot
+Freedom
+Vote
+Rights
+Act
+Activist
+[/Puzzle]
+
+
+[Block]
+name: Black Arts, Music & Culture
+background: assets/arts.png
+[/Block]
+
+[Puzzle]
+title: Jazz Legends
+fact: Jazz originated in New Orleans and became one of America's most influential music genres.
+words:
+Jazz
+Rhythm
+Blues
+Swing
+Horn
+Improvisation
+[/Puzzle]
+
+[Puzzle]
+title: Harlem Renaissance Writers
+fact: The Harlem Renaissance produced a surge of Black artistic expression in the 1920s.
+words:
+Poetry
+Harlem
+Writer
+Culture
+Jazz
+Story
+[/Puzzle]
+
+[Puzzle]
+title: Soul & Blues Icons
+fact: Artists like Aretha Franklin and Ray Charles shaped modern soul music.
+words:
+Soul
+Aretha Franklin
+Ray Charles
+Voice
+Rhythm
+Blues
+[/Puzzle]
+
+[Puzzle]
+title: Hip Hop Pioneers
+fact: Hip hop culture emerged in the Bronx, blending rhythm, poetry, and street expression.
+words:
+Hip Hop
+Rap
+Bronx
+Beat
+DJ
+Flow
+[/Puzzle]

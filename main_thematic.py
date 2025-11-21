@@ -14,7 +14,7 @@ import os
 from wordsearch.difficulty_levels import DifficultyLevel, difficulty_settings
 from wordsearch.grid_size_utils import ask_grid_size
 from wordsearch.grid_generation import place_words_on_grid
-from wordsearch.image_rendering import render_page
+from wordsearch.image_rendering import render_page, render_block_cover
 from wordsearch.pdf_book_generation import generate_pdf
 from wordsearch.wordlist_utils import slugify
 from wordsearch.puzzle_parser import parse_puzzle_file, PuzzleParseError
@@ -68,7 +68,9 @@ def main():
 
     print(f"Se han cargado {total_puzzles} puzzles del fichero.")
 
-    # Dificultad + tamaño de grid (comunes para todo el libro)
+    # ---------------------------------------------
+    # Dificultad + tamaño de grid (comunes)
+    # ---------------------------------------------
     difficulty = _ask_difficulty()
     settings = difficulty_settings[difficulty]
     grid_size = ask_grid_size(settings)
@@ -78,32 +80,90 @@ def main():
     output_dir = os.path.join(BASE_OUTPUT_DIR, slugify(book_title))
     os.makedirs(output_dir, exist_ok=True)
 
-    puzzle_imgs = []
+    puzzle_imgs = []    # aquí incluiremos portadas de bloque + puzzles
     solution_imgs = []
+
+    # ---------------------------------------------
+    # Cálculo de nº de bloques (para paginación)
+    # Contamos cambios de block_name en orden.
+    # ---------------------------------------------
+    block_names_ordered = []
+    last_block = object()
+    for s in specs:
+        if s.block_name and s.block_name != last_block:
+            block_names_ordered.append(s.block_name)
+            last_block = s.block_name
+    num_blocks = len(block_names_ordered)
+
+    # En el PDF:
+    # - Primero va una portada interna creada en generate_pdf (página 1)
+    # - Luego TODAS las imágenes de puzzle_imgs (portadas de bloque + puzzles)
+    # - Luego portada de soluciones
+    # - Luego todas las soluciones.
+    #
+    # En la versión anterior (sin bloques), hacíamos:
+    #   solution_page_number = total_puzzles + 2 + spec.index
+    # donde "total_puzzles + 2" era el offset fijo antes de empezar las soluciones.
+    #
+    # Ahora hay num_blocks páginas extra (portadas de bloque) en la sección de puzzles,
+    # así que el offset aumenta en num_blocks:
+    pages_before_first_solution = total_puzzles + num_blocks + 2
+
+    # ---------------------------------------------
+    # Generación de grids e imágenes
+    # ---------------------------------------------
+    current_block_name = None
+    block_counter = 0
 
     for spec in specs:
         print(f"Generando puzzle {spec.index + 1}/{total_puzzles}: {spec.title}")
 
+        # Si empezamos un bloque nuevo, generamos primero su portada de bloque
+        if spec.block_name and spec.block_name != current_block_name:
+            current_block_name = spec.block_name
+            block_counter += 1
+
+            cover_bg_path = spec.block_background or None
+            cover_filename = os.path.join(
+                output_dir,
+                f"block_{block_counter:02d}_{slugify(spec.block_name)}.png",
+            )
+
+            cover_img = render_block_cover(
+                block_name=spec.block_name,
+                block_index=block_counter,
+                filename=cover_filename,
+                background_path=cover_bg_path,
+            )
+            puzzle_imgs.append(cover_img)
+
+        # Limpieza de palabras para el grid (quitamos espacios y no-alfas)
         def clean_for_grid(word: str) -> str:
             return "".join(ch for ch in word.upper() if ch.isalpha())
-        
+
         words_for_grid = [clean_for_grid(w) for w in spec.words]
 
-        placed_result = place_words_on_grid(words_for_grid, difficulty=difficulty, grid_size=grid_size)
+        placed_result = place_words_on_grid(
+            words_for_grid,
+            difficulty=difficulty,
+            grid_size=grid_size,
+        )
         if placed_result is None:
             print(f"  [AVISO] No se pudo generar grid para el puzzle {spec.index + 1}. Se salta.")
             continue
 
         grid, placed = placed_result
 
-        # PDF final: primero todos los puzzles, luego portada de soluciones, luego soluciones.
-        # -> Puzzle i está en página (i+1)
-        # -> Portada soluciones en página (N + 1)
-        # -> Solución i está en página (N + 2 + i)
-        solution_page_number = total_puzzles + 2 + spec.index
+        # Paginación de la solución, teniendo en cuenta:
+        # - total_puzzles      -> nº de puzzles
+        # - num_blocks         -> nº de portadas de bloque
+        # - "2"                -> portada interna + portada de soluciones
+        solution_page_number = pages_before_first_solution + spec.index
 
         puzzle_filename = os.path.join(output_dir, f"puzzle_{spec.index + 1}.png")
         solution_filename = os.path.join(output_dir, f"puzzle_{spec.index + 1}_sol.png")
+
+        bg_path = spec.block_background or None
 
         img_puzzle = render_page(
             grid,
@@ -115,6 +175,7 @@ def main():
             puzzle_title=spec.title,
             fun_fact=spec.fact,
             solution_page_number=solution_page_number,
+            background_path=bg_path,
         )
 
         img_solution = render_page(
@@ -125,6 +186,7 @@ def main():
             filename=solution_filename,
             placed_words=placed,
             puzzle_title=spec.title,
+            background_path=bg_path,
         )
 
         puzzle_imgs.append(img_puzzle)

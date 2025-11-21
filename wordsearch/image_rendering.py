@@ -130,6 +130,7 @@ def render_page(
     idx: int,
     is_solution: bool = False,
     solution_positions=None,  # compatibilidad con código viejo
+    background_path: Optional[str] = None,
     filename: Optional[str] = None,
     placed_words: Optional[Sequence[Tuple[str, Tuple[int, int, int, int]]]] = None,
     puzzle_title: Optional[str] = None,
@@ -149,23 +150,26 @@ def render_page(
     SAFE_BOTTOM_HI = SAFE_BOTTOM * SCALE
     TOP_PX_HI = TOP_PX * SCALE
 
-      # --- Fondo de página (PNG opcional) ---
-    if os.path.exists(BACKGROUND_PATH):
-        bg = Image.open(BACKGROUND_PATH).convert("RGBA")
-        # Redimensionamos el fondo al tamaño hi-res de la página
+    # --- Fondo de página (PNG opcional) ---
+
+    # Si nos pasan un fondo específico para este puzzle, lo usamos.
+    # Si no, usamos el BACKGROUND_PATH global como fallback.
+    bg_path = background_path or BACKGROUND_PATH
+
+    if bg_path and os.path.exists(bg_path):
+        bg = Image.open(bg_path).convert("RGBA")
         bg = bg.resize((PAGE_W_HI, PAGE_H_HI), Image.LANCZOS)
 
-        # Si quieres aclarar un poco el fondo para que no moleste al texto:
-        # (baja alfa a ~70%)
         if bg.mode == "RGBA":
             r, g, b, a = bg.split()
-            a = a.point(lambda v: int(v * 0.7))  # 70% de opacidad del PNG original
+            a = a.point(lambda v: int(v * 0.7))  # 70% opacidad
             bg = Image.merge("RGBA", (r, g, b, a))
 
         img = bg
     else:
         # Fondo blanco por defecto
         img = Image.new("RGBA", (PAGE_W_HI, PAGE_H_HI), (255, 255, 255, 255))
+
 
     draw = ImageDraw.Draw(img)
 
@@ -691,5 +695,184 @@ def render_page(
 
     img_rgb = img.convert("RGB")
     img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), resample=Image.LANCZOS)
+    img_final.save(filename, dpi=(300, 300))
+    return filename
+
+
+def render_block_cover(
+    block_name: str,
+    block_index: int,
+    filename: Optional[str] = None,
+    background_path: Optional[str] = None,
+) -> str:
+    """
+    Genera una página de portada para un bloque temático.
+    Fondo completo + título centrado + subtítulo de una línea.
+    Sin panel blanco.
+    """
+
+    SCALE = 3
+    PAGE_W_HI = PAGE_W_PX * SCALE
+    PAGE_H_HI = PAGE_H_PX * SCALE
+
+    # --- Fondo de página ---
+    bg_path = background_path or BACKGROUND_PATH
+    if bg_path and os.path.exists(bg_path):
+        img = Image.open(bg_path).convert("RGBA")
+        img = img.resize((PAGE_W_HI, PAGE_H_HI), Image.LANCZOS)
+
+        # Bajamos un poco la opacidad para que el texto destaque mejor
+        if img.mode == "RGBA":
+            r, g, b, a = img.split()
+            a = a.point(lambda v: int(v * 0.70))
+            img = Image.merge("RGBA", (r, g, b, a))
+    else:
+        img = Image.new("RGBA", (PAGE_W_HI, PAGE_H_HI), (255, 255, 255, 255))
+
+    draw = ImageDraw.Draw(img)
+
+    # -----------------------------------------------------------------
+    # Parámetros de layout
+    # -----------------------------------------------------------------
+    margin_x = int(PAGE_W_HI * 0.10)          # 10% de margen lateral
+    max_text_width = PAGE_W_HI - 2 * margin_x
+
+    center_x = PAGE_W_HI // 2
+    title_y = int(PAGE_H_HI * 0.33)           # tercio superior
+    subtitle_gap = int(40 * SCALE)            # distancia título → subtítulo
+
+    # Heurística simple de luminosidad para decidir color del texto
+    small = img.resize((50, 50)).convert("L")
+    avg_brightness = sum(small.getdata()) / (50 * 50)
+    main_color = (255, 255, 255, 255) if avg_brightness < 128 else (0, 0, 0, 255)
+    shadow_color = (0, 0, 0, 90) if main_color[0] == 255 else (255, 255, 255, 90)
+
+    # -----------------------------------------------------------------
+    # TÍTULO: grande pero elegante, con wrap y auto-ajuste de tamaño
+    # -----------------------------------------------------------------
+    raw_title = block_name.strip() or f"Block {block_index}"
+
+    # Tamaño base: “grande pero elegante”
+    base_size = int(TITLE_FONT_SIZE * 1.6) * SCALE
+    min_size = int(TITLE_FONT_SIZE * 1.0) * SCALE
+
+    font_size = base_size
+    while font_size > min_size:
+        font_title = _load_font(FONT_TITLE, font_size)
+        # Intentamos partir el título en líneas para que quepa en ancho
+        title_lines = _wrap_text(draw, raw_title, font_title, max_text_width)
+        widest = 0
+        max_h = 0
+        for line in title_lines:
+            w, h = _text_size(draw, line, font_title)
+            widest = max(widest, w)
+            max_h = max(max_h, h)
+        if widest <= max_text_width:
+            break
+        font_size = int(font_size * 0.9)
+
+    # Recalculamos medidas finales
+    font_title = _load_font(FONT_TITLE, font_size)
+    title_lines = _wrap_text(draw, raw_title, font_title, max_text_width)
+    line_heig = int(font_size * 1.1)
+    total_title_h = len(title_lines) * line_heig
+
+    # Ajustamos Y del bloque de título para que quede centrado alrededor de title_y
+    first_line_y = title_y - total_title_h // 2
+
+    # Sombra ligera (offset pequeño)
+    shadow_offset = int(4 * SCALE)
+
+    y = first_line_y
+    for line in title_lines:
+        w, h = _text_size(draw, line, font_title)
+
+        # Con anchor="mm" centramos por el medio; si no está disponible, hacemos fallback manual
+        try:
+            # sombra
+            draw.text(
+                (center_x + shadow_offset, y + h / 2 + shadow_offset),
+                line,
+                font=font_title,
+                fill=shadow_color,
+                anchor="mm",
+            )
+            # texto
+            draw.text(
+                (center_x, y + h / 2),
+                line,
+                font=font_title,
+                fill=main_color,
+                anchor="mm",
+            )
+        except TypeError:
+            x = center_x - w / 2
+            # sombra
+            draw.text(
+                (x + shadow_offset, y + shadow_offset),
+                line,
+                font=font_title,
+                fill=shadow_color,
+            )
+            # texto
+            draw.text((x, y), line, font=font_title, fill=main_color)
+        y += line_heig
+
+    # -----------------------------------------------------------------
+    # SUBTÍTULO: una sola línea, centrada
+    # -----------------------------------------------------------------
+    subtitle = "A themed collection of word search puzzles"
+    font_sub_size = int(WORDLIST_FONT_SIZE * 1.3) * SCALE
+    font_sub = _load_font(FONT_PATH, font_sub_size)
+
+    # Si no cabe, reducimos un poco el tamaño
+    sub_w, sub_h = _text_size(draw, subtitle, font_sub)
+    while sub_w > max_text_width and font_sub_size > int(WORDLIST_FONT_SIZE * 0.9) * SCALE:
+        font_sub_size = int(font_sub_size * 0.9)
+        font_sub = _load_font(FONT_PATH, font_sub_size)
+        sub_w, sub_h = _text_size(draw, subtitle, font_sub)
+
+    subtitle_y = y + subtitle_gap
+
+    try:
+        # sombra
+        draw.text(
+            (center_x + shadow_offset, subtitle_y + sub_h / 2 + shadow_offset),
+            subtitle,
+            font=font_sub,
+            fill=shadow_color,
+            anchor="mm",
+        )
+        # texto
+        draw.text(
+            (center_x, subtitle_y + sub_h / 2),
+            subtitle,
+            font=font_sub,
+            fill=main_color,
+            anchor="mm",
+        )
+    except TypeError:
+        sx = center_x - sub_w / 2
+        sy = subtitle_y
+        draw.text(
+            (sx + shadow_offset, sy + shadow_offset),
+            subtitle,
+            font=font_sub,
+            fill=shadow_color,
+        )
+        draw.text((sx, sy), subtitle, font=font_sub, fill=main_color)
+
+    # -----------------------------------------------------------------
+    # Guardar
+    # -----------------------------------------------------------------
+    if filename is None:
+        safe_name = "".join(c if c.isalnum() or c in " -_." else "_" for c in block_name)
+        filename = os.path.join(
+            "output_puzzles_kdp",
+            f"block_{block_index}_{safe_name}.png",
+        )
+
+    img_rgb = img.convert("RGB")
+    img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), Image.LANCZOS)
     img_final.save(filename, dpi=(300, 300))
     return filename
