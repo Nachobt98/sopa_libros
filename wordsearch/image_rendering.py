@@ -101,7 +101,8 @@ def _draw_wrapped_centered_title(
     font: ImageFont.FreeTypeFont,
     max_width: int,
     start_y: int,
-    page_width: int,
+    area_left: int,
+    area_right: int,
     line_spacing: float = 1.05,
 ) -> int:
     """
@@ -110,9 +111,10 @@ def _draw_wrapped_centered_title(
     """
     lines = _wrap_text(draw, text, font, max_width)
     y = start_y
+    container_width = max(0, area_right - area_left)
     for line in lines:
         w, h = _text_size(draw, line, font)
-        x = (page_width - w) // 2
+        x = area_left + max(0, (container_width - w) // 2)
         draw.text((x, y), line, font=font, fill=(0, 0, 0, 255))
         y += int(h * line_spacing)
     return y
@@ -233,14 +235,15 @@ def render_page(
     else:
         title_text = f"Solution {idx}" if is_solution else f"Puzzle {idx}"
 
-    title_max_width = int(SAFE_RIGHT_HI - SAFE_LEFT_HI)
+    title_max_width = int(CONTENT_RIGHT_HI - CONTENT_LEFT_HI)
     y_after_title = _draw_wrapped_centered_title(
         draw,
         title_text,
         font_title,
         max_width=title_max_width,
-        start_y=TOP_PX_HI,
-        page_width=PAGE_W_HI,
+        start_y=panel_top + int(25 * SCALE),
+        area_left=CONTENT_LEFT_HI,
+        area_right=CONTENT_RIGHT_HI,
         line_spacing=1.05,
     )
 
