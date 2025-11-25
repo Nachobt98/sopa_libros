@@ -435,9 +435,9 @@ def render_page(
             tmp_border = Image.new("RGBA", (PAGE_W_HI, PAGE_H_HI), (0, 0, 0, 0))
             bdraw = ImageDraw.Draw(tmp_border)
 
-            outer_width = int(thickness + 4 * SCALE)
+            outer_width = int(thickness + 8 * SCALE)
             inner_width = int(thickness)
-            outer_radius = radius + 2 * SCALE
+            outer_radius = radius + 4 * SCALE
             inner_radius = radius
 
             # Exterior
