@@ -23,7 +23,10 @@ from wordsearch.constants_and_layout import (
     title_font_size as TITLE_FONT_SIZE,
     wordlist_font_size as WORDLIST_FONT_SIZE,
 )
+
 BACKGROUND_PATH = "assets/afro_recargado_background.png"
+
+
 # ------------------------------------------------------------
 # Utilidades
 # ------------------------------------------------------------
@@ -35,7 +38,11 @@ def _load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
         return ImageFont.load_default()
 
 
-def _text_size(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont) -> Tuple[int, int]:
+def _text_size(
+    draw: ImageDraw.ImageDraw,
+    text: str,
+    font: ImageFont.FreeTypeFont,
+) -> Tuple[int, int]:
     bbox = draw.textbbox((0, 0), text, font=font)
     return bbox[2] - bbox[0], bbox[3] - bbox[1]
 
@@ -51,17 +58,14 @@ def _rounded_rectangle(
     """
     Wrapper limpio que usa rounded_rectangle de Pillow si existe,
     y solo si no existe usa un fallback sencillo.
-    Así evitamos artefactos en las esquinas.
     """
     try:
-        # Pillow >= 5 tiene rounded_rectangle
         draw.rounded_rectangle(xy, radius=radius, fill=fill, outline=outline, width=width)
     except AttributeError:
-        # Fallback muy simple sin dibujar el borde varias veces
         x1, y1, x2, y2 = xy
         draw.rectangle([x1, y1 + radius, x2, y2 - radius], fill=fill, outline=None)
         draw.rectangle([x1 + radius, y1, x2 - radius, y2], fill=fill, outline=None)
-        # esquinas
+        # Esquinas
         draw.pieslice([x1, y1, x1 + 2 * radius, y1 + 2 * radius], 180, 270, fill=fill, outline=None)
         draw.pieslice([x2 - 2 * radius, y1, x2, y1 + 2 * radius], 270, 360, fill=fill, outline=None)
         draw.pieslice([x1, y2 - 2 * radius, x1 + 2 * radius, y2], 90, 180, fill=fill, outline=None)
@@ -69,7 +73,6 @@ def _rounded_rectangle(
 
         if outline is not None and width > 0:
             draw.rounded_rectangle(xy, radius=radius, outline=outline, fill=None, width=width)
-
 
 
 def _wrap_text(
@@ -151,9 +154,6 @@ def render_page(
     TOP_PX_HI = TOP_PX * SCALE
 
     # --- Fondo de página (PNG opcional) ---
-
-    # Si nos pasan un fondo específico para este puzzle, lo usamos.
-    # Si no, usamos el BACKGROUND_PATH global como fallback.
     bg_path = background_path or BACKGROUND_PATH
 
     if bg_path and os.path.exists(bg_path):
@@ -167,14 +167,12 @@ def render_page(
 
         img = bg
     else:
-        # Fondo blanco por defecto
         img = Image.new("RGBA", (PAGE_W_HI, PAGE_H_HI), (255, 255, 255, 255))
-
 
     draw = ImageDraw.Draw(img)
 
     # === PANEL BLANCO PRINCIPAL PARA TODO EL CONTENIDO ===
-    panel_pad_x = int(30 * SCALE)   # margen horizontal hacia dentro del borde
+    panel_pad_x = int(30 * SCALE)
     panel_pad_top = int(40 * SCALE)
     panel_pad_bottom = int(40 * SCALE)
 
@@ -184,11 +182,9 @@ def render_page(
     panel_bottom = SAFE_BOTTOM_HI + panel_pad_bottom
 
     # Altura máxima permitida para título + FUN FACT
-    TITLE_FACT_AREA_HI = int(500 * SCALE)  # ajustable y fijo en todo el libro
+    TITLE_FACT_AREA_HI = int(500 * SCALE)
     GRID_TOP_BASE = panel_top + TITLE_FACT_AREA_HI
 
-
-    # Nos aseguramos de no salirnos de la página
     panel_left = max(0, panel_left)
     panel_top = max(0, panel_top)
     panel_right = min(PAGE_W_HI, panel_right)
@@ -198,17 +194,16 @@ def render_page(
         draw,
         (panel_left, panel_top, panel_right, panel_bottom),
         radius=int(35 * SCALE),
-        fill=(255, 255, 255, 100),         # blanco casi opaco
-        outline=(0, 0, 0, 60),             # borde muy suave
+        fill=(255, 255, 255, 100),
+        outline=(0, 0, 0, 60),
         width=max(1, int(3 * SCALE)),
     )
 
-    # Área común de contenido dentro del panel (para alinear todo)
+    # Área común de contenido dentro del panel
     content_margin_x = int(40 * SCALE)
     CONTENT_LEFT_HI = panel_left + content_margin_x
     CONTENT_RIGHT_HI = panel_right - content_margin_x
     min_gap_hi = int(30 * SCALE)
-
 
     # Fuentes
     font_title = _load_font(FONT_TITLE, TITLE_FONT_SIZE * SCALE)
@@ -216,17 +211,19 @@ def render_page(
     font_words_bold = _load_font(FONT_PATH_BOLD, WORDLIST_FONT_SIZE * SCALE)
 
     text_color = (0, 0, 0, 255)
+
     # FUN FACT
-    fact_bg = (245, 245, 245, 245)          # fondo de la tarjeta
-    fact_border = (170, 170, 170, 255)      # borde suave
-    fact_header_bg = (30, 30, 30, 255)      # cabecera casi negra
-    fact_header_text = (255, 255, 255, 255) # texto "FUN FACT"
+    fact_bg = (245, 245, 245, 245)
+    fact_border = (170, 170, 170, 255)
+    fact_header_bg = (30, 30, 30, 255)
+    fact_header_text = (255, 255, 255, 255)
+
     pill_bg = (230, 230, 230, 255)
     pill_border = (120, 120, 120, 255)
 
     # Resaltado soluciones
-    highlight_fill = (243, 226, 200, 230)   # relleno
-    highlight_border = (70, 80, 100, 255)   # borde más oscuro
+    highlight_fill = (243, 226, 200, 230)   # beige
+    highlight_border = (0, 0, 0, 255)       # borde oscuro
 
     # --------------------------------------------------------
     # TÍTULO (con wrap)
@@ -258,32 +255,25 @@ def render_page(
     # FUN FACT – tarjeta con cabecera
     # --------------------------------------------------------
     if (not is_solution) and fun_fact:
-        # Tipos de letra
         fact_label_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.9) * SCALE)
-        fact_text_font_size_hi = int(WORDLIST_FONT_SIZE * 0.5) * SCALE  # fijo para todo el libro
+        fact_text_font_size_hi = int(WORDLIST_FONT_SIZE * 0.5) * SCALE
 
-        # La tarjeta vive dentro del panel, con margen interior
         left_hi = CONTENT_LEFT_HI
         right_hi = CONTENT_RIGHT_HI
 
-        # Anchura disponible para texto dentro de la tarjeta
         inner_horizontal_pad = int(18 * SCALE)
         max_text_width_hi = int((right_hi - left_hi) - 2 * inner_horizontal_pad)
 
-        # Etiqueta de cabecera
         fact_label = "FUN FACT"
         label_w, label_h = _text_size(draw, fact_label, fact_label_font)
 
-        # Texto envuelto dentro de una altura máxima fija para que el grid no se mueva.
-        # Aquí NO reducimos el tamaño de fuente; si no cabe, truncamos con “…”.
-        header_pad_v_hi = int(8 * SCALE)    # padding vertical cabecera
-        text_pad_v_hi = int(10 * SCALE)     # padding vertical del bloque de texto
+        header_pad_v_hi = int(8 * SCALE)
+        text_pad_v_hi = int(10 * SCALE)
         header_height_hi = label_h + 2 * header_pad_v_hi
 
         fact_text_font = _load_font(FONT_PATH, fact_text_font_size_hi)
         line_height_hi = int(fact_text_font.size * 1.10)
 
-        # Altura máxima disponible; garantizamos al menos espacio para 1 línea
         min_fact_block_hi = header_height_hi + 2 * text_pad_v_hi + line_height_hi
         max_fact_height_hi = max(min_fact_block_hi, GRID_TOP_BASE - y_cursor_hi - min_gap_hi)
 
@@ -308,7 +298,6 @@ def render_page(
         box_top_hi = y_cursor_hi
         box_bottom_hi = box_top_hi + box_height_hi
 
-        # Tarjeta principal
         card_radius = int(18 * SCALE)
         _rounded_rectangle(
             draw,
@@ -319,7 +308,6 @@ def render_page(
             width=max(1, int(2 * SCALE)),
         )
 
-        # Cabecera oscura pegada a la parte superior de la tarjeta
         header_left_hi = left_hi
         header_right_hi = right_hi
         header_top_hi = box_top_hi
@@ -334,7 +322,6 @@ def render_page(
             outline=None,
             width=0,
         )
-        # Rectificamos la base para que quede recta dentro de la caja principal
         draw.rectangle(
             (
                 int(header_left_hi),
@@ -346,7 +333,6 @@ def render_page(
             outline=None,
         )
 
-        # Texto "FUN FACT" centrado en la cabecera
         header_cx = (header_left_hi + header_right_hi) / 2
         header_cy = (header_top_hi + header_bottom_hi) / 2
         try:
@@ -362,7 +348,6 @@ def render_page(
             hy = header_cy - label_h / 2
             draw.text((hx, hy), fact_label, font=fact_label_font, fill=fact_header_text)
 
-        # Texto del fact, alineado a la izquierda dentro de la tarjeta
         text_x_hi = left_hi + inner_horizontal_pad
         text_y_hi = header_bottom_hi + text_pad_v_hi
 
@@ -370,12 +355,10 @@ def render_page(
             draw.text((text_x_hi, text_y_hi), line, font=fact_text_font, fill=text_color)
             text_y_hi += line_height_hi
 
-        # Más separación FUN FACT → GRID
         y_cursor_hi = box_bottom_hi + int(50 * SCALE)
 
-
     # --------------------------------------------------------
-    # GRID (protagonista)
+    # GRID
     # --------------------------------------------------------
     rows = len(grid)
     cols = len(grid[0]) if rows > 0 else 0
@@ -387,14 +370,9 @@ def render_page(
     grid_w_hi = cell_size_hi * cols
     grid_h_hi = cell_size_hi * rows
 
-    # Posición fija del grid para que no se desplace con un FUN FACT alto
     grid_top_hi = GRID_TOP_BASE
-
-    # Centramos en horizontal dentro del contenido
     grid_left_hi = int((CONTENT_LEFT_HI + CONTENT_RIGHT_HI - grid_w_hi) // 2)
 
-
-    # Fuente de letras en función del tamaño de celda
     letter_font_size_hi = max(int(cell_size_hi * 0.9), int(18 * SCALE))
     font_letter = _load_font(FONT_PATH, letter_font_size_hi)
     font_letter_bold = _load_font(FONT_PATH_BOLD, letter_font_size_hi)
@@ -402,14 +380,14 @@ def render_page(
     grid_line_width_hi = max(1, int(1.2 * SCALE))
     grid_line_color = "#444444"
 
-
-
     # --------------------------------------------------------
     # CAPA DE RESALTADO (solo soluciones, con cápsula)
     # --------------------------------------------------------
-    overlay = Image.new("RGBA", (PAGE_W_HI, PAGE_H_HI), (0, 0, 0, 0))
-    odraw = ImageDraw.Draw(overlay)
     highlight_positions = set()
+
+    overlay_fill = Image.new("RGBA", (PAGE_W_HI, PAGE_H_HI), (0, 0, 0, 0))
+    overlay_border = Image.new("RGBA", (PAGE_W_HI, PAGE_H_HI), (0, 0, 0, 0))
+    odraw_fill = ImageDraw.Draw(overlay_fill)
 
     if is_solution and placed_words:
         for w, (r, c, dr, dc) in placed_words:
@@ -423,6 +401,7 @@ def render_page(
                 cc = c + dc * i
                 if rr < 0 or rr >= rows or cc < 0 or cc >= cols:
                     break
+
                 x0 = grid_left_hi + cc * cell_size_hi
                 y0 = grid_top_hi + rr * cell_size_hi
                 cx = x0 + cell_size_hi / 2
@@ -433,42 +412,72 @@ def render_page(
             if len(centers) < 2:
                 continue
 
-            thickness = cell_size_hi * 0.8
-            radius = thickness / 2
-
             p0 = centers[0]
             p1 = centers[-1]
 
-            # borde exterior
-            odraw.line(
-                centers,
-                fill=highlight_border,
-                width=int(thickness + 4 * SCALE),
-                joint="curve",
-            )
-            for (cx, cy) in (p0, p1):
-                odraw.ellipse(
-                    (
-                        cx - (radius + 2 * SCALE),
-                        cy - (radius + 2 * SCALE),
-                        cx + (radius + 2 * SCALE),
-                        cy + (radius + 2 * SCALE),
-                    ),
-                    fill=highlight_border,
-                )
+            thickness = cell_size_hi * 0.8
+            radius = thickness / 2
 
-            # relleno interior
-            odraw.line(
+            # 1) Relleno beige
+            odraw_fill.line(
                 centers,
                 fill=highlight_fill,
                 width=int(thickness),
                 joint="curve",
             )
             for (cx, cy) in (p0, p1):
-                odraw.ellipse(
+                odraw_fill.ellipse(
                     (cx - radius, cy - radius, cx + radius, cy + radius),
                     fill=highlight_fill,
                 )
+
+            # 2) Borde tipo anillo en capa temporal
+            tmp_border = Image.new("RGBA", (PAGE_W_HI, PAGE_H_HI), (0, 0, 0, 0))
+            bdraw = ImageDraw.Draw(tmp_border)
+
+            outer_width = int(thickness + 4 * SCALE)
+            inner_width = int(thickness)
+            outer_radius = radius + 2 * SCALE
+            inner_radius = radius
+
+            # Exterior
+            bdraw.line(
+                centers,
+                fill=highlight_border,
+                width=outer_width,
+                joint="curve",
+            )
+            for (cx, cy) in (p0, p1):
+                bdraw.ellipse(
+                    (
+                        cx - outer_radius,
+                        cy - outer_radius,
+                        cx + outer_radius,
+                        cy + outer_radius,
+                    ),
+                    fill=highlight_border,
+                )
+
+            # Vaciar interior con transparente
+            transparent = (0, 0, 0, 0)
+            bdraw.line(
+                centers,
+                fill=transparent,
+                width=inner_width,
+                joint="curve",
+            )
+            for (cx, cy) in (p0, p1):
+                bdraw.ellipse(
+                    (
+                        cx - inner_radius,
+                        cy - inner_radius,
+                        cx + inner_radius,
+                        cy + inner_radius,
+                    ),
+                    fill=transparent,
+                )
+
+            overlay_border.alpha_composite(tmp_border)
 
     # --------------------------------------------------------
     # GRID (líneas + letras normales)
@@ -496,29 +505,33 @@ def render_page(
             cy = y0 + cell_size_hi / 2
             letter = grid[r][c]
 
-            chosen_font = font_letter  # primero todas normales
-
             try:
                 draw.text(
                     (cx, cy),
                     letter,
                     fill="black",
-                    font=chosen_font,
+                    font=font_letter,
                     anchor="mm",
                 )
             except TypeError:
-                lw, lh = _text_size(draw, letter, chosen_font)
+                lw, lh = _text_size(draw, letter, font_letter)
                 draw.text(
                     (cx - lw / 2, cy - lh / 2),
                     letter,
                     fill="black",
-                    font=chosen_font,
+                    font=font_letter,
                 )
 
-    # Combinamos overlay
+    # --------------------------------------------------------
+    # Mezclar resaltado sobre el grid
+    # --------------------------------------------------------
+    overlay = Image.new("RGBA", (PAGE_W_HI, PAGE_H_HI), (0, 0, 0, 0))
+    # Primero el relleno, luego el borde tipo “donut”
+    overlay.alpha_composite(overlay_fill)
+    overlay.alpha_composite(overlay_border)
     img.alpha_composite(overlay)
 
-    # Redibujar letras de palabras resaltadas ENCIMA del overlay y en negrita
+    # Redibujar letras de las posiciones resaltadas en negrita
     if is_solution and highlight_positions:
         for r in range(rows):
             for c in range(cols):
@@ -529,22 +542,21 @@ def render_page(
                 cx = x0 + cell_size_hi / 2
                 cy = y0 + cell_size_hi / 2
                 letter = grid[r][c]
-                chosen_font = font_letter_bold
                 try:
                     draw.text(
                         (cx, cy),
                         letter,
                         fill="black",
-                        font=chosen_font,
+                        font=font_letter_bold,
                         anchor="mm",
                     )
                 except TypeError:
-                    lw, lh = _text_size(draw, letter, chosen_font)
+                    lw, lh = _text_size(draw, letter, font_letter_bold)
                     draw.text(
                         (cx - lw / 2, cy - lh / 2),
                         letter,
                         fill="black",
-                        font=chosen_font,
+                        font=font_letter_bold,
                     )
 
     grid_bottom_hi = grid_top_hi + grid_h_hi
@@ -552,16 +564,13 @@ def render_page(
     # --------------------------------------------------------
     # ÁREA INFERIOR (pill + lista)
     # --------------------------------------------------------
-    # Primero definimos un margen fijo desde el grid hacia abajo
     base_gap_hi = int(60 * SCALE)
-    gap_pill_to_words_hi = int(70 * SCALE)  # separación fija pastilla → palabras
-    words_area_height_hi = int(850 * SCALE)  # banda fija para la lista de palabras
+    gap_pill_to_words_hi = int(70 * SCALE)
+    words_area_height_hi = int(850 * SCALE)
     words_bottom_hi = SAFE_BOTTOM_HI - int(8 * SCALE)
     words_top_hi = max(0, words_bottom_hi - words_area_height_hi)
 
-    # --------------------------------------------------------
-    # PASTILLA "Solution on page X" entre grid y palabras
-    # --------------------------------------------------------
+    # PASTILLA "Solution on page X"
     pill_box_h = 0
     pill_y = grid_bottom_hi + base_gap_hi
     if (not is_solution) and solution_page_number is not None:
@@ -576,7 +585,6 @@ def render_page(
         pill_box_h = box_h
 
         pill_x = int((CONTENT_LEFT_HI + CONTENT_RIGHT_HI - box_w) // 2)
-        # Colocamos la pastilla para dejar un gap constante con la lista de palabras
         target_pill_y = words_top_hi - gap_pill_to_words_hi - box_h
         min_pill_y = grid_bottom_hi + base_gap_hi
         pill_y = max(min_pill_y, target_pill_y)
@@ -590,7 +598,6 @@ def render_page(
             width=max(1, int(2 * SCALE)),
         )
 
-        # Centrar texto dentro de la pastilla usando el tamaño medido
         tx = pill_x + box_w / 2
         ty = pill_y + box_h / 2
         try:
@@ -598,7 +605,6 @@ def render_page(
         except TypeError:
             draw.text((tx - tw_pill / 2, ty - th_pill / 2), pill_text, font=pill_font, fill=text_color)
 
-    # Ajustamos words_top_hi para mantener el gap fijo con la pastilla
     desired_words_top_hi = pill_y + pill_box_h + gap_pill_to_words_hi
     if desired_words_top_hi > words_top_hi:
         words_top_hi = desired_words_top_hi
@@ -606,17 +612,14 @@ def render_page(
         words_top_hi = words_bottom_hi
     words_height_hi = max(0, words_bottom_hi - words_top_hi)
 
-    # --------------------------------------------------------
-    # LISTA DE PALABRAS (todas deben caber)
-    # --------------------------------------------------------
+    # LISTA DE PALABRAS
     words_upper = [str(w).upper() for w in words]
     if words_upper and words_height_hi > 0:
-        words_inner_margin_hi = int(35 * SCALE)  # margen interior similar al FUN FACT
+        words_inner_margin_hi = int(35 * SCALE)
         area_left_hi = CONTENT_LEFT_HI + words_inner_margin_hi
         area_right_hi = CONTENT_RIGHT_HI - words_inner_margin_hi
         total_w_hi = area_right_hi - area_left_hi
 
-        # Fuente fija para todas las páginas
         font_words_real = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.6) * SCALE)
         line_h_hi = int(font_words_real.size * 1.12)
 
@@ -624,7 +627,6 @@ def render_page(
         word_max_w = max(_text_size(draw, w, font_words_real)[0] for w in words_upper)
 
         best_layout = None
-        # Probamos de 2 a 5 columnas para cumplir alto y ancho sin cambiar tamaño de letra
         for col_count in range(2, 6):
             if col_count * max_lines_per_col < len(words_upper):
                 continue
@@ -634,29 +636,25 @@ def render_page(
                 break
 
         if best_layout is None:
-            # Fallback: usa las columnas mínimas necesarias por alto, aunque alguna palabra quede justa.
             col_count = max(2, min(5, math.ceil(len(words_upper) / max_lines_per_col)))
             col_w_hi = total_w_hi / col_count
             best_layout = (col_count, col_w_hi)
 
         col_count, col_w_hi = best_layout
 
-        # Repartimos las palabras por columnas, balanceando tamaños
         base_len = len(words_upper) // col_count
         remainder = len(words_upper) % col_count
         col_sizes = [base_len + (1 if i < remainder else 0) for i in range(col_count)]
 
         col_words: List[List[str]] = []
-        idx = 0
+        idx_tmp = 0
         for size in col_sizes:
-            col_words.append(words_upper[idx : idx + size])
-            idx += size
+            col_words.append(words_upper[idx_tmp : idx_tmp + size])
+            idx_tmp += size
 
-        # Altura usada por la columna más alta para alinear filas
         max_used_h = max(len(cw) * line_h_hi for cw in col_words) if col_words else 0
         group_y_start = words_top_hi + (words_height_hi - max_used_h) // 2
 
-        # Dibujamos cada columna centrada horizontalmente en su bloque, con texto alineado por filas
         for ci, cw in enumerate(col_words):
             if not cw:
                 continue
@@ -664,25 +662,24 @@ def render_page(
             col_center_x = int(area_left_hi + (ci + 0.5) * col_w_hi)
             y_hi = int(group_y_start)
 
-            for w in cw:
+            for w_txt in cw:
                 try:
                     draw.text(
                         (col_center_x, y_hi),
-                        w,
+                        w_txt,
                         fill=text_color,
                         font=font_words_real,
                         anchor="mm",
                     )
                 except TypeError:
-                    ww, hh = _text_size(draw, w, font_words_real)
+                    ww, hh = _text_size(draw, w_txt, font_words_real)
                     draw.text(
                         (col_center_x - ww / 2, y_hi - hh / 2),
-                        w,
+                        w_txt,
                         fill=text_color,
                         font=font_words_real,
                     )
                 y_hi += line_h_hi
-
 
     # --------------------------------------------------------
     # Guardar
@@ -698,6 +695,10 @@ def render_page(
     img_final.save(filename, dpi=(300, 300))
     return filename
 
+
+# ------------------------------------------------------------
+# Portada de bloque
+# ------------------------------------------------------------
 
 def render_block_cover(
     block_name: str,
@@ -715,13 +716,11 @@ def render_block_cover(
     PAGE_W_HI = PAGE_W_PX * SCALE
     PAGE_H_HI = PAGE_H_PX * SCALE
 
-    # --- Fondo de página ---
     bg_path = background_path or BACKGROUND_PATH
     if bg_path and os.path.exists(bg_path):
         img = Image.open(bg_path).convert("RGBA")
         img = img.resize((PAGE_W_HI, PAGE_H_HI), Image.LANCZOS)
 
-        # Bajamos un poco la opacidad para que el texto destaque mejor
         if img.mode == "RGBA":
             r, g, b, a = img.split()
             a = a.point(lambda v: int(v * 0.70))
@@ -731,65 +730,47 @@ def render_block_cover(
 
     draw = ImageDraw.Draw(img)
 
-    # -----------------------------------------------------------------
-    # Parámetros de layout
-    # -----------------------------------------------------------------
-    margin_x = int(PAGE_W_HI * 0.10)          # 10% de margen lateral
+    margin_x = int(PAGE_W_HI * 0.10)
     max_text_width = PAGE_W_HI - 2 * margin_x
 
     center_x = PAGE_W_HI // 2
-    title_y = int(PAGE_H_HI * 0.33)           # tercio superior
-    subtitle_gap = int(40 * SCALE)            # distancia título → subtítulo
+    title_y = int(PAGE_H_HI * 0.33)
+    subtitle_gap = int(40 * SCALE)
 
-    # Heurística simple de luminosidad para decidir color del texto
     small = img.resize((50, 50)).convert("L")
     avg_brightness = sum(small.getdata()) / (50 * 50)
     main_color = (255, 255, 255, 255) if avg_brightness < 128 else (0, 0, 0, 255)
     shadow_color = (0, 0, 0, 90) if main_color[0] == 255 else (255, 255, 255, 90)
 
-    # -----------------------------------------------------------------
-    # TÍTULO: grande pero elegante, con wrap y auto-ajuste de tamaño
-    # -----------------------------------------------------------------
     raw_title = block_name.strip() or f"Block {block_index}"
 
-    # Tamaño base: “grande pero elegante”
     base_size = int(TITLE_FONT_SIZE * 1.6) * SCALE
     min_size = int(TITLE_FONT_SIZE * 1.0) * SCALE
 
     font_size = base_size
     while font_size > min_size:
         font_title = _load_font(FONT_TITLE, font_size)
-        # Intentamos partir el título en líneas para que quepa en ancho
         title_lines = _wrap_text(draw, raw_title, font_title, max_text_width)
         widest = 0
-        max_h = 0
         for line in title_lines:
             w, h = _text_size(draw, line, font_title)
             widest = max(widest, w)
-            max_h = max(max_h, h)
         if widest <= max_text_width:
             break
         font_size = int(font_size * 0.9)
 
-    # Recalculamos medidas finales
     font_title = _load_font(FONT_TITLE, font_size)
     title_lines = _wrap_text(draw, raw_title, font_title, max_text_width)
     line_heig = int(font_size * 1.1)
     total_title_h = len(title_lines) * line_heig
 
-    # Ajustamos Y del bloque de título para que quede centrado alrededor de title_y
     first_line_y = title_y - total_title_h // 2
-
-    # Sombra ligera (offset pequeño)
     shadow_offset = int(4 * SCALE)
 
     y = first_line_y
     for line in title_lines:
         w, h = _text_size(draw, line, font_title)
-
-        # Con anchor="mm" centramos por el medio; si no está disponible, hacemos fallback manual
         try:
-            # sombra
             draw.text(
                 (center_x + shadow_offset, y + h / 2 + shadow_offset),
                 line,
@@ -797,7 +778,6 @@ def render_block_cover(
                 fill=shadow_color,
                 anchor="mm",
             )
-            # texto
             draw.text(
                 (center_x, y + h / 2),
                 line,
@@ -807,25 +787,19 @@ def render_block_cover(
             )
         except TypeError:
             x = center_x - w / 2
-            # sombra
             draw.text(
                 (x + shadow_offset, y + shadow_offset),
                 line,
                 font=font_title,
                 fill=shadow_color,
             )
-            # texto
             draw.text((x, y), line, font=font_title, fill=main_color)
         y += line_heig
 
-    # -----------------------------------------------------------------
-    # SUBTÍTULO: una sola línea, centrada
-    # -----------------------------------------------------------------
     subtitle = "A themed collection of word search puzzles"
     font_sub_size = int(WORDLIST_FONT_SIZE * 1.3) * SCALE
     font_sub = _load_font(FONT_PATH, font_sub_size)
 
-    # Si no cabe, reducimos un poco el tamaño
     sub_w, sub_h = _text_size(draw, subtitle, font_sub)
     while sub_w > max_text_width and font_sub_size > int(WORDLIST_FONT_SIZE * 0.9) * SCALE:
         font_sub_size = int(font_sub_size * 0.9)
@@ -835,7 +809,6 @@ def render_block_cover(
     subtitle_y = y + subtitle_gap
 
     try:
-        # sombra
         draw.text(
             (center_x + shadow_offset, subtitle_y + sub_h / 2 + shadow_offset),
             subtitle,
@@ -843,7 +816,6 @@ def render_block_cover(
             fill=shadow_color,
             anchor="mm",
         )
-        # texto
         draw.text(
             (center_x, subtitle_y + sub_h / 2),
             subtitle,
@@ -862,9 +834,6 @@ def render_block_cover(
         )
         draw.text((sx, sy), subtitle, font=font_sub, fill=main_color)
 
-    # -----------------------------------------------------------------
-    # Guardar
-    # -----------------------------------------------------------------
     if filename is None:
         safe_name = "".join(c if c.isalnum() or c in " -_." else "_" for c in block_name)
         filename = os.path.join(
@@ -878,7 +847,9 @@ def render_block_cover(
     return filename
 
 
-from typing import Tuple  # si no lo tienes ya importado arriba, añádelo
+# ------------------------------------------------------------
+# Tabla de contenidos (una o varias páginas, 1 columna)
+# ------------------------------------------------------------
 
 def render_table_of_contents(
     entries: List[Tuple[str, int, bool]],
@@ -896,7 +867,6 @@ def render_table_of_contents(
     PAGE_W_HI = PAGE_W_PX * SCALE
     PAGE_H_HI = PAGE_H_PX * SCALE
 
-    # Parámetros comunes de layout
     SAFE_LEFT_HI = SAFE_LEFT * SCALE
     SAFE_RIGHT_HI = SAFE_RIGHT * SCALE
     SAFE_BOTTOM_HI = SAFE_BOTTOM * SCALE
@@ -908,7 +878,6 @@ def render_table_of_contents(
 
     content_margin_x = int(40 * SCALE)
 
-    # Fuentes (más compactas)
     font_title_size = int(TITLE_FONT_SIZE * 1.4) * SCALE
     font_section_size = int(WORDLIST_FONT_SIZE * 0.70) * SCALE
     font_item_size = int(WORDLIST_FONT_SIZE * 0.60) * SCALE
@@ -920,13 +889,12 @@ def render_table_of_contents(
     text_color = (0, 0, 0, 255)
 
     toc_images: List[str] = []
-    page_index = 1  # TOC página 1, 2, ...
+    page_index = 1
 
     def _new_page() -> Tuple[Image.Image, ImageDraw.ImageDraw, int, int, int, int]:
-        # --- Fondo ---
-        bg_path = background_path or BACKGROUND_PATH
-        if bg_path and os.path.exists(bg_path):
-            img_local = Image.open(bg_path).convert("RGBA")
+        bg_path_local = background_path or BACKGROUND_PATH
+        if bg_path_local and os.path.exists(bg_path_local):
+            img_local = Image.open(bg_path_local).convert("RGBA")
             img_local = img_local.resize((PAGE_W_HI, PAGE_H_HI), Image.LANCZOS)
             if img_local.mode == "RGBA":
                 r, g, b, a = img_local.split()
@@ -937,7 +905,6 @@ def render_table_of_contents(
 
         draw_local = ImageDraw.Draw(img_local)
 
-        # Panel blanco central
         panel_left_local = SAFE_LEFT_HI - panel_pad_x
         panel_right_local = SAFE_RIGHT_HI + panel_pad_x
         panel_top_local = TOP_PX_HI - panel_pad_top
@@ -966,7 +933,6 @@ def render_table_of_contents(
             panel_bottom_local,
         )
 
-    # --- Primera página ---
     (
         img,
         draw,
@@ -979,7 +945,6 @@ def render_table_of_contents(
     CONTENT_LEFT_HI = panel_left + content_margin_x
     CONTENT_RIGHT_HI = panel_right - content_margin_x
 
-    # Título "Table of Contents"
     title_text = "Table of Contents"
     y_title = panel_top + int(70 * SCALE)
     title_max_w = CONTENT_RIGHT_HI - CONTENT_LEFT_HI
@@ -994,7 +959,6 @@ def render_table_of_contents(
         line_spacing=1.05,
     )
 
-    # El índice empieza justo debajo del título
     y_start_base = y_after_title + int(120 * SCALE)
     CONTENT_BOTTOM_HI = panel_bottom - int(60 * SCALE)
 
@@ -1004,7 +968,6 @@ def render_table_of_contents(
 
     y_cursor = y_start_base
 
-    # Anchura disponible en UNA columna
     x_title_left = CONTENT_LEFT_HI
     x_page_right = CONTENT_RIGHT_HI
     x_line_left = CONTENT_LEFT_HI + int(10 * SCALE)
@@ -1017,13 +980,9 @@ def render_table_of_contents(
         page_w, _ = _text_size(draw, page_str, font_item)
         max_title_w = x_page_right - x_title_left - page_w - int(30 * SCALE)
 
-        # Partimos en varias líneas si es necesario
         lines = _wrap_text(draw, text, font, max_title_w)
-
-        # ¿Cabe este bloque en la página actual?
         needed_h = len(lines) * line_h
         if y_cursor + needed_h > CONTENT_BOTTOM_HI:
-            # Guardamos página actual
             img_rgb = img.convert("RGB")
             out_name = os.path.join(
                 output_dir, f"00_table_of_contents_{page_index}.png"
@@ -1032,7 +991,6 @@ def render_table_of_contents(
             img_final.save(out_name, dpi=(300, 300))
             toc_images.append(out_name)
 
-            # Nueva página
             page_index += 1
             (
                 img,
@@ -1050,7 +1008,6 @@ def render_table_of_contents(
             x_line_left = CONTENT_LEFT_HI + int(10 * SCALE)
             x_line_right = CONTENT_RIGHT_HI - int(10 * SCALE)
 
-            # Redibujamos el título "Table of Contents" más discreto o igual que antes
             y_title = panel_top + int(70 * SCALE)
             y_after_title = _draw_wrapped_centered_title(
                 draw,
@@ -1066,12 +1023,10 @@ def render_table_of_contents(
             CONTENT_BOTTOM_HI = panel_bottom - int(60 * SCALE)
             y_cursor = y_start_base
 
-        # Dibujamos las líneas de este ítem
         for i, line in enumerate(lines):
             lw, lh = _text_size(draw, line, font)
             y_mid = y_cursor + line_h // 2
 
-            # Texto
             try:
                 draw.text(
                     (x_title_left, y_mid),
@@ -1083,7 +1038,6 @@ def render_table_of_contents(
             except TypeError:
                 draw.text((x_title_left, y_cursor), line, font=font, fill=text_color)
 
-            # Última línea → puntos + número
             if i == len(lines) - 1:
                 px = x_page_right - page_w
                 try:
@@ -1108,7 +1062,6 @@ def render_table_of_contents(
 
             y_cursor += line_h
 
-    # Guardamos la última página (si hay contenido o aunque sea solo el título)
     img_rgb = img.convert("RGB")
     out_name = os.path.join(
         output_dir, f"00_table_of_contents_{page_index}.png"
@@ -1120,6 +1073,9 @@ def render_table_of_contents(
     return toc_images
 
 
+# ------------------------------------------------------------
+# Página de instrucciones
+# ------------------------------------------------------------
 
 def render_instructions_page(
     book_title: str,
@@ -1133,7 +1089,6 @@ def render_instructions_page(
     PAGE_W_HI = PAGE_W_PX * SCALE
     PAGE_H_HI = PAGE_H_PX * SCALE
 
-    # --- Fondo ---
     bg_path = background_path or BACKGROUND_PATH
     if bg_path and os.path.exists(bg_path):
         img = Image.open(bg_path).convert("RGBA")
@@ -1179,14 +1134,12 @@ def render_instructions_page(
     CONTENT_LEFT_HI = panel_left + content_margin_x
     CONTENT_RIGHT_HI = panel_right - content_margin_x
 
-    # Fuentes
     font_title = _load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.4) * SCALE)
     font_subtitle = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.95) * SCALE)
     font_body = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.8) * SCALE)
 
     text_color = (0, 0, 0, 255)
 
-    # Título principal
     main_title = "Instructions"
     y = panel_top + int(90 * SCALE)
     title_max_w = CONTENT_RIGHT_HI - CONTENT_LEFT_HI
@@ -1201,7 +1154,6 @@ def render_instructions_page(
         line_spacing=1.05,
     )
 
-    # Subtítulo
     subtitle = f"How to enjoy {book_title}"
     y_sub = y_after_title + int(50 * SCALE)
     _draw_wrapped_centered_title(
@@ -1215,7 +1167,6 @@ def render_instructions_page(
         line_spacing=1.1,
     )
 
-    # Lista de instrucciones
     bullets = [
         "Each puzzle includes a themed word list at the bottom of the page.",
         "Words may appear horizontally, vertically or diagonally in the grid.",
@@ -1238,7 +1189,7 @@ def render_instructions_page(
         for line in lines:
             draw.text((body_left, y_cursor), line, font=font_body, fill=text_color)
             y_cursor += line_h
-        y_cursor += int(0.5 * line_h)  # pequeño espacio extra
+        y_cursor += int(0.5 * line_h)
 
     if filename is None:
         filename = os.path.join("output_puzzles_kdp", "instructions.png")
