@@ -876,3 +876,374 @@ def render_block_cover(
     img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), Image.LANCZOS)
     img_final.save(filename, dpi=(300, 300))
     return filename
+
+
+from typing import Tuple  # si no lo tienes ya importado arriba, añádelo
+
+def render_table_of_contents(
+    entries: List[Tuple[str, int, bool]],
+    output_dir: str,
+    background_path: Optional[str] = None,
+) -> List[str]:
+    """
+    Genera UNA o VARIAS páginas de índice (Table of Contents) en UNA sola columna.
+
+    entries: lista de tuplas (texto, page_number, is_block_header)
+             is_block_header=True -> línea de sección (bloque temático).
+    Devuelve: lista de rutas a las imágenes generadas, en orden.
+    """
+    SCALE = 3
+    PAGE_W_HI = PAGE_W_PX * SCALE
+    PAGE_H_HI = PAGE_H_PX * SCALE
+
+    # Parámetros comunes de layout
+    SAFE_LEFT_HI = SAFE_LEFT * SCALE
+    SAFE_RIGHT_HI = SAFE_RIGHT * SCALE
+    SAFE_BOTTOM_HI = SAFE_BOTTOM * SCALE
+    TOP_PX_HI = TOP_PX * SCALE
+
+    panel_pad_x = int(30 * SCALE)
+    panel_pad_top = int(40 * SCALE)
+    panel_pad_bottom = int(40 * SCALE)
+
+    content_margin_x = int(40 * SCALE)
+
+    # Fuentes (más compactas)
+    font_title_size = int(TITLE_FONT_SIZE * 1.4) * SCALE
+    font_section_size = int(WORDLIST_FONT_SIZE * 0.70) * SCALE
+    font_item_size = int(WORDLIST_FONT_SIZE * 0.60) * SCALE
+
+    font_title = _load_font(FONT_TITLE, font_title_size)
+    font_section = _load_font(FONT_PATH_BOLD, font_section_size)
+    font_item = _load_font(FONT_PATH, font_item_size)
+
+    text_color = (0, 0, 0, 255)
+
+    toc_images: List[str] = []
+    page_index = 1  # TOC página 1, 2, ...
+
+    def _new_page() -> Tuple[Image.Image, ImageDraw.ImageDraw, int, int, int, int]:
+        # --- Fondo ---
+        bg_path = background_path or BACKGROUND_PATH
+        if bg_path and os.path.exists(bg_path):
+            img_local = Image.open(bg_path).convert("RGBA")
+            img_local = img_local.resize((PAGE_W_HI, PAGE_H_HI), Image.LANCZOS)
+            if img_local.mode == "RGBA":
+                r, g, b, a = img_local.split()
+                a = a.point(lambda v: int(v * 0.7))
+                img_local = Image.merge("RGBA", (r, g, b, a))
+        else:
+            img_local = Image.new("RGBA", (255, 255, 255, 255))
+
+        draw_local = ImageDraw.Draw(img_local)
+
+        # Panel blanco central
+        panel_left_local = SAFE_LEFT_HI - panel_pad_x
+        panel_right_local = SAFE_RIGHT_HI + panel_pad_x
+        panel_top_local = TOP_PX_HI - panel_pad_top
+        panel_bottom_local = SAFE_BOTTOM_HI + panel_pad_bottom
+
+        panel_left_local = max(0, panel_left_local)
+        panel_top_local = max(0, panel_top_local)
+        panel_right_local = min(PAGE_W_HI, panel_right_local)
+        panel_bottom_local = min(PAGE_H_HI, panel_bottom_local)
+
+        _rounded_rectangle(
+            draw_local,
+            (panel_left_local, panel_top_local, panel_right_local, panel_bottom_local),
+            radius=int(35 * SCALE),
+            fill=(255, 255, 255, 230),
+            outline=(0, 0, 0, 60),
+            width=max(1, int(3 * SCALE)),
+        )
+
+        return (
+            img_local,
+            draw_local,
+            panel_left_local,
+            panel_top_local,
+            panel_right_local,
+            panel_bottom_local,
+        )
+
+    # --- Primera página ---
+    (
+        img,
+        draw,
+        panel_left,
+        panel_top,
+        panel_right,
+        panel_bottom,
+    ) = _new_page()
+
+    CONTENT_LEFT_HI = panel_left + content_margin_x
+    CONTENT_RIGHT_HI = panel_right - content_margin_x
+
+    # Título "Table of Contents"
+    title_text = "Table of Contents"
+    y_title = panel_top + int(70 * SCALE)
+    title_max_w = CONTENT_RIGHT_HI - CONTENT_LEFT_HI
+    y_after_title = _draw_wrapped_centered_title(
+        draw,
+        title_text,
+        font_title,
+        max_width=title_max_w,
+        start_y=y_title,
+        area_left=CONTENT_LEFT_HI,
+        area_right=CONTENT_RIGHT_HI,
+        line_spacing=1.05,
+    )
+
+    # El índice empieza justo debajo del título
+    y_start_base = y_after_title + int(120 * SCALE)
+    CONTENT_BOTTOM_HI = panel_bottom - int(60 * SCALE)
+
+    line_h_item = int(font_item.size * 1.15)
+    line_h_section = int(font_section.size * 1.20)
+    line_h = max(line_h_item, line_h_section)
+
+    y_cursor = y_start_base
+
+    # Anchura disponible en UNA columna
+    x_title_left = CONTENT_LEFT_HI
+    x_page_right = CONTENT_RIGHT_HI
+    x_line_left = CONTENT_LEFT_HI + int(10 * SCALE)
+    x_line_right = CONTENT_RIGHT_HI - int(10 * SCALE)
+
+    for text, page, is_block in entries:
+        font = font_section if is_block else font_item
+
+        page_str = str(page)
+        page_w, _ = _text_size(draw, page_str, font_item)
+        max_title_w = x_page_right - x_title_left - page_w - int(30 * SCALE)
+
+        # Partimos en varias líneas si es necesario
+        lines = _wrap_text(draw, text, font, max_title_w)
+
+        # ¿Cabe este bloque en la página actual?
+        needed_h = len(lines) * line_h
+        if y_cursor + needed_h > CONTENT_BOTTOM_HI:
+            # Guardamos página actual
+            img_rgb = img.convert("RGB")
+            out_name = os.path.join(
+                output_dir, f"00_table_of_contents_{page_index}.png"
+            )
+            img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), Image.LANCZOS)
+            img_final.save(out_name, dpi=(300, 300))
+            toc_images.append(out_name)
+
+            # Nueva página
+            page_index += 1
+            (
+                img,
+                draw,
+                panel_left,
+                panel_top,
+                panel_right,
+                panel_bottom,
+            ) = _new_page()
+
+            CONTENT_LEFT_HI = panel_left + content_margin_x
+            CONTENT_RIGHT_HI = panel_right - content_margin_x
+            x_title_left = CONTENT_LEFT_HI
+            x_page_right = CONTENT_RIGHT_HI
+            x_line_left = CONTENT_LEFT_HI + int(10 * SCALE)
+            x_line_right = CONTENT_RIGHT_HI - int(10 * SCALE)
+
+            # Redibujamos el título "Table of Contents" más discreto o igual que antes
+            y_title = panel_top + int(70 * SCALE)
+            y_after_title = _draw_wrapped_centered_title(
+                draw,
+                title_text,
+                font_title,
+                max_width=CONTENT_RIGHT_HI - CONTENT_LEFT_HI,
+                start_y=y_title,
+                area_left=CONTENT_LEFT_HI,
+                area_right=CONTENT_RIGHT_HI,
+                line_spacing=1.05,
+            )
+            y_start_base = y_after_title + int(120 * SCALE)
+            CONTENT_BOTTOM_HI = panel_bottom - int(60 * SCALE)
+            y_cursor = y_start_base
+
+        # Dibujamos las líneas de este ítem
+        for i, line in enumerate(lines):
+            lw, lh = _text_size(draw, line, font)
+            y_mid = y_cursor + line_h // 2
+
+            # Texto
+            try:
+                draw.text(
+                    (x_title_left, y_mid),
+                    line,
+                    font=font,
+                    fill=text_color,
+                    anchor="lm",
+                )
+            except TypeError:
+                draw.text((x_title_left, y_cursor), line, font=font, fill=text_color)
+
+            # Última línea → puntos + número
+            if i == len(lines) - 1:
+                px = x_page_right - page_w
+                try:
+                    draw.text(
+                        (px, y_mid),
+                        page_str,
+                        font=font_item,
+                        fill=text_color,
+                        anchor="lm",
+                    )
+                except TypeError:
+                    draw.text((px, y_cursor), page_str, font=font_item, fill=text_color)
+
+                end_line_x = px - int(10 * SCALE)
+                start_line_x = x_line_left + lw + int(10 * SCALE)
+                if end_line_x > start_line_x:
+                    draw.line(
+                        (start_line_x, y_mid, end_line_x, y_mid),
+                        fill=text_color,
+                        width=max(1, int(1 * SCALE)),
+                    )
+
+            y_cursor += line_h
+
+    # Guardamos la última página (si hay contenido o aunque sea solo el título)
+    img_rgb = img.convert("RGB")
+    out_name = os.path.join(
+        output_dir, f"00_table_of_contents_{page_index}.png"
+    )
+    img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), Image.LANCZOS)
+    img_final.save(out_name, dpi=(300, 300))
+    toc_images.append(out_name)
+
+    return toc_images
+
+
+
+def render_instructions_page(
+    book_title: str,
+    filename: Optional[str] = None,
+    background_path: Optional[str] = None,
+) -> str:
+    """
+    Página de instrucciones del libro.
+    """
+    SCALE = 3
+    PAGE_W_HI = PAGE_W_PX * SCALE
+    PAGE_H_HI = PAGE_H_PX * SCALE
+
+    # --- Fondo ---
+    bg_path = background_path or BACKGROUND_PATH
+    if bg_path and os.path.exists(bg_path):
+        img = Image.open(bg_path).convert("RGBA")
+        img = img.resize((PAGE_W_HI, PAGE_H_HI), Image.LANCZOS)
+        if img.mode == "RGBA":
+            r, g, b, a = img.split()
+            a = a.point(lambda v: int(v * 0.75))
+            img = Image.merge("RGBA", (r, g, b, a))
+    else:
+        img = Image.new("RGBA", (PAGE_W_HI, PAGE_H_HI), (255, 255, 255, 255))
+
+    draw = ImageDraw.Draw(img)
+
+    SAFE_LEFT_HI = SAFE_LEFT * SCALE
+    SAFE_RIGHT_HI = SAFE_RIGHT * SCALE
+    SAFE_BOTTOM_HI = SAFE_BOTTOM * SCALE
+    TOP_PX_HI = TOP_PX * SCALE
+
+    panel_pad_x = int(30 * SCALE)
+    panel_pad_top = int(40 * SCALE)
+    panel_pad_bottom = int(40 * SCALE)
+
+    panel_left = SAFE_LEFT_HI - panel_pad_x
+    panel_right = SAFE_RIGHT_HI + panel_pad_x
+    panel_top = TOP_PX_HI - panel_pad_top
+    panel_bottom = SAFE_BOTTOM_HI + panel_pad_bottom
+
+    panel_left = max(0, panel_left)
+    panel_top = max(0, panel_top)
+    panel_right = min(PAGE_W_HI, panel_right)
+    panel_bottom = min(PAGE_H_HI, panel_bottom)
+
+    _rounded_rectangle(
+        draw,
+        (panel_left, panel_top, panel_right, panel_bottom),
+        radius=int(35 * SCALE),
+        fill=(255, 255, 255, 235),
+        outline=(0, 0, 0, 60),
+        width=max(1, int(3 * SCALE)),
+    )
+
+    content_margin_x = int(40 * SCALE)
+    CONTENT_LEFT_HI = panel_left + content_margin_x
+    CONTENT_RIGHT_HI = panel_right - content_margin_x
+
+    # Fuentes
+    font_title = _load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.4) * SCALE)
+    font_subtitle = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.95) * SCALE)
+    font_body = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.8) * SCALE)
+
+    text_color = (0, 0, 0, 255)
+
+    # Título principal
+    main_title = "Instructions"
+    y = panel_top + int(90 * SCALE)
+    title_max_w = CONTENT_RIGHT_HI - CONTENT_LEFT_HI
+    y_after_title = _draw_wrapped_centered_title(
+        draw,
+        main_title,
+        font_title,
+        max_width=title_max_w,
+        start_y=y,
+        area_left=CONTENT_LEFT_HI,
+        area_right=CONTENT_RIGHT_HI,
+        line_spacing=1.05,
+    )
+
+    # Subtítulo
+    subtitle = f"How to enjoy {book_title}"
+    y_sub = y_after_title + int(50 * SCALE)
+    _draw_wrapped_centered_title(
+        draw,
+        subtitle,
+        font_subtitle,
+        max_width=title_max_w,
+        start_y=y_sub,
+        area_left=CONTENT_LEFT_HI,
+        area_right=CONTENT_RIGHT_HI,
+        line_spacing=1.1,
+    )
+
+    # Lista de instrucciones
+    bullets = [
+        "Each puzzle includes a themed word list at the bottom of the page.",
+        "Words may appear horizontally, vertically or diagonally in the grid.",
+        "Depending on the difficulty you chose, words can also appear backwards.",
+        "Circle or highlight each word as you find it in the grid.",
+        "Use the fun facts to learn more about Black history, culture and achievements.",
+        "You can find the completed solutions in the Solutions section at the back of the book.",
+    ]
+
+    body_top = y_sub + int(150 * SCALE)
+    body_left = CONTENT_LEFT_HI + int(40 * SCALE)
+    body_right = CONTENT_RIGHT_HI - int(20 * SCALE)
+    max_body_width = body_right - body_left
+    line_h = int(font_body.size * 1.25)
+    y_cursor = body_top
+    bullet_prefix = "• "
+
+    for bullet in bullets:
+        lines = _wrap_text(draw, bullet_prefix + bullet, font_body, max_body_width)
+        for line in lines:
+            draw.text((body_left, y_cursor), line, font=font_body, fill=text_color)
+            y_cursor += line_h
+        y_cursor += int(0.5 * line_h)  # pequeño espacio extra
+
+    if filename is None:
+        filename = os.path.join("output_puzzles_kdp", "instructions.png")
+
+    img_rgb = img.convert("RGB")
+    img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), Image.LANCZOS)
+    img_final.save(filename, dpi=(300, 300))
+    return filename

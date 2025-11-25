@@ -3,18 +3,24 @@ Script para generar un libro TEMÁTICO completo de sopas de letras
 a partir de un TXT gigante con bloques [Puzzle] ... [/Puzzle].
 
 Flujo:
-- Lee el fichero (p.ej. wordlists/black_culture_book.txt)
+- Lee el fichero (p.ej. wordlists/book_thematic.txt)
 - Pregunta dificultad y tamaño de grid (igual para todo el libro)
-- Genera grids + imágenes (puzzles y soluciones) con layout editorial
+- Genera grids + imágenes (puzzles, portadas de bloque, índice, instrucciones, soluciones)
 - Genera el PDF final con portada de soluciones incluida
 """
 
 import os
+from typing import Dict, List, Tuple
 
 from wordsearch.difficulty_levels import DifficultyLevel, difficulty_settings
 from wordsearch.grid_size_utils import ask_grid_size
 from wordsearch.grid_generation import place_words_on_grid
-from wordsearch.image_rendering import render_page, render_block_cover
+from wordsearch.image_rendering import (
+    render_page,
+    render_block_cover,
+    render_table_of_contents,
+    render_instructions_page,
+)
 from wordsearch.pdf_book_generation import generate_pdf
 from wordsearch.wordlist_utils import slugify
 from wordsearch.puzzle_parser import parse_puzzle_file, PuzzleParseError
@@ -68,9 +74,7 @@ def main():
 
     print(f"Se han cargado {total_puzzles} puzzles del fichero.")
 
-    # ---------------------------------------------
-    # Dificultad + tamaño de grid (comunes)
-    # ---------------------------------------------
+    # Dificultad + tamaño de grid (comunes para todo el libro)
     difficulty = _ask_difficulty()
     settings = difficulty_settings[difficulty]
     grid_size = ask_grid_size(settings)
@@ -80,90 +84,131 @@ def main():
     output_dir = os.path.join(BASE_OUTPUT_DIR, slugify(book_title))
     os.makedirs(output_dir, exist_ok=True)
 
-    puzzle_imgs = []    # aquí incluiremos portadas de bloque + puzzles
-    solution_imgs = []
+    # ------------------------------------------------------------------
+    # PRE-CÁLCULO DE PÁGINAS: TOC (1), INSTRUCTIONS (2),
+    # luego portadas de bloque y puzzles.
+    # ------------------------------------------------------------------
+    block_first_page: Dict[str, int] = {}
+    blocks_in_order: List[str] = []
+    puzzle_page: Dict[int, int] = {}
 
-    # ---------------------------------------------
-    # Cálculo de nº de bloques (para paginación)
-    # Contamos cambios de block_name en orden.
-    # ---------------------------------------------
-    block_names_ordered = []
-    last_block = object()
-    for s in specs:
-        if s.block_name and s.block_name != last_block:
-            block_names_ordered.append(s.block_name)
-            last_block = s.block_name
-    num_blocks = len(block_names_ordered)
+    current_page = 1  # 1: TOC
+    toc_page = current_page
+    instructions_page = toc_page + 1
+    current_page = instructions_page + 1  # empezamos en página 3
 
-    # En el PDF:
-    # - Primero va una portada interna creada en generate_pdf (página 1)
-    # - Luego TODAS las imágenes de puzzle_imgs (portadas de bloque + puzzles)
-    # - Luego portada de soluciones
-    # - Luego todas las soluciones.
-    #
-    # En la versión anterior (sin bloques), hacíamos:
-    #   solution_page_number = total_puzzles + 2 + spec.index
-    # donde "total_puzzles + 2" era el offset fijo antes de empezar las soluciones.
-    #
-    # Ahora hay num_blocks páginas extra (portadas de bloque) en la sección de puzzles,
-    # así que el offset aumenta en num_blocks:
-    pages_before_first_solution = total_puzzles + num_blocks + 2
+    current_block_name: str = ""
+    for spec in specs:
+        block_name = getattr(spec, "block_name", "") or ""
+        if block_name and block_name != current_block_name:
+            current_block_name = block_name
+            if block_name not in block_first_page:
+                block_first_page[block_name] = current_page  # portada del bloque
+                blocks_in_order.append(block_name)
+                current_page += 1  # la propia portada ocupa una página
 
-    # ---------------------------------------------
-    # Generación de grids e imágenes
-    # ---------------------------------------------
-    current_block_name = None
-    block_counter = 0
+        # página del puzzle dentro de este flujo
+        puzzle_page[spec.index] = current_page
+        current_page += 1
+
+    last_puzzle_page = current_page - 1
+    # Después de los puzzles habrá:
+    #   +1 página de portada de soluciones
+    #   +N páginas de soluciones. La primera solución estará en:
+    pages_before_first_solution = last_puzzle_page + 2  # portada soluciones + offset 1-based
+
+    # ------------------------------------------------------------------
+    # Construir las entradas del índice (bloques + puzzles)
+    # ------------------------------------------------------------------
+    toc_entries: List[Tuple[str, int, bool]] = []
+    current_block_name = ""
+    for spec in specs:
+        block_name = getattr(spec, "block_name", "") or ""
+        if block_name and block_name != current_block_name:
+            current_block_name = block_name
+            toc_entries.append(
+                (block_name, block_first_page.get(block_name, 1), True)
+            )
+
+        toc_entries.append(
+            (spec.title, puzzle_page.get(spec.index, 1), False)
+        )
+
+    puzzle_imgs: List[str] = []
+    solution_imgs: List[str] = []
+
+    # ------------------------------------------------------------------
+    # 1) Página de índice
+    # ------------------------------------------------------------------
+    toc_imgs = render_table_of_contents(
+        toc_entries,
+        output_dir=output_dir,
+            background_path=None,
+        )
+    puzzle_imgs.extend(toc_imgs)
+
+
+    # ------------------------------------------------------------------
+    # 2) Página de instrucciones
+    # ------------------------------------------------------------------
+    instr_filename = os.path.join(output_dir, "00_instructions.png")
+    instr_img = render_instructions_page(
+        book_title,
+        filename=instr_filename,
+        background_path=None,
+    )
+    puzzle_imgs.append(instr_img)
+
+    # ------------------------------------------------------------------
+    # 3) Portadas de bloque + puzzles y soluciones
+    # ------------------------------------------------------------------
+    current_block_name = ""
+    block_index = 0
 
     for spec in specs:
         print(f"Generando puzzle {spec.index + 1}/{total_puzzles}: {spec.title}")
 
-        # Si empezamos un bloque nuevo, generamos primero su portada de bloque
-        if spec.block_name and spec.block_name != current_block_name:
-            current_block_name = spec.block_name
-            block_counter += 1
-
-            cover_bg_path = spec.block_background or None
-            cover_filename = os.path.join(
-                output_dir,
-                f"block_{block_counter:02d}_{slugify(spec.block_name)}.png",
-            )
-
-            cover_img = render_block_cover(
-                block_name=spec.block_name,
-                block_index=block_counter,
-                filename=cover_filename,
-                background_path=cover_bg_path,
-            )
-            puzzle_imgs.append(cover_img)
-
-        # Limpieza de palabras para el grid (quitamos espacios y no-alfas)
         def clean_for_grid(word: str) -> str:
             return "".join(ch for ch in word.upper() if ch.isalpha())
 
         words_for_grid = [clean_for_grid(w) for w in spec.words]
 
-        placed_result = place_words_on_grid(
-            words_for_grid,
-            difficulty=difficulty,
-            grid_size=grid_size,
-        )
+        placed_result = place_words_on_grid(words_for_grid, difficulty=difficulty, grid_size=grid_size)
         if placed_result is None:
             print(f"  [AVISO] No se pudo generar grid para el puzzle {spec.index + 1}. Se salta.")
             continue
 
         grid, placed = placed_result
 
-        # Paginación de la solución, teniendo en cuenta:
-        # - total_puzzles      -> nº de puzzles
-        # - num_blocks         -> nº de portadas de bloque
-        # - "2"                -> portada interna + portada de soluciones
+        # Fondo asociado al bloque (si se definió en el TXT)
+        block_name = getattr(spec, "block_name", "") or ""
+        bg_path = getattr(spec, "block_background", None)
+
+        # Si cambiamos de bloque, generamos portada de bloque
+        if block_name and block_name != current_block_name:
+            current_block_name = block_name
+            block_index += 1
+            block_cover_filename = os.path.join(
+                output_dir,
+                f"block_{block_index:02d}_{slugify(block_name)}.png",
+            )
+
+            # Subtítulo sencillo; puedes cambiar el texto si quieres algo más elaborado
+            subtitle = "A themed collection of word search puzzles."
+
+            cover_img = render_block_cover(
+            block_name=block_name,
+            block_index=block_index,
+            filename=block_cover_filename,
+            background_path=bg_path,
+)
+            puzzle_imgs.append(cover_img)
+
+        # Página de solución destino (ya contando índice + instrucciones + portadas)
         solution_page_number = pages_before_first_solution + spec.index
 
         puzzle_filename = os.path.join(output_dir, f"puzzle_{spec.index + 1}.png")
         solution_filename = os.path.join(output_dir, f"puzzle_{spec.index + 1}_sol.png")
-
-        bg_path = spec.block_background or None
 
         img_puzzle = render_page(
             grid,
