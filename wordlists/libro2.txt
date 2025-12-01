@@ -1,0 +1,883 @@
+[Block]
+name: Foundations of Black History
+background: assets/world.png
+[/Block]
+
+[Puzzle]
+title: Black History Month
+fact: Black History Month began in 1926 as Negro History Week, created by historian Carter G. Woodson. It expanded into a full month in 1976. Today, it is celebrated in February in the United States and October in the United Kingdom to honor global Black achievements.
+words:
+CULTURE
+LEGACY
+FREEDOM
+HERITAGE
+PIONEERS
+HISTORY
+CELEBRATE
+EQUALITY
+TRADITION
+COMMUNITY
+VOICES
+HONOR
+[/Puzzle]
+
+[Puzzle]
+title: Early Black Pioneers
+fact: Early Black pioneers made groundbreaking contributions in fields like exploration, science, and education long before the Civil Rights era. Many of their achievements remained unrecognized for decades due to segregation and limited historical documentation.
+words:
+PIONEERS
+EXPLORERS
+EDUCATORS
+SCIENTISTS
+INNOVATORS
+TRAILBLAZERS
+ACHIEVEMENT
+RESILIENCE
+COURAGE
+LEGACY
+HISTORY
+IMPACT
+[/Puzzle]
+
+[Puzzle]
+title: African Diaspora Journeys
+fact: The African diaspora refers to the mass dispersion of peoples from Africa between the 1500s and 1800s. Despite forced migration, displaced communities preserved traditions, languages, and cultural practices that shaped societies worldwide.
+words:
+DIASPORA
+HERITAGE
+MIGRATION
+TRADITIONS
+LANGUAGE
+COMMUNITY
+ANCESTRY
+CULTURE
+RESILIENCE
+MEMORY
+IDENTITY
+ROOTS
+[/Puzzle]
+
+[Puzzle]
+title: Slavery, Resistance & Abolition
+fact: More than 12 million Africans were forcibly transported across the Atlantic. Despite brutal conditions, enslaved people resisted through revolts, sabotage, and the preservation of culture. Global abolition movements finally led to emancipation across the 19th century.
+words:
+EMANCIPATION
+RESISTANCE
+FREEDOM
+ABOLITION
+REBELLION
+SURVIVAL
+JUSTICE
+TRADE
+OPPRESSION
+HISTORY
+VOICES
+COURAGE
+[/Puzzle]
+
+[Puzzle]
+title: Emancipation & Reconstruction
+fact: Reconstruction (1865–1877) was a transformative period when formerly enslaved people gained political rights, founded schools, and held public office. Its progress was later reversed by segregation laws and widespread racial violence.
+words:
+RECONSTRUCTION
+EMANCIPATION
+VOTING
+EDUCATION
+CITIZENSHIP
+AMENDMENTS
+FREEDMEN
+LEGACY
+EQUALITY
+RIGHTS
+COMMUNITY
+PROGRESS
+[/Puzzle]
+
+[Puzzle]
+title: The Great Migration North
+fact: Between 1910 and 1970, over six million African Americans left the rural South in the Great Migration. They transformed major cities and fueled cultural movements like the Harlem Renaissance, reshaping American society.
+words:
+MIGRATION
+OPPORTUNITY
+CITIES
+HARLEM
+CHICAGO
+DETROIT
+JOURNEY
+CHANGE
+FAMILIES
+CULTURE
+INDUSTRY
+NEWLIFE
+[/Puzzle]
+
+[Puzzle]
+title: Harlem Renaissance Beginnings
+fact: The Harlem Renaissance of the 1920s was a cultural explosion of Black creativity in literature, music, and art. Figures like Langston Hughes and Zora Neale Hurston transformed American arts and inspired generations.
+words:
+HARLEM
+RENAISSANCE
+POETRY
+JAZZ
+ARTISTS
+WRITERS
+CREATIVITY
+MUSIC
+CULTURE
+COMMUNITY
+THEATER
+LEGACY
+[/Puzzle]
+
+[Puzzle]
+title: Jim Crow Era & Segregation
+fact: Jim Crow laws, enforced from the late 1800s to the 1960s, mandated racial segregation in public spaces across the American South. These laws institutionalized discrimination until the Civil Rights Movement dismantled them.
+words:
+SEGREGATION
+JIMCROW
+DISCRIMINATION
+RIGHTS
+SCHOOLS
+LAWS
+EQUALITY
+JUSTICE
+STRUGGLE
+PROTEST
+COURAGE
+FREEDOM
+[/Puzzle]
+
+[Puzzle]
+title: Landmark Supreme Court Cases
+fact: Cases like Brown v. Board of Education (1954) declared school segregation unconstitutional. These rulings played a vital role in dismantling discriminatory laws and expanding civil rights protections nationwide.
+words:
+BROWN
+JUSTICE
+SUPREME
+COURT
+LAW
+EQUALITY
+DECISION
+RIGHTS
+CONSTITUTION
+APPEAL
+INTEGRATION
+CASELAW
+[/Puzzle]
+
+[Puzzle]
+title: Voting Rights Milestones
+fact: The Voting Rights Act of 1965 outlawed discriminatory practices like literacy tests. It is considered one of the most effective civil rights laws in U.S. history, protecting minority voting rights for generations.
+words:
+VOTING
+BALLOT
+RIGHTS
+ACT1965
+EQUALITY
+DEMOCRACY
+ACCESS
+JUSTICE
+CITIZENS
+REFORM
+FREEDOM
+PROTECTION
+[/Puzzle]
+
+[Puzzle]
+title: Modern Civil Rights Milestones
+fact: Modern civil rights progress includes laws advancing fair housing, workplace equality, and protections for marginalized groups. Grassroots activism continues to address systemic racism and expand social justice reforms.
+words:
+CIVILRIGHTS
+ACTIVISM
+COMMUNITY
+JUSTICE
+FAIRNESS
+REFORM
+UNITY
+PROGRESS
+EQUALITY
+FREEDOM
+VOICE
+CHANGE
+[/Puzzle]
+
+[Puzzle]
+title: Juneteenth Celebration
+fact: Juneteenth commemorates June 19, 1865, when enslaved Texans learned of their freedom two years after the Emancipation Proclamation. It is now a U.S. federal holiday celebrating liberation, culture, and resilience.
+words:
+JUNETEENTH
+FREEDOM
+CELEBRATION
+TEXAS
+EMANCIPATION
+HISTORY
+RESILIENCE
+CULTURE
+UNITY
+HOLIDAY
+HERITAGE
+COMMUNITY
+[/Puzzle]
+
+[Block]
+name: African Kingdoms & Civilizations
+background: assets/world.png
+[/Block]
+
+[Puzzle]
+title: Ancient Nile Kingdoms
+fact: The Kingdom of Kush once rivaled ancient Egypt and even ruled it during the 25th Dynasty. Kushite pharaohs left behind pyramids in Nubia, which today outnumber those in Egypt.
+words:
+KUSH
+NUBIA
+PHARAOHS
+PYRAMIDS
+NILE
+KINGDOM
+DYNASTY
+MEROE
+CULTURE
+TRADE
+EMPIRE
+HERITAGE
+[/Puzzle]
+
+[Puzzle]
+title: West African Empires
+fact: The empires of Ghana, Mali, and Songhai controlled vast trade routes across West Africa. Their wealth came from gold, salt, and trans-Saharan commerce, turning cities into global centers of learning and trade.
+words:
+GHANA
+MALI
+SONGHAI
+TIMBUKTU
+GOLD
+SALT
+CARAVANS
+KINGDOM
+EMPIRE
+TRADE
+MARKETS
+LEGACY
+[/Puzzle]
+
+[Puzzle]
+title: Mali & Timbuktu Scholars
+fact: Timbuktu’s University of Sankore was one of the world’s oldest centers of learning. Scholars there produced thousands of manuscripts on science, law, and astronomy.
+words:
+TIMBUKTU
+SANKORE
+SCHOLARS
+MANUSCRIPTS
+ASTRONOMY
+SCIENCE
+LIBRARIES
+LEARNING
+EMPIRE
+KNOWLEDGE
+HISTORY
+HERITAGE
+[/Puzzle]
+
+[Puzzle]
+title: Desert Trade Routes & Caravans
+fact: Trans-Saharan caravans often traveled more than 2,500 miles, guided by the stars. Camel caravans transported gold, spices, and textiles across harsh desert landscapes for centuries.
+words:
+CARAVAN
+SAND
+ROUTES
+CAMELS
+TRADE
+SALT
+GOLD
+OASIS
+MARKETS
+MERCHANTS
+SMUGGLERS
+JOURNEY
+[/Puzzle]
+
+[Puzzle]
+title: Great Zimbabwe & Southern Africa
+fact: Great Zimbabwe flourished between the 11th and 15th centuries. Its massive stone walls were constructed without mortar, showcasing remarkable engineering skill.
+words:
+ZIMBABWE
+STONEWALLS
+SHONA
+EMPIRE
+TRADE
+GOLD
+HERITAGE
+AFRICA
+RUINS
+ARCHITECTURE
+KINGS
+MARKETS
+[/Puzzle]
+
+[Puzzle]
+title: African Cultural Symbols
+fact: Adinkra symbols from Ghana convey philosophical ideas and proverbs through visual art. They appear in textiles, pottery, and architecture, representing wisdom, unity, and resilience.
+words:
+ADINKRA
+SYMBOLS
+MEANINGS
+UNITY
+WISDOM
+CULTURE
+AFRICA
+HERITAGE
+PROVERBS
+DESIGN
+PATTERNS
+VALUES
+[/Puzzle]
+
+[Puzzle]
+title: Heritage Sites & Landmarks
+fact: Africa is home to more than 90 UNESCO World Heritage Sites, including Lalibela’s rock churches and the Serengeti. These sites preserve ancient architecture, wildlife, and cultural traditions.
+words:
+UNESCO
+LALIBELA
+SERENGETI
+SAHARA
+PYRAMIDS
+LANDMARKS
+RUINS
+HERITAGE
+WILDLIFE
+TEMPLES
+HISTORY
+CULTURE
+[/Puzzle]
+
+[Puzzle]
+title: African Independence Movements
+fact: Between 1950 and 1980, dozens of African nations gained independence from colonial rule. Leaders like Kwame Nkrumah and Jomo Kenyatta inspired Pan-African unity and self-determination movements.
+words:
+INDEPENDENCE
+NKRUMAH
+KENYATTA
+NATIONS
+FREEDOM
+MOVEMENTS
+UNITY
+PANAFRICAN
+COLONIALISM
+PEACE
+STRUGGLE
+DIGNITY
+[/Puzzle]
+
+[Puzzle]
+title: Kingdom of Benin & Bronze Art
+fact: The Kingdom of Benin produced highly detailed bronze plaques dating back to the 13th century. These artworks depict royal life and skilled craftsmanship unmatched for their time.
+words:
+BENIN
+BRONZES
+ARTWORK
+ROYALTY
+CASTING
+HISTORY
+KINGDOM
+SCULPTURE
+HERITAGE
+EMPIRE
+GUILD
+MASTERPIECE
+[/Puzzle]
+
+[Puzzle]
+title: Swahili Coast Trading Cities
+fact: Swahili port cities like Kilwa and Mombasa were major Indian Ocean trading hubs. Their culture blended African, Arab, and Persian influences through language, architecture, and commerce.
+words:
+SWAHILI
+KILWA
+MOMBASA
+TRADE
+DHOWS
+OCEAN
+MARKETS
+ARCHITECTURE
+CULTURE
+BLEND
+MERCHANTS
+ISLAM
+[/Puzzle]
+
+[Puzzle]
+title: Ethiopian Kingdoms & Christianity
+fact: Ethiopia adopted Christianity in the 4th century, making it one of the world’s oldest Christian nations. The Kingdom of Axum built monumental stelae and developed its own written script, Ge’ez.
+words:
+AXUM
+ETHIOPIA
+GE EZ
+CHRISTIANITY
+STELAE
+KINGDOM
+MONUMENTS
+ANCIENT
+CULTURE
+CHURCHES
+HERITAGE
+HISTORY
+[/Puzzle]
+
+[Puzzle]
+title: African Philosophies & Proverbs
+fact: African proverbs emphasize community, responsibility, and wisdom. Passed down orally for generations, they continue to guide social values across the continent.
+words:
+PROVERBS
+WISDOM
+AFRICA
+COMMUNITY
+VALUES
+TRADITION
+ORALITY
+HERITAGE
+LESSONS
+UNITY
+CULTURE
+GUIDANCE
+[/Puzzle]
+
+[Block]
+name: Civil Rights & Social Justice
+background: assets/world.png
+[/Block]
+
+[Puzzle]
+title: Civil Rights Movement Leaders
+fact: Leaders like Martin Luther King Jr., Rosa Parks, and Malcolm X played pivotal roles in advancing racial equality. Despite different approaches, all contributed to dismantling segregation and inspiring worldwide movements.
+words:
+KING
+PARKS
+MALCOLM
+LEADERS
+JUSTICE
+EQUALITY
+FREEDOM
+STRUGGLE
+COMMUNITY
+RIGHTS
+COURAGE
+VISION
+[/Puzzle]
+
+[Puzzle]
+title: Montgomery Bus Boycott
+fact: Sparked by Rosa Parks’ arrest in 1955, the Montgomery Bus Boycott lasted 381 days. It resulted in a Supreme Court ruling that segregation on public buses was unconstitutional.
+words:
+MONTGOMERY
+BOYCOTT
+PARKS
+BUS
+SUPREME
+COURT
+SEGREGATION
+PROTEST
+LEADERSHIP
+COMMUNITY
+RESISTANCE
+VICTORY
+[/Puzzle]
+
+[Puzzle]
+title: Freedom Riders
+fact: In 1961, interracial activists known as Freedom Riders challenged segregated bus terminals in the South. Their bravery led to federal enforcement of desegregated interstate travel.
+words:
+RIDERS
+BUS
+PROTEST
+ACTIVISTS
+COURAGE
+SOUTH
+EQUALITY
+TRAVEL
+RIGHTS
+FEDERAL
+MOVEMENT
+HISTORY
+[/Puzzle]
+
+[Puzzle]
+title: Student Sit-Ins & Lunch Counters
+fact: The 1960 Greensboro sit-ins sparked nationwide protests against segregated lunch counters. Students maintained nonviolent discipline despite harassment and arrests.
+words:
+SITINS
+GREENSBORO
+STUDENTS
+LUNCH
+NONVIOLENCE
+COURAGE
+PROTEST
+COUNTERS
+RIGHTS
+CHANGE
+VOICE
+YOUTH
+[/Puzzle]
+
+[Puzzle]
+title: The Little Rock Nine
+fact: In 1957, nine Black students integrated Central High School in Little Rock, Arkansas, protected by federal troops. Their courage became a defining moment of school desegregation.
+words:
+LITTLEROCK
+NINE
+STUDENTS
+TROOPS
+INTEGRATION
+SCHOOL
+COURAGE
+RIGHTS
+FEDERAL
+HISTORY
+EDUCATION
+EQUALITY
+[/Puzzle]
+
+[Puzzle]
+title: March on Washington
+fact: The 1963 March on Washington gathered over 250,000 people demanding civil and economic rights. It is best known for Martin Luther King Jr.’s “I Have a Dream” speech.
+words:
+WASHINGTON
+MARCH
+DREAM
+KING
+SPEECH
+RIGHTS
+JUSTICE
+FREEDOM
+CROWD
+MOVEMENT
+UNITY
+CHANGE
+[/Puzzle]
+
+[Puzzle]
+title: Black Power & Pan-Africanism
+fact: The Black Power movement emphasized self-determination, cultural pride, and political autonomy. Pan-Africanism connected people of African descent worldwide, promoting global solidarity.
+words:
+POWER
+UNITY
+PANAfrican
+SOLIDARITY
+PRIDE
+CULTURE
+IDENTITY
+MOVEMENT
+RESPECT
+HERITAGE
+FREEDOM
+VOICE
+[/Puzzle]
+
+[Puzzle]
+title: Fair Housing & Economic Justice
+fact: The Fair Housing Act of 1968 outlawed discrimination in housing. Activists also pushed for equal employment and economic opportunity to address systemic inequality.
+words:
+HOUSING
+FAIRNESS
+ACT1968
+EQUALITY
+ECONOMY
+JUSTICE
+RIGHTS
+WORKPLACE
+ACCESS
+PROTECTION
+COMMUNITY
+CHANGE
+[/Puzzle]
+
+[Puzzle]
+title: Historic Civil Rights Speeches
+fact: Speeches by leaders such as John Lewis, Fannie Lou Hamer, and Stokely Carmichael motivated activists and reshaped public opinion on racial justice.
+words:
+SPEECH
+LEADERS
+VOICE
+MOVEMENT
+CHANGE
+JUSTICE
+WORDS
+POWER
+PROTEST
+FREEDOM
+HISTORY
+CIVILRIGHTS
+[/Puzzle]
+
+[Puzzle]
+title: Voting Rights Activists
+fact: Activists like Ella Baker, Diane Nash, and the SNCC played critical roles in securing voting protections during the 1960s. Their grassroots organizing helped reshape American democracy.
+words:
+VOTING
+ACTIVISTS
+SNCC
+BAKER
+NASH
+DEMOCRACY
+PROTEST
+FAIRNESS
+BALLOT
+ORGANIZING
+RIGHTS
+STRUGGLE
+[/Puzzle]
+
+[Puzzle]
+title: Civil Rights Organizations
+fact: Groups such as the NAACP, CORE, and SCLC coordinated legal battles, protests, and voter drives. Their work remains crucial to ongoing social justice efforts.
+words:
+NAACP
+SCLC
+CORE
+MOVEMENT
+LEADERS
+JUSTICE
+COMMUNITY
+ORGANIZE
+RIGHTS
+UNITY
+FAIRNESS
+HISTORY
+[/Puzzle]
+
+[Puzzle]
+title: Path to Freedom
+fact: The long path to racial equality spans centuries of resistance, activism, and legal change. Modern movements like Black Lives Matter continue this legacy by challenging systemic injustice.
+words:
+FREEDOM
+MOVEMENT
+EQUALITY
+JUSTICE
+RESISTANCE
+ACTIVISM
+CHANGE
+VOICE
+COMMUNITY
+RIGHTS
+UNITY
+STRENGTH
+[/Puzzle]
+
+[Block]
+name: Black Arts, Music & Literature
+background: assets/world.png
+[/Block]
+
+[Puzzle]
+title: Roots of the Blues
+fact: The blues emerged in the Deep South in the late 19th century, drawing from African rhythms, spirituals, and work songs. Its emotional storytelling later influenced jazz, rock, and soul music.
+words:
+BLUES
+DELTA
+RHYTHM
+SPIRITUALS
+GUITAR
+SINGERS
+WORKSONGS
+MISSISSIPPI
+SOUL
+HERITAGE
+MUSIC
+ORIGINS
+[/Puzzle]
+
+[Puzzle]
+title: Jazz Legends & Harlem Nights
+fact: Jazz blossomed during the Harlem Renaissance, with artists like Duke Ellington and Louis Armstrong transforming American music through improvisation and innovation.
+words:
+JAZZ
+ELLINGTON
+ARMSTRONG
+HARLEM
+IMPROV
+SWING
+BRASS
+RHYTHM
+BAND
+CLUBS
+NIGHTS
+LEGENDS
+[/Puzzle]
+
+[Puzzle]
+title: Gospel Music & Spirituals
+fact: Gospel music grew from African American spirituals, blending religious lyrics with rhythmic vocals. Choir traditions shaped modern genres like soul and R&B.
+words:
+GOSPEL
+CHOIR
+SPIRITUALS
+HARMONY
+FAITH
+SINGING
+RHYTHM
+CHURCH
+SOUL
+PRAISE
+HISTORY
+HERITAGE
+[/Puzzle]
+
+[Puzzle]
+title: Motown Sound & Soul Classics
+fact: Founded in 1959, Motown Records became one of the most successful Black-owned businesses in history. Its distinct sound launched stars like Marvin Gaye, Diana Ross, and Stevie Wonder.
+words:
+MOTOWN
+SOUL
+GROOVE
+DETROIT
+RECORDS
+MARVINGAYE
+STEVIEWONDER
+DIANAROSS
+VOCALS
+HITS
+LEGENDS
+SOUND
+[/Puzzle]
+
+[Puzzle]
+title: Hip-Hop Pioneers & Breakdancers
+fact: Hip-hop originated in the Bronx during the 1970s. DJs, MCs, graffiti artists, and breakdancers created a global cultural movement rooted in creativity and community.
+words:
+HIPHOP
+BRONX
+BREAKDANCE
+MCING
+DJING
+GRAFFITI
+RHYTHM
+BEATS
+FLOW
+CYPHER
+CREW
+CULTURE
+[/Puzzle]
+
+[Puzzle]
+title: Reggae & Caribbean Rhythms
+fact: Reggae emerged in Jamaica in the late 1960s, blending African drums, ska, and rocksteady. Bob Marley helped bring it to global audiences with songs about justice and unity.
+words:
+REGGAE
+MARLEY
+SKA
+ROCKSTEADY
+DRUMS
+JAMAICA
+RHYTHM
+UNITY
+PEACE
+ISLANDS
+MUSIC
+CULTURE
+[/Puzzle]
+
+[Puzzle]
+title: Black Poets & Spoken Word
+fact: Writers like Langston Hughes, Maya Angelou, and Amanda Gorman shaped poetry with themes of identity, justice, and resilience. Spoken word has become a powerful form of performance art.
+words:
+POETRY
+HUGHES
+ANGELOU
+GORMAN
+VERSE
+VOICE
+SPOKENWORD
+IDENTITY
+JUSTICE
+STAGE
+ART
+RESILIENCE
+[/Puzzle]
+
+[Puzzle]
+title: Black Novelists & Storytellers
+fact: Authors like Toni Morrison, James Baldwin, and Chinua Achebe shaped global literature with powerful narratives on culture, identity, and history.
+words:
+MORRISON
+BALDWIN
+ACHEBE
+NOVEL
+STORY
+CHARACTERS
+HISTORY
+IDENTITY
+LITERATURE
+VOICE
+IMPACT
+CULTURE
+[/Puzzle]
+
+[Puzzle]
+title: Black Visual Artists & Murals
+fact: Black artists have shaped modern art through painting, sculpture, and large-scale murals. Their work often explores identity, heritage, and social issues.
+words:
+ARTISTS
+MURALS
+PAINTING
+SCULPTURE
+HERITAGE
+IDENTITY
+COLORS
+CREATIVITY
+CANVAS
+SYMBOLS
+GALLERIES
+CULTURE
+[/Puzzle]
+
+[Puzzle]
+title: Black Theatre & Broadway Voices
+fact: Black theatre traditions highlight storytelling, music, and community. Productions like “The Wiz” and “A Raisin in the Sun” changed Broadway’s cultural landscape.
+words:
+THEATRE
+BROADWAY
+RAISIN
+WIZ
+ACTORS
+MUSIC
+STAGE
+DRAMA
+VOICE
+PLAYWRIGHTS
+CULTURE
+IMPACT
+[/Puzzle]
+
+[Puzzle]
+title: Black Cinema Pioneers
+fact: Filmmakers like Oscar Micheaux and Ava DuVernay challenged stereotypes and expanded representation in film. Their work paved the way for new generations of creators.
+words:
+CINEMA
+MICHEAUX
+DUVERNAY
+DIRECTOR
+SCREEN
+FILM
+STORY
+IMPACT
+HOLLYWOOD
+ART
+VISION
+LEGACY
+[/Puzzle]
+
+[Puzzle]
+title: Afrofuturism & Science Fiction
+fact: Afrofuturism blends African heritage with futuristic themes in science fiction, fashion, and music. It imagines new worlds where Black culture thrives beyond historical limitations.
+words:
+AFROFUTURISM
+FUTURE
+SCIENCE
+FANTASY
+HERITAGE
+MUSIC
+ART
+INNOVATION
+WORLDS
+TECH
+IMAGINATION
+CULTURE
+[/Puzzle]

@@ -24,7 +24,7 @@ from wordsearch.constants_and_layout import (
     wordlist_font_size as WORDLIST_FONT_SIZE,
 )
 
-BACKGROUND_PATH = "assets/afro_recargado_background.png"
+BACKGROUND_PATH = "assets/world.png"
 
 
 # ------------------------------------------------------------
@@ -182,7 +182,7 @@ def render_page(
     panel_bottom = SAFE_BOTTOM_HI + panel_pad_bottom
 
     # Altura máxima permitida para título + FUN FACT
-    TITLE_FACT_AREA_HI = int(500 * SCALE)
+    TITLE_FACT_AREA_HI = int(600 * SCALE)
     GRID_TOP_BASE = panel_top + TITLE_FACT_AREA_HI
 
     panel_left = max(0, panel_left)
@@ -194,7 +194,7 @@ def render_page(
         draw,
         (panel_left, panel_top, panel_right, panel_bottom),
         radius=int(35 * SCALE),
-        fill=(255, 255, 255, 100),
+        fill=(255, 255, 255, 150),
         outline=(0, 0, 0, 60),
         width=max(1, int(3 * SCALE)),
     )
@@ -373,7 +373,7 @@ def render_page(
     grid_top_hi = GRID_TOP_BASE
     grid_left_hi = int((CONTENT_LEFT_HI + CONTENT_RIGHT_HI - grid_w_hi) // 2)
 
-    letter_font_size_hi = max(int(cell_size_hi * 0.9), int(18 * SCALE))
+    letter_font_size_hi = max(int(cell_size_hi * 0.70), int(18 * SCALE))
     font_letter = _load_font(FONT_PATH, letter_font_size_hi)
     font_letter_bold = _load_font(FONT_PATH_BOLD, letter_font_size_hi)
 
@@ -415,7 +415,7 @@ def render_page(
             p0 = centers[0]
             p1 = centers[-1]
 
-            thickness = cell_size_hi * 0.8
+            thickness = cell_size_hi * 0.67
             radius = thickness / 2
 
             # 1) Relleno beige
@@ -1154,7 +1154,7 @@ def render_instructions_page(
         line_spacing=1.05,
     )
 
-    subtitle = f"How to enjoy {book_title}"
+    subtitle = f"How to enjoy this book"
     y_sub = y_after_title + int(50 * SCALE)
     _draw_wrapped_centered_title(
         draw,

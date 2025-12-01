@@ -118,21 +118,13 @@ def main():
     pages_before_first_solution = last_puzzle_page + 2  # portada soluciones + offset 1-based
 
     # ------------------------------------------------------------------
-    # Construir las entradas del índice (bloques + puzzles)
+    # Construir las entradas del índice (solo portadas de bloque + soluciones)
     # ------------------------------------------------------------------
     toc_entries: List[Tuple[str, int, bool]] = []
-    current_block_name = ""
-    for spec in specs:
-        block_name = getattr(spec, "block_name", "") or ""
-        if block_name and block_name != current_block_name:
-            current_block_name = block_name
-            toc_entries.append(
-                (block_name, block_first_page.get(block_name, 1), True)
-            )
+    for block_name in blocks_in_order:
+        toc_entries.append((block_name, block_first_page.get(block_name, 1), True))
 
-        toc_entries.append(
-            (spec.title, puzzle_page.get(spec.index, 1), False)
-        )
+    toc_entries.append(("Solutions", pages_before_first_solution, True))
 
     puzzle_imgs: List[str] = []
     solution_imgs: List[str] = []
