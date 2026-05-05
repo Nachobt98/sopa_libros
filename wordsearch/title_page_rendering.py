@@ -14,7 +14,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 from wordsearch.constants_and_layout import (
     FONT_PATH,
-    FONT_PATH_BOLD,
     FONT_TITLE,
     PAGE_H_PX,
     PAGE_W_PX,
@@ -187,13 +186,12 @@ def render_title_page(
     title_lines = _wrap_text(draw, title, title_font, max_width)
 
     subtitle_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 1.03) * scale)
-    meta_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.70) * scale)
 
     title_block_height = sum(_text_size(draw, line, title_font)[1] for line in title_lines)
     title_block_height += int(title_size * 0.12) * max(0, len(title_lines) - 1)
 
     # Slightly above optical center: more editorial, less empty at the top.
-    title_start_y = int(height_hi * 0.255) - title_block_height // 2
+    title_start_y = int(height_hi * 0.265) - title_block_height // 2
     shadow = (0, 0, 0, 60)
     black = (0, 0, 0, 255)
 
@@ -209,30 +207,20 @@ def render_title_page(
         shadow_offset=int(2 * scale),
     )
 
+    sep_y = y + int(95 * scale)
+    sep_w = int(width_hi * 0.38)
+    _draw_ornamental_separator(draw, center_x, sep_y, sep_w, scale)
+
     subtitle_lines = _wrap_text(draw, subtitle, subtitle_font, max_width)
-    y += int(90 * scale)
-    y = _draw_centered_lines(
+    subtitle_y = sep_y + int(75 * scale)
+    _draw_centered_lines(
         draw,
         subtitle_lines,
         subtitle_font,
         center_x,
-        y,
+        subtitle_y,
         (0, 0, 0, 225),
         line_spacing=1.18,
-    )
-
-    sep_y = y + int(105 * scale)
-    sep_w = int(width_hi * 0.38)
-    _draw_ornamental_separator(draw, center_x, sep_y, sep_w, scale)
-
-    footer_text = "A Themed Word Search Collection"
-    footer_w, _ = _text_size(draw, footer_text, meta_font)
-    footer_y = int(height_hi * 0.735)
-    draw.text(
-        (center_x - footer_w // 2, footer_y),
-        footer_text,
-        font=meta_font,
-        fill=(0, 0, 0, 185),
     )
 
     if filename is None:
