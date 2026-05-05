@@ -9,7 +9,7 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 
 from wordsearch.constants_and_layout import TRIM_H_IN, TRIM_W_IN
-from wordsearch.image_rendering import BACKGROUND_PATH
+from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 
 
 def generate_pdf(puzzle_imgs, solution_imgs, outname="wordsearch_book_kdp.pdf", background_path=None):
