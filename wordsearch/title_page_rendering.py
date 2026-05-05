@@ -92,18 +92,49 @@ def _draw_centered_lines(
 
 
 def _draw_soft_panel(draw: ImageDraw.ImageDraw, scale: int) -> None:
-    margin_x = int(110 * scale)
-    margin_y = int(170 * scale)
-    radius = int(35 * scale)
-    outline_width = max(1, int(3 * scale))
+    """Draw a subtle editorial panel, leaving more visible textured background."""
+    margin_x = int(135 * scale)
+    margin_top = int(210 * scale)
+    margin_bottom = int(225 * scale)
+    radius = int(30 * scale)
+    outline_width = max(1, int(2 * scale))
 
     draw.rounded_rectangle(
-        (margin_x, margin_y, PAGE_W_PX * scale - margin_x, PAGE_H_PX * scale - margin_y),
+        (
+            margin_x,
+            margin_top,
+            PAGE_W_PX * scale - margin_x,
+            PAGE_H_PX * scale - margin_bottom,
+        ),
         radius=radius,
-        fill=(255, 255, 255, 145),
-        outline=(0, 0, 0, 55),
+        fill=(255, 255, 255, 118),
+        outline=(0, 0, 0, 45),
         width=outline_width,
     )
+
+
+def _draw_ornamental_separator(
+    draw: ImageDraw.ImageDraw,
+    center_x: int,
+    y: int,
+    width: int,
+    scale: int,
+) -> None:
+    """Draw a small centered separator used in the title page."""
+    line_color = (0, 0, 0, 145)
+    dot_color = (0, 0, 0, 170)
+    gap = int(18 * scale)
+    dot_r = int(5 * scale)
+    line_w = max(1, int(2 * scale))
+
+    left_outer = center_x - width // 2
+    left_inner = center_x - gap
+    right_inner = center_x + gap
+    right_outer = center_x + width // 2
+
+    draw.line((left_outer, y, left_inner, y), fill=line_color, width=line_w)
+    draw.line((right_inner, y, right_outer, y), fill=line_color, width=line_w)
+    draw.ellipse((center_x - dot_r, y - dot_r, center_x + dot_r, y + dot_r), fill=dot_color)
 
 
 def render_title_page(
@@ -137,11 +168,11 @@ def render_title_page(
     _draw_soft_panel(draw, scale)
 
     center_x = width_hi // 2
-    max_width = int(width_hi * 0.72)
+    max_width = int(width_hi * 0.70)
 
     # Título principal: se reduce si el título es largo.
-    title_size = int(TITLE_FONT_SIZE * 1.85) * scale
-    min_title_size = int(TITLE_FONT_SIZE * 1.05) * scale
+    title_size = int(TITLE_FONT_SIZE * 1.70) * scale
+    min_title_size = int(TITLE_FONT_SIZE * 0.98) * scale
     title = book_title.strip() or "Word Search Book"
 
     while title_size > min_title_size:
@@ -155,14 +186,15 @@ def render_title_page(
     title_font = _load_font(FONT_TITLE, title_size)
     title_lines = _wrap_text(draw, title, title_font, max_width)
 
-    subtitle_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 1.15) * scale)
-    meta_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.72) * scale)
+    subtitle_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 1.03) * scale)
+    meta_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.70) * scale)
 
     title_block_height = sum(_text_size(draw, line, title_font)[1] for line in title_lines)
-    title_block_height += int(title_size * 0.10) * max(0, len(title_lines) - 1)
+    title_block_height += int(title_size * 0.12) * max(0, len(title_lines) - 1)
 
-    title_start_y = int(height_hi * 0.29) - title_block_height // 2
-    shadow = (0, 0, 0, 75)
+    # Slightly above optical center: more editorial, less empty at the top.
+    title_start_y = int(height_hi * 0.255) - title_block_height // 2
+    shadow = (0, 0, 0, 60)
     black = (0, 0, 0, 255)
 
     y = _draw_centered_lines(
@@ -172,36 +204,36 @@ def render_title_page(
         center_x,
         title_start_y,
         black,
-        line_spacing=1.05,
+        line_spacing=1.07,
         shadow_fill=shadow,
-        shadow_offset=int(3 * scale),
+        shadow_offset=int(2 * scale),
     )
 
     subtitle_lines = _wrap_text(draw, subtitle, subtitle_font, max_width)
-    y += int(55 * scale)
+    y += int(90 * scale)
     y = _draw_centered_lines(
         draw,
         subtitle_lines,
         subtitle_font,
         center_x,
         y,
-        black,
-        line_spacing=1.15,
+        (0, 0, 0, 225),
+        line_spacing=1.18,
     )
 
-    # Separador ornamental sencillo.
-    sep_y = y + int(85 * scale)
-    sep_w = int(width_hi * 0.34)
-    sep_x1 = center_x - sep_w // 2
-    sep_x2 = center_x + sep_w // 2
-    draw.line((sep_x1, sep_y, sep_x2, sep_y), fill=(0, 0, 0, 150), width=max(1, int(2 * scale)))
-    dot_r = int(5 * scale)
-    draw.ellipse((center_x - dot_r, sep_y - dot_r, center_x + dot_r, sep_y + dot_r), fill=(0, 0, 0, 180))
+    sep_y = y + int(105 * scale)
+    sep_w = int(width_hi * 0.38)
+    _draw_ornamental_separator(draw, center_x, sep_y, sep_w, scale)
 
-    footer_text = "Word Search Puzzle Book"
-    footer_w, footer_h = _text_size(draw, footer_text, meta_font)
-    footer_y = int(height_hi * 0.76)
-    draw.text((center_x - footer_w // 2, footer_y), footer_text, font=meta_font, fill=(0, 0, 0, 210))
+    footer_text = "A Themed Word Search Collection"
+    footer_w, _ = _text_size(draw, footer_text, meta_font)
+    footer_y = int(height_hi * 0.735)
+    draw.text(
+        (center_x - footer_w // 2, footer_y),
+        footer_text,
+        font=meta_font,
+        fill=(0, 0, 0, 185),
+    )
 
     if filename is None:
         filename = os.path.join("output_puzzles_kdp", "00_title_page.png")
