@@ -161,7 +161,7 @@ Difficulty data should remain separate from interactive prompts.
 Current location:
 
 ```text
-main_thematic.py
+wordsearch/domain/page_plan.py
 ```
 
 Responsibility:
@@ -172,24 +172,20 @@ Responsibility:
 - Calculate first real solution page.
 ```
 
-Future target:
-
-```text
-wordsearch/domain/page_plan.py
-wordsearch/generation/page_planning.py
-```
-
-The current tuple-based result should become an explicit `PagePlan` dataclass.
+The current page plan is represented by an explicit `PagePlan` dataclass.
 
 ### Rendering
 
 Current modules:
 
 ```text
-wordsearch/image_rendering.py
-wordsearch/title_page_rendering.py
-wordsearch/front_matter_rendering.py
-wordsearch/pdf_book_generation.py
+wordsearch/rendering/common.py
+wordsearch/rendering/backgrounds.py
+wordsearch/rendering/title_page.py
+wordsearch/rendering/front_matter.py
+wordsearch/rendering/block_cover.py
+wordsearch/rendering/puzzle_page.py
+wordsearch/rendering/pdf.py
 ```
 
 Responsibility:
@@ -204,19 +200,12 @@ Responsibility:
 Future target:
 
 ```text
-wordsearch/rendering/common.py
-wordsearch/rendering/backgrounds.py
-wordsearch/rendering/title_page.py
-wordsearch/rendering/front_matter.py
-wordsearch/rendering/block_cover.py
-wordsearch/rendering/puzzle_page.py
 wordsearch/rendering/solution_page.py
 wordsearch/rendering/highlights.py
 wordsearch/rendering/word_list.py
-wordsearch/rendering/pdf.py
 ```
 
-The largest current refactor candidate is `image_rendering.py`, but it should be split only after page planning and tests are in place.
+The old root-level rendering wrappers have been removed. Rendering code now lives under `wordsearch/rendering/`.
 
 ### Configuration
 
@@ -249,14 +238,12 @@ Eventually this should move from global constants to explicit layout/font/theme 
 ## Current pain points
 
 ```text
-1. main_thematic.py still mixes CLI, orchestration, page planning and rendering calls.
-2. image_rendering.py contains too many rendering responsibilities.
-3. Rendering helpers are duplicated across modules.
-4. Page planning uses tuple returns instead of explicit domain models.
-5. Grid placement uses tuple-heavy structures.
-6. No automated tests yet.
-7. No lint/format/type tooling yet.
-8. Simple and thematic generation do not share a unified pipeline.
+1. Rendering submodules can still be split further: highlights, word list and solution-page concerns.
+2. Grid placement uses tuple-heavy structures.
+3. Coverage is still low outside parser, normalization and page planning.
+4. No lint/format/type tooling yet.
+5. Simple and thematic generation do not share a unified pipeline.
+6. Layout/font/theme config still lives in global constants.
 ```
 
 ## Refactor direction
@@ -274,8 +261,9 @@ Recommended order:
 6. Extract common rendering helpers.
 7. Move already-separated renderers into a rendering package.
 8. Split image_rendering.py.
-9. Add tooling: pytest, ruff, CI.
-10. Add advanced CLI options such as --seed, --validate-only and --clean-output.
+9. Remove legacy rendering wrappers.
+10. Add tooling: pytest, ruff, CI.
+11. Add advanced CLI options such as --seed, --validate-only and --clean-output.
 ```
 
 ## Stability rule
