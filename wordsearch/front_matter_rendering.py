@@ -226,6 +226,26 @@ def render_table_of_contents(
     return [_save_page(img, filename)]
 
 
+def _measure_instruction_block_height(
+    draw: ImageDraw.ImageDraw,
+    instructions: Sequence[str],
+    number_font: ImageFont.FreeTypeFont,
+    body_font: ImageFont.FreeTypeFont,
+    max_text_width: int,
+    row_gap: int,
+) -> int:
+    line_h = int(body_font.size * 1.18)
+    total_height = 0
+
+    for instruction in instructions:
+        lines = _wrap_text(draw, instruction, body_font, max_text_width)
+        number_h = _text_size(draw, "1.", number_font)[1]
+        text_h = len(lines) * line_h
+        total_height += max(number_h, text_h) + row_gap
+
+    return max(0, total_height - row_gap)
+
+
 def render_instructions_page(
     book_title: str,
     filename: Optional[str] = None,
@@ -237,7 +257,7 @@ def render_instructions_page(
     scale = 3
     img = _make_background(background_path, scale)
     draw = ImageDraw.Draw(img)
-    panel_left, panel_top, panel_right, _panel_bottom = _draw_main_panel(draw, scale)
+    panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale)
 
     center_x = PAGE_W_PX * scale // 2
     title_font = _load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.05) * scale)
@@ -245,12 +265,18 @@ def render_instructions_page(
     number_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.72) * scale)
     body_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.70) * scale)
 
-    y = panel_top + int(70 * scale)
-    y = _draw_centered_text(draw, "Instructions", title_font, center_x, y, (0, 0, 0, 255))
-    y += int(24 * scale)
-    y = _draw_centered_text(draw, "How to enjoy this book", subtitle_font, center_x, y, (0, 0, 0, 220))
+    title_y = panel_top + int(78 * scale)
+    title_bottom = _draw_centered_text(draw, "Instructions", title_font, center_x, title_y, (0, 0, 0, 255))
 
-    y += int(80 * scale)
+    subtitle_y = title_bottom + int(46 * scale)
+    subtitle_bottom = _draw_centered_text(
+        draw,
+        "How to enjoy this book",
+        subtitle_font,
+        center_x,
+        subtitle_y,
+        (0, 0, 0, 220),
+    )
 
     instructions = [
         "Find each word from the list at the bottom of the puzzle page.",
@@ -261,12 +287,26 @@ def render_instructions_page(
         "Check the solutions section at the back of the book if you get stuck.",
     ]
 
-    content_left = panel_left + int(80 * scale)
-    content_right = panel_right - int(80 * scale)
-    number_col_width = int(55 * scale)
-    text_left = content_left + number_col_width
+    content_left = panel_left + int(82 * scale)
+    content_right = panel_right - int(82 * scale)
+    number_col_width = int(74 * scale)
+    number_text_gap = int(18 * scale)
+    text_left = content_left + number_col_width + number_text_gap
     max_text_width = content_right - text_left
-    row_gap = int(38 * scale)
+    row_gap = int(42 * scale)
+
+    block_height = _measure_instruction_block_height(
+        draw,
+        instructions,
+        number_font,
+        body_font,
+        max_text_width,
+        row_gap,
+    )
+
+    min_content_y = subtitle_bottom + int(115 * scale)
+    available_center_y = (subtitle_bottom + int(160 * scale) + panel_bottom - int(100 * scale)) // 2
+    y = max(min_content_y, available_center_y - block_height // 2)
 
     for idx, instruction in enumerate(instructions, start=1):
         number_text = f"{idx}."
@@ -285,7 +325,8 @@ def render_instructions_page(
             draw.text((text_left, text_y), line, font=body_font, fill=(0, 0, 0, 235))
             text_y += line_h
 
-        y = text_y + row_gap
+        number_h = _text_size(draw, number_text, number_font)[1]
+        y = max(y + number_h, text_y) + row_gap
 
     if filename is None:
         filename = os.path.join("output_puzzles_kdp", "02_instructions.png")
