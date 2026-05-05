@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Sequence
+from typing import Dict, List, Sequence
 
 from wordsearch.puzzle_parser import PuzzleSpec
 from wordsearch.text_normalization import normalize_word_for_grid
