@@ -9,11 +9,13 @@ export the final PDF.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
-from typing import Dict, List, Sequence, Tuple
+from typing import List, Sequence, Tuple
 
 from wordsearch.constants_and_layout import BASE_OUTPUT_DIR
 from wordsearch.difficulty_levels import DifficultyLevel
+from wordsearch.domain.book import ThematicGenerationOptions
+from wordsearch.domain.generated_puzzle import GeneratedPuzzle
+from wordsearch.domain.page_plan import build_page_plan
 from wordsearch.front_matter_rendering import render_instructions_page, render_table_of_contents
 from wordsearch.grid_generation import place_words_on_grid
 from wordsearch.image_rendering import render_block_cover, render_page
@@ -23,26 +25,6 @@ from wordsearch.text_normalization import normalize_words_for_grid
 from wordsearch.thematic_validation import validate_thematic_specs
 from wordsearch.title_page_rendering import render_title_page
 from wordsearch.wordlist_utils import slugify
-
-
-@dataclass
-class GeneratedPuzzle:
-    """Puzzle data after validation and successful grid generation."""
-
-    spec: PuzzleSpec
-    words_for_grid: List[str]
-    grid: Sequence[Sequence[str]]
-    placed_words: Sequence[Tuple[str, Tuple[int, int, int, int]]]
-
-
-@dataclass
-class ThematicGenerationOptions:
-    """Runtime options resolved from CLI arguments and/or interactive prompts."""
-
-    book_title: str
-    puzzles_txt_path: str
-    difficulty: DifficultyLevel
-    grid_size: int
 
 
 def print_run_summary(options: ThematicGenerationOptions) -> None:
@@ -106,46 +88,6 @@ def _generate_all_grids(
     return generated
 
 
-def _build_page_plan(
-    generated_puzzles: Sequence[GeneratedPuzzle],
-) -> Tuple[Dict[str, int], List[str], Dict[int, int], int]:
-    """
-    Calculate page numbers after all puzzles are known to be viable.
-
-    Current front matter convention:
-    - page 1: title page
-    - page 2: table of contents
-    - page 3: instructions
-    - page 4+: block covers and puzzles
-    - after puzzles: solutions cover + solution pages
-    """
-    block_first_page: Dict[str, int] = {}
-    blocks_in_order: List[str] = []
-    puzzle_page: Dict[int, int] = {}
-
-    current_page = 4
-    current_block_name = ""
-
-    for generated in generated_puzzles:
-        spec = generated.spec
-        block_name = getattr(spec, "block_name", "") or ""
-
-        if block_name and block_name != current_block_name:
-            current_block_name = block_name
-            if block_name not in block_first_page:
-                block_first_page[block_name] = current_page
-                blocks_in_order.append(block_name)
-                current_page += 1
-
-        puzzle_page[spec.index] = current_page
-        current_page += 1
-
-    last_puzzle_page = current_page - 1
-    pages_before_first_solution = last_puzzle_page + 2
-
-    return block_first_page, blocks_in_order, puzzle_page, pages_before_first_solution
-
-
 def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     """
     Generate the complete thematic book.
@@ -192,20 +134,15 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     output_dir = os.path.join(BASE_OUTPUT_DIR, slugify(options.book_title))
     os.makedirs(output_dir, exist_ok=True)
 
-    (
-        block_first_page,
-        blocks_in_order,
-        puzzle_page,
-        pages_before_first_solution,
-    ) = _build_page_plan(generated_puzzles)
+    page_plan = build_page_plan(generated_puzzles)
 
     # ------------------------------------------------------------------
     # Construir entradas del índice: portadas de bloque + soluciones.
     # ------------------------------------------------------------------
     toc_entries: List[Tuple[str, int, bool]] = []
-    for block_name in blocks_in_order:
-        toc_entries.append((block_name, block_first_page.get(block_name, 1), True))
-    toc_entries.append(("Solutions", pages_before_first_solution, True))
+    for block_name in page_plan.blocks_in_order:
+        toc_entries.append((block_name, page_plan.block_first_page.get(block_name, 1), True))
+    toc_entries.append(("Solutions", page_plan.first_solution_page, True))
 
     content_imgs: List[str] = []
     solution_imgs: List[str] = []
@@ -271,7 +208,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
             )
             content_imgs.append(cover_img)
 
-        solution_page_number = pages_before_first_solution + spec.index
+        solution_page_number = page_plan.first_solution_page + spec.index
 
         puzzle_filename = os.path.join(output_dir, f"puzzle_{spec.index + 1}.png")
         solution_filename = os.path.join(output_dir, f"puzzle_{spec.index + 1}_sol.png")
