@@ -8,11 +8,16 @@ The goal is to fail early before rendering pages, because page numbering and
 from __future__ import annotations
 
 import os
+import textwrap
 from dataclasses import dataclass, field
 from typing import Dict, List, Sequence
 
 from wordsearch.puzzle_parser import PuzzleSpec
 from wordsearch.text_normalization import normalize_word_for_grid
+
+REPORT_WIDTH = 100
+BULLET_INDENT = "  - "
+CONTINUATION_INDENT = "    "
 
 
 @dataclass
@@ -34,6 +39,19 @@ class ValidationIssue:
             return f"[{prefix}] Puzzle {self.puzzle_index + 1}{title}: {self.message}"
 
         return f"[{prefix}] {self.message}"
+
+
+def _print_wrapped_issue(issue: ValidationIssue) -> None:
+    """Print one validation issue with stable indentation in narrow terminals."""
+    wrapped = textwrap.fill(
+        issue.format(),
+        width=REPORT_WIDTH,
+        initial_indent=BULLET_INDENT,
+        subsequent_indent=CONTINUATION_INDENT,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+    print(wrapped)
 
 
 @dataclass
@@ -96,14 +114,14 @@ class ThematicValidationReport:
         if self.errors:
             print(f"\nERRORES BLOQUEANTES ({len(self.errors)}):")
             for issue in self.errors:
-                print(f"  - {issue.format()}")
+                _print_wrapped_issue(issue)
         else:
             print("\nERRORES BLOQUEANTES: ninguno.")
 
         if self.warnings:
             print(f"\nAVISOS NO BLOQUEANTES ({len(self.warnings)}):")
             for issue in self.warnings:
-                print(f"  - {issue.format()}")
+                _print_wrapped_issue(issue)
         else:
             print("\nAVISOS NO BLOQUEANTES: ninguno.")
 
