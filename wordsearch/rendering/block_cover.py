@@ -15,7 +15,7 @@ from wordsearch.constants_and_layout import (
     title_font_size as TITLE_FONT_SIZE,
     wordlist_font_size as WORDLIST_FONT_SIZE,
 )
-from wordsearch.image_rendering import BACKGROUND_PATH
+from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import load_font, save_page, text_size, wrap_text
 
 
