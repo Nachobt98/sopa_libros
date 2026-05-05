@@ -19,14 +19,10 @@ from typing import Dict, List, Sequence, Tuple
 
 from wordsearch.constants_and_layout import BASE_OUTPUT_DIR
 from wordsearch.difficulty_levels import DifficultyLevel, difficulty_settings
+from wordsearch.front_matter_rendering import render_instructions_page, render_table_of_contents
 from wordsearch.grid_generation import place_words_on_grid
 from wordsearch.grid_size_utils import ask_grid_size
-from wordsearch.image_rendering import (
-    render_block_cover,
-    render_instructions_page,
-    render_page,
-    render_table_of_contents,
-)
+from wordsearch.image_rendering import render_block_cover, render_page
 from wordsearch.pdf_book_generation import generate_pdf
 from wordsearch.puzzle_parser import PuzzleParseError, PuzzleSpec, parse_puzzle_file
 from wordsearch.text_normalization import normalize_words_for_grid
@@ -253,7 +249,7 @@ def main():
     # ------------------------------------------------------------------
     # 3) Página de instrucciones
     # ------------------------------------------------------------------
-    instr_filename = os.path.join(output_dir, "00_instructions.png")
+    instr_filename = os.path.join(output_dir, "02_instructions.png")
     instr_img = render_instructions_page(
         book_title,
         filename=instr_filename,
