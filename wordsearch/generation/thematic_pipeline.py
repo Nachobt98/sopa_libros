@@ -16,14 +16,14 @@ from wordsearch.difficulty_levels import DifficultyLevel
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.page_plan import build_page_plan
-from wordsearch.front_matter_rendering import render_instructions_page, render_table_of_contents
 from wordsearch.grid_generation import place_words_on_grid
 from wordsearch.image_rendering import render_block_cover, render_page
-from wordsearch.pdf_book_generation import generate_pdf
 from wordsearch.puzzle_parser import PuzzleParseError, PuzzleSpec, parse_puzzle_file
+from wordsearch.rendering.front_matter import render_instructions_page, render_table_of_contents
+from wordsearch.rendering.pdf import generate_pdf
+from wordsearch.rendering.title_page import render_title_page
 from wordsearch.text_normalization import normalize_words_for_grid
 from wordsearch.thematic_validation import validate_thematic_specs
-from wordsearch.title_page_rendering import render_title_page
 from wordsearch.wordlist_utils import slugify
 
 
