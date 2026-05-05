@@ -91,10 +91,10 @@ def _draw_centered_lines(
 
 
 def _draw_soft_panel(draw: ImageDraw.ImageDraw, scale: int) -> None:
-    """Draw a subtle editorial panel, leaving more visible textured background."""
+    """Draw a compact editorial panel, leaving visible textured background."""
     margin_x = int(135 * scale)
-    margin_top = int(210 * scale)
-    margin_bottom = int(225 * scale)
+    margin_top = int(200 * scale)
+    margin_bottom = int(560 * scale)
     radius = int(30 * scale)
     outline_width = max(1, int(2 * scale))
 
@@ -106,7 +106,7 @@ def _draw_soft_panel(draw: ImageDraw.ImageDraw, scale: int) -> None:
             PAGE_H_PX * scale - margin_bottom,
         ),
         radius=radius,
-        fill=(255, 255, 255, 118),
+        fill=(255, 255, 255, 125),
         outline=(0, 0, 0, 45),
         width=outline_width,
     )
@@ -190,8 +190,7 @@ def render_title_page(
     title_block_height = sum(_text_size(draw, line, title_font)[1] for line in title_lines)
     title_block_height += int(title_size * 0.12) * max(0, len(title_lines) - 1)
 
-    # Slightly above optical center: more editorial, less empty at the top.
-    title_start_y = int(height_hi * 0.265) - title_block_height // 2
+    title_start_y = int(height_hi * 0.25) - title_block_height // 2
     shadow = (0, 0, 0, 60)
     black = (0, 0, 0, 255)
 
@@ -207,12 +206,12 @@ def render_title_page(
         shadow_offset=int(2 * scale),
     )
 
-    sep_y = y + int(95 * scale)
+    sep_y = y + int(130 * scale)
     sep_w = int(width_hi * 0.38)
     _draw_ornamental_separator(draw, center_x, sep_y, sep_w, scale)
 
     subtitle_lines = _wrap_text(draw, subtitle, subtitle_font, max_width)
-    subtitle_y = sep_y + int(75 * scale)
+    subtitle_y = sep_y + int(105 * scale)
     _draw_centered_lines(
         draw,
         subtitle_lines,
