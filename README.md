@@ -30,6 +30,13 @@ Instala las dependencias con:
 pip install -r requirements.txt
 ```
 
+Para desarrollo del proyecto, incluyendo tests, cobertura y lint, usa la guia
+de entorno en:
+
+```text
+docs/development.md
+```
+
 ---
 
 ## 2. Instalación desde cero

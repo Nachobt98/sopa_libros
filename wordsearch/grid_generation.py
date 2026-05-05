@@ -10,7 +10,6 @@ def place_words_on_grid(words, difficulty: DifficultyLevel, grid_size=None):
     settings = difficulty_settings[difficulty]
     size = grid_size if grid_size is not None else settings["grid_default"]
     directions = settings["directions"]
-    allow_reversed = settings["allow_reversed"]
     max_attempts = 500
     grid = [['' for _ in range(size)] for _ in range(size)]
     placed = []

@@ -116,13 +116,6 @@ def main():
             continue
         grid, placed = placed_result
 
-        sol_positions = set()
-        for w, (r, c, dr, dc) in placed:
-            rr, cc = r, c
-            for _ in w:
-                sol_positions.add((rr, cc))
-                rr += dr
-                cc += dc
         puzzle_img = render_page(
             grid, wl, i, is_solution=False,
             filename=os.path.join(output_dir, f"puzzle_{i}.png"),
