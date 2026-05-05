@@ -8,7 +8,7 @@ módulo que ya contiene el render principal de puzzles y soluciones.
 from __future__ import annotations
 
 import os
-from typing import List, Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -22,72 +22,17 @@ from wordsearch.constants_and_layout import (
     title_font_size as TITLE_FONT_SIZE,
 )
 from wordsearch.image_rendering import BACKGROUND_PATH
+from wordsearch.rendering.common import (
+    draw_centered_text,
+    load_font,
+    rounded_rectangle,
+    save_page,
+    text_size,
+    wrap_text,
+)
 
 
 TocEntry = Tuple[str, int, bool]
-
-
-def _load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
-    try:
-        return ImageFont.truetype(path, size)
-    except Exception:
-        return ImageFont.load_default()
-
-
-def _text_size(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    font: ImageFont.FreeTypeFont,
-) -> Tuple[int, int]:
-    bbox = draw.textbbox((0, 0), text, font=font)
-    return bbox[2] - bbox[0], bbox[3] - bbox[1]
-
-
-def _wrap_text(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    font: ImageFont.FreeTypeFont,
-    max_width: int,
-) -> List[str]:
-    words = text.split()
-    lines: List[str] = []
-    current: List[str] = []
-
-    for word in words:
-        candidate = " ".join(current + [word]).strip()
-        width, _ = _text_size(draw, candidate, font)
-        if width <= max_width or not current:
-            current.append(word)
-        else:
-            lines.append(" ".join(current))
-            current = [word]
-
-    if current:
-        lines.append(" ".join(current))
-
-    return lines
-
-
-def _rounded_rectangle(
-    draw: ImageDraw.ImageDraw,
-    xy: Tuple[int, int, int, int],
-    radius: int,
-    fill=None,
-    outline=None,
-    width: int = 1,
-) -> None:
-    try:
-        draw.rounded_rectangle(xy, radius=radius, fill=fill, outline=outline, width=width)
-    except AttributeError:
-        x1, y1, x2, y2 = xy
-        draw.rectangle((x1, y1 + radius, x2, y2 - radius), fill=fill)
-        draw.rectangle((x1 + radius, y1, x2 - radius, y2), fill=fill)
-        draw.pieslice((x1, y1, x1 + 2 * radius, y1 + 2 * radius), 180, 270, fill=fill)
-        draw.pieslice((x2 - 2 * radius, y1, x2, y1 + 2 * radius), 270, 360, fill=fill)
-        draw.pieslice((x1, y2 - 2 * radius, x1 + 2 * radius, y2), 90, 180, fill=fill)
-        draw.pieslice((x2 - 2 * radius, y2 - 2 * radius, x2, y2), 0, 90, fill=fill)
-        if outline:
-            draw.rectangle(xy, outline=outline, width=width)
 
 
 def _make_background(background_path: Optional[str], scale: int) -> Image.Image:
@@ -111,7 +56,7 @@ def _draw_main_panel(draw: ImageDraw.ImageDraw, scale: int) -> Tuple[int, int, i
     right = PAGE_W_PX * scale - int(110 * scale)
     bottom = PAGE_H_PX * scale - int(150 * scale)
 
-    _rounded_rectangle(
+    rounded_rectangle(
         draw,
         (left, top, right, bottom),
         radius=int(26 * scale),
@@ -122,31 +67,11 @@ def _draw_main_panel(draw: ImageDraw.ImageDraw, scale: int) -> Tuple[int, int, i
     return left, top, right, bottom
 
 
-def _draw_centered_text(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    font: ImageFont.FreeTypeFont,
-    center_x: int,
-    y: int,
-    fill,
-) -> int:
-    width, height = _text_size(draw, text, font)
-    draw.text((center_x - width // 2, y), text, font=font, fill=fill)
-    return y + height
-
-
-def _save_page(img: Image.Image, filename: str) -> str:
-    img_rgb = img.convert("RGB")
-    img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), resample=Image.LANCZOS)
-    img_final.save(filename, dpi=(300, 300))
-    return filename
-
-
 def render_table_of_contents(
     toc_entries: Sequence[TocEntry],
     output_dir: str,
     background_path: Optional[str] = None,
-) -> List[str]:
+) -> list[str]:
     """
     Renderiza un índice editorial con más aire vertical.
 
@@ -159,16 +84,16 @@ def render_table_of_contents(
     panel_left, panel_top, panel_right, _panel_bottom = _draw_main_panel(draw, scale)
 
     center_x = PAGE_W_PX * scale // 2
-    title_font = _load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.15) * scale)
-    section_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.74) * scale)
-    entry_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.78) * scale)
-    page_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.78) * scale)
+    title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.15) * scale)
+    section_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.74) * scale)
+    entry_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.78) * scale)
+    page_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.78) * scale)
 
     y = panel_top + int(96 * scale)
-    y = _draw_centered_text(draw, "Table of Contents", title_font, center_x, y, (0, 0, 0, 255))
+    y = draw_centered_text(draw, "Table of Contents", title_font, center_x, y, (0, 0, 0, 255))
 
     y += int(54 * scale)
-    y = _draw_centered_text(draw, "SECTIONS", section_font, center_x, y, (0, 0, 0, 190))
+    y = draw_centered_text(draw, "SECTIONS", section_font, center_x, y, (0, 0, 0, 190))
 
     line_y = y + int(44 * scale)
     line_width = int((panel_right - panel_left) * 0.46)
@@ -194,9 +119,9 @@ def render_table_of_contents(
             )
             y += int(72 * scale)
 
-        label_width, label_height = _text_size(draw, label, entry_font)
+        label_width, label_height = text_size(draw, label, entry_font)
         page_text = str(page_number)
-        page_width, page_height = _text_size(draw, page_text, page_font)
+        page_width, page_height = text_size(draw, page_text, page_font)
 
         page_x = content_right - page_width
         label_x = content_left
@@ -223,7 +148,7 @@ def render_table_of_contents(
         y += max(label_height, page_height) + row_gap
 
     filename = os.path.join(output_dir, "01_table_of_contents.png")
-    return [_save_page(img, filename)]
+    return [save_page(img, filename)]
 
 
 def _measure_instruction_block_height(
@@ -238,8 +163,8 @@ def _measure_instruction_block_height(
     total_height = 0
 
     for instruction in instructions:
-        lines = _wrap_text(draw, instruction, body_font, max_text_width)
-        number_h = _text_size(draw, "1.", number_font)[1]
+        lines = wrap_text(draw, instruction, body_font, max_text_width)
+        number_h = text_size(draw, "1.", number_font)[1]
         text_h = len(lines) * line_h
         total_height += max(number_h, text_h) + row_gap
 
@@ -260,16 +185,16 @@ def render_instructions_page(
     panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale)
 
     center_x = PAGE_W_PX * scale // 2
-    title_font = _load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.05) * scale)
-    subtitle_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.9) * scale)
-    number_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.72) * scale)
-    body_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.70) * scale)
+    title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.05) * scale)
+    subtitle_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.9) * scale)
+    number_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.72) * scale)
+    body_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.70) * scale)
 
     title_y = panel_top + int(78 * scale)
-    title_bottom = _draw_centered_text(draw, "Instructions", title_font, center_x, title_y, (0, 0, 0, 255))
+    title_bottom = draw_centered_text(draw, "Instructions", title_font, center_x, title_y, (0, 0, 0, 255))
 
     subtitle_y = title_bottom + int(46 * scale)
-    subtitle_bottom = _draw_centered_text(
+    subtitle_bottom = draw_centered_text(
         draw,
         "How to enjoy this book",
         subtitle_font,
@@ -310,7 +235,7 @@ def render_instructions_page(
 
     for idx, instruction in enumerate(instructions, start=1):
         number_text = f"{idx}."
-        num_w, _num_h = _text_size(draw, number_text, number_font)
+        num_w, _num_h = text_size(draw, number_text, number_font)
         draw.text(
             (content_left + number_col_width - num_w, y),
             number_text,
@@ -318,17 +243,17 @@ def render_instructions_page(
             fill=(0, 0, 0, 235),
         )
 
-        lines = _wrap_text(draw, instruction, body_font, max_text_width)
+        lines = wrap_text(draw, instruction, body_font, max_text_width)
         text_y = y
         line_h = int(body_font.size * 1.18)
         for line in lines:
             draw.text((text_left, text_y), line, font=body_font, fill=(0, 0, 0, 235))
             text_y += line_h
 
-        number_h = _text_size(draw, number_text, number_font)[1]
+        number_h = text_size(draw, number_text, number_font)[1]
         y = max(y + number_h, text_y) + row_gap
 
     if filename is None:
         filename = os.path.join("output_puzzles_kdp", "02_instructions.png")
 
-    return _save_page(img, filename)
+    return save_page(img, filename)
