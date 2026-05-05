@@ -20,7 +20,7 @@ from wordsearch.constants_and_layout import (
     wordlist_font_size as WORDLIST_FONT_SIZE,
     title_font_size as TITLE_FONT_SIZE,
 )
-from wordsearch.image_rendering import BACKGROUND_PATH
+from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import (
     draw_centered_lines,
     load_font,
