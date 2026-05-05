@@ -148,7 +148,7 @@ def render_table_of_contents(
     background_path: Optional[str] = None,
 ) -> List[str]:
     """
-    Renderiza un índice editorial compacto.
+    Renderiza un índice editorial con más aire vertical.
 
     Mantiene la firma histórica para que main_thematic.py no tenga que conocer
     detalles de renderizado.
@@ -164,13 +164,13 @@ def render_table_of_contents(
     entry_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.78) * scale)
     page_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.78) * scale)
 
-    y = panel_top + int(70 * scale)
+    y = panel_top + int(96 * scale)
     y = _draw_centered_text(draw, "Table of Contents", title_font, center_x, y, (0, 0, 0, 255))
 
-    y += int(42 * scale)
+    y += int(54 * scale)
     y = _draw_centered_text(draw, "SECTIONS", section_font, center_x, y, (0, 0, 0, 190))
 
-    line_y = y + int(34 * scale)
+    line_y = y + int(44 * scale)
     line_width = int((panel_right - panel_left) * 0.46)
     draw.line(
         (center_x - line_width // 2, line_y, center_x + line_width // 2, line_y),
@@ -178,21 +178,21 @@ def render_table_of_contents(
         width=max(1, int(1.5 * scale)),
     )
 
-    y = line_y + int(82 * scale)
+    y = line_y + int(110 * scale)
     content_left = panel_left + int(70 * scale)
     content_right = panel_right - int(70 * scale)
-    row_gap = int(50 * scale)
+    row_gap = int(78 * scale)
 
     for idx, (label, page_number, _is_section) in enumerate(toc_entries):
         is_solutions = idx == len(toc_entries) - 1 and label.lower() == "solutions"
         if is_solutions:
-            y += int(42 * scale)
+            y += int(70 * scale)
             draw.line(
                 (content_left, y, content_right, y),
                 fill=(0, 0, 0, 75),
                 width=max(1, int(1 * scale)),
             )
-            y += int(48 * scale)
+            y += int(72 * scale)
 
         label_width, label_height = _text_size(draw, label, entry_font)
         page_text = str(page_number)
