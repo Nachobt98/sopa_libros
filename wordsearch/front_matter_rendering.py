@@ -7,7 +7,6 @@ módulo que ya contiene el render principal de puzzles y soluciones.
 
 from __future__ import annotations
 
-import math
 import os
 from typing import List, Optional, Sequence, Tuple
 
@@ -136,15 +135,6 @@ def _draw_centered_text(
     return y + height
 
 
-def _draw_page_number(draw: ImageDraw.ImageDraw, page_number: int, scale: int) -> None:
-    font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.55) * scale)
-    text = str(page_number)
-    width, height = _text_size(draw, text, font)
-    x = PAGE_W_PX * scale // 2 - width // 2
-    y = PAGE_H_PX * scale - int(44 * scale)
-    draw.text((x, y), text, font=font, fill=(0, 0, 0, 210))
-
-
 def _save_page(img: Image.Image, filename: str) -> str:
     img_rgb = img.convert("RGB")
     img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), resample=Image.LANCZOS)
@@ -166,43 +156,43 @@ def render_table_of_contents(
     scale = 3
     img = _make_background(background_path, scale)
     draw = ImageDraw.Draw(img)
-    panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale)
+    panel_left, panel_top, panel_right, _panel_bottom = _draw_main_panel(draw, scale)
 
     center_x = PAGE_W_PX * scale // 2
     title_font = _load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.15) * scale)
-    section_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.72) * scale)
+    section_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.74) * scale)
     entry_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.78) * scale)
     page_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.78) * scale)
 
-    y = panel_top + int(64 * scale)
+    y = panel_top + int(70 * scale)
     y = _draw_centered_text(draw, "Table of Contents", title_font, center_x, y, (0, 0, 0, 255))
 
-    subtitle = "Sections"
-    y += int(36 * scale)
-    y = _draw_centered_text(draw, subtitle.upper(), section_font, center_x, y, (0, 0, 0, 180))
+    y += int(42 * scale)
+    y = _draw_centered_text(draw, "SECTIONS", section_font, center_x, y, (0, 0, 0, 190))
 
-    line_y = y + int(28 * scale)
-    line_width = int((panel_right - panel_left) * 0.42)
+    line_y = y + int(34 * scale)
+    line_width = int((panel_right - panel_left) * 0.46)
     draw.line(
         (center_x - line_width // 2, line_y, center_x + line_width // 2, line_y),
         fill=(0, 0, 0, 95),
         width=max(1, int(1.5 * scale)),
     )
 
-    y = line_y + int(58 * scale)
-    content_left = panel_left + int(64 * scale)
-    content_right = panel_right - int(64 * scale)
-    row_gap = int(42 * scale)
+    y = line_y + int(82 * scale)
+    content_left = panel_left + int(70 * scale)
+    content_right = panel_right - int(70 * scale)
+    row_gap = int(50 * scale)
 
     for idx, (label, page_number, _is_section) in enumerate(toc_entries):
-        if idx == len(toc_entries) - 1 and label.lower() == "solutions":
-            y += int(24 * scale)
+        is_solutions = idx == len(toc_entries) - 1 and label.lower() == "solutions"
+        if is_solutions:
+            y += int(42 * scale)
             draw.line(
                 (content_left, y, content_right, y),
-                fill=(0, 0, 0, 65),
+                fill=(0, 0, 0, 75),
                 width=max(1, int(1 * scale)),
             )
-            y += int(34 * scale)
+            y += int(48 * scale)
 
         label_width, label_height = _text_size(draw, label, entry_font)
         page_text = str(page_number)
@@ -215,17 +205,17 @@ def render_table_of_contents(
         draw.text((label_x, baseline_y), label, font=entry_font, fill=(0, 0, 0, 235))
         draw.text((page_x, baseline_y), page_text, font=page_font, fill=(0, 0, 0, 235))
 
-        dot_start = label_x + label_width + int(16 * scale)
-        dot_end = page_x - int(16 * scale)
+        dot_start = label_x + label_width + int(18 * scale)
+        dot_end = page_x - int(18 * scale)
         dot_y = baseline_y + label_height // 2 + int(2 * scale)
         if dot_end > dot_start:
-            dash_w = int(10 * scale)
-            gap_w = int(8 * scale)
+            dash_w = int(9 * scale)
+            gap_w = int(9 * scale)
             x = dot_start
             while x < dot_end:
                 draw.line(
                     (x, dot_y, min(x + dash_w, dot_end), dot_y),
-                    fill=(0, 0, 0, 75),
+                    fill=(0, 0, 0, 70),
                     width=max(1, int(1 * scale)),
                 )
                 x += dash_w + gap_w
@@ -233,7 +223,6 @@ def render_table_of_contents(
         y += max(label_height, page_height) + row_gap
 
     filename = os.path.join(output_dir, "01_table_of_contents.png")
-    _draw_page_number(draw, 2, scale)
     return [_save_page(img, filename)]
 
 
@@ -243,25 +232,25 @@ def render_instructions_page(
     background_path: Optional[str] = None,
 ) -> str:
     """
-    Renderiza una página de instrucciones más limpia y genérica.
+    Renderiza una página de instrucciones limpia y genérica.
     """
     scale = 3
     img = _make_background(background_path, scale)
     draw = ImageDraw.Draw(img)
-    panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale)
+    panel_left, panel_top, panel_right, _panel_bottom = _draw_main_panel(draw, scale)
 
     center_x = PAGE_W_PX * scale // 2
     title_font = _load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.05) * scale)
     subtitle_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.9) * scale)
-    number_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.82) * scale)
+    number_font = _load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.72) * scale)
     body_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.70) * scale)
 
-    y = panel_top + int(60 * scale)
+    y = panel_top + int(70 * scale)
     y = _draw_centered_text(draw, "Instructions", title_font, center_x, y, (0, 0, 0, 255))
-    y += int(16 * scale)
+    y += int(24 * scale)
     y = _draw_centered_text(draw, "How to enjoy this book", subtitle_font, center_x, y, (0, 0, 0, 220))
 
-    y += int(70 * scale)
+    y += int(80 * scale)
 
     instructions = [
         "Find each word from the list at the bottom of the puzzle page.",
@@ -272,47 +261,33 @@ def render_instructions_page(
         "Check the solutions section at the back of the book if you get stuck.",
     ]
 
-    content_left = panel_left + int(72 * scale)
-    content_right = panel_right - int(72 * scale)
-    text_left = content_left + int(58 * scale)
+    content_left = panel_left + int(80 * scale)
+    content_right = panel_right - int(80 * scale)
+    number_col_width = int(55 * scale)
+    text_left = content_left + number_col_width
     max_text_width = content_right - text_left
-    row_gap = int(34 * scale)
+    row_gap = int(38 * scale)
 
     for idx, instruction in enumerate(instructions, start=1):
-        number_text = str(idx)
-        circle_r = int(19 * scale)
-        circle_cx = content_left + circle_r
-        circle_cy = y + circle_r
-
-        draw.ellipse(
-            (
-                circle_cx - circle_r,
-                circle_cy - circle_r,
-                circle_cx + circle_r,
-                circle_cy + circle_r,
-            ),
+        number_text = f"{idx}."
+        num_w, _num_h = _text_size(draw, number_text, number_font)
+        draw.text(
+            (content_left + number_col_width - num_w, y),
+            number_text,
+            font=number_font,
             fill=(0, 0, 0, 235),
         )
 
-        num_w, num_h = _text_size(draw, number_text, number_font)
-        draw.text(
-            (circle_cx - num_w // 2, circle_cy - num_h // 2 - int(1 * scale)),
-            number_text,
-            font=number_font,
-            fill=(255, 255, 255, 255),
-        )
-
         lines = _wrap_text(draw, instruction, body_font, max_text_width)
-        text_y = y - int(2 * scale)
+        text_y = y
         line_h = int(body_font.size * 1.18)
         for line in lines:
             draw.text((text_left, text_y), line, font=body_font, fill=(0, 0, 0, 235))
             text_y += line_h
 
-        y = max(circle_cy + circle_r, text_y) + row_gap
+        y = text_y + row_gap
 
     if filename is None:
         filename = os.path.join("output_puzzles_kdp", "02_instructions.png")
 
-    _draw_page_number(draw, 3, scale)
     return _save_page(img, filename)
