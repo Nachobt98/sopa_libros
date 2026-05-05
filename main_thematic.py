@@ -7,7 +7,7 @@ Flujo:
 - Pregunta dificultad y tamaño de grid (igual para todo el libro)
 - Valida el libro antes de renderizar
 - Genera todos los grids antes de calcular paginación
-- Genera imágenes (índice, instrucciones, portadas de bloque, puzzles y soluciones)
+- Genera imágenes (portada interior, índice, instrucciones, portadas de bloque, puzzles y soluciones)
 - Genera el PDF final con portada de soluciones incluida
 """
 
@@ -31,6 +31,7 @@ from wordsearch.pdf_book_generation import generate_pdf
 from wordsearch.puzzle_parser import PuzzleParseError, PuzzleSpec, parse_puzzle_file
 from wordsearch.text_normalization import normalize_words_for_grid
 from wordsearch.thematic_validation import validate_thematic_specs
+from wordsearch.title_page_rendering import render_title_page
 from wordsearch.wordlist_utils import slugify
 
 
@@ -122,16 +123,17 @@ def _build_page_plan(
     Calculate page numbers after all puzzles are known to be viable.
 
     Current front matter convention:
-    - page 1: table of contents
-    - page 2: instructions
-    - page 3+: block covers and puzzles
+    - page 1: title page
+    - page 2: table of contents
+    - page 3: instructions
+    - page 4+: block covers and puzzles
     - after puzzles: solutions cover + solution pages
     """
     block_first_page: Dict[str, int] = {}
     blocks_in_order: List[str] = []
     puzzle_page: Dict[int, int] = {}
 
-    current_page = 3
+    current_page = 4
     current_block_name = ""
 
     for generated in generated_puzzles:
@@ -228,7 +230,18 @@ def main():
     solution_imgs: List[str] = []
 
     # ------------------------------------------------------------------
-    # 1) Página de índice
+    # 1) Portada interior del libro
+    # ------------------------------------------------------------------
+    title_page_filename = os.path.join(output_dir, "00_title_page.png")
+    title_page_img = render_title_page(
+        book_title,
+        filename=title_page_filename,
+        background_path=None,
+    )
+    content_imgs.append(title_page_img)
+
+    # ------------------------------------------------------------------
+    # 2) Página de índice
     # ------------------------------------------------------------------
     toc_imgs = render_table_of_contents(
         toc_entries,
@@ -238,7 +251,7 @@ def main():
     content_imgs.extend(toc_imgs)
 
     # ------------------------------------------------------------------
-    # 2) Página de instrucciones
+    # 3) Página de instrucciones
     # ------------------------------------------------------------------
     instr_filename = os.path.join(output_dir, "00_instructions.png")
     instr_img = render_instructions_page(
@@ -249,7 +262,7 @@ def main():
     content_imgs.append(instr_img)
 
     # ------------------------------------------------------------------
-    # 3) Portadas de bloque + puzzles y soluciones
+    # 4) Portadas de bloque + puzzles y soluciones
     # ------------------------------------------------------------------
     current_block_name = ""
     block_index = 0
