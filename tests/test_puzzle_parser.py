@@ -97,7 +97,7 @@ def test_parse_puzzle_missing_closing_tag_raises_error(tmp_path):
         """,
     )
 
-    with pytest.raises(PuzzleParseError, match="Falta '\[/Puzzle\]'"):
+    with pytest.raises(PuzzleParseError, match=r"Falta '\[/Puzzle\]'"):
         parse_puzzle_file(path)
 
 
