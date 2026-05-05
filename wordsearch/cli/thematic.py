@@ -11,10 +11,8 @@ import argparse
 import os
 
 from wordsearch.difficulty_levels import DifficultyLevel, difficulty_settings
-from wordsearch.generation.thematic_pipeline import (
-    ThematicGenerationOptions,
-    generate_thematic_book,
-)
+from wordsearch.domain.book import ThematicGenerationOptions
+from wordsearch.generation.thematic_pipeline import generate_thematic_book
 from wordsearch.grid_size_utils import ask_grid_size
 
 
