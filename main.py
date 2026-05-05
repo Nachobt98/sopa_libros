@@ -6,8 +6,8 @@ import os
 from wordsearch.constants_and_layout import BASE_OUTPUT_DIR
 from wordsearch.wordlist_utils import slugify, prompt_wordlists, validate_wordlists_for_grid
 from wordsearch.grid_generation import place_words_on_grid
-from wordsearch.image_rendering import render_page
-from wordsearch.pdf_book_generation import generate_pdf
+from wordsearch.rendering.puzzle_page import render_page
+from wordsearch.rendering.pdf import generate_pdf
 from wordsearch.difficulty_levels import DifficultyLevel, difficulty_settings
 from wordsearch.grid_size_utils import ask_grid_size
 
@@ -52,7 +52,7 @@ def main():
     if problems:
         print("\n[ERROR] Se han encontrado palabras que no caben en el grid seleccionado.")
         print(f"Tamaño del grid: {grid_size}x{grid_size}")
-        print("Revisa y corrige estas palabras en tus listas (o aumenta el tamaño del grid):\n")
+        print("Revisa y corrige estas palabras en tus listas (o aumenta el tamaño de grid):\n")
 
         # Agrupar por lista para que sea más legible
         by_list = {}
