@@ -21,12 +21,18 @@ class ValidationIssue:
     message: str
     puzzle_index: int | None = None
     puzzle_title: str | None = None
+    context: str | None = None
 
     def format(self) -> str:
         prefix = "ERROR" if self.severity == "error" else "WARNING"
+
+        if self.context:
+            return f"[{prefix}] {self.context}: {self.message}"
+
         if self.puzzle_index is not None:
             title = f" - {self.puzzle_title}" if self.puzzle_title else ""
             return f"[{prefix}] Puzzle {self.puzzle_index + 1}{title}: {self.message}"
+
         return f"[{prefix}] {self.message}"
 
 
@@ -50,6 +56,8 @@ class ThematicValidationReport:
         self,
         message: str,
         puzzle: PuzzleSpec | None = None,
+        *,
+        context: str | None = None,
     ) -> None:
         self.issues.append(
             ValidationIssue(
@@ -57,6 +65,7 @@ class ThematicValidationReport:
                 message=message,
                 puzzle_index=puzzle.index if puzzle else None,
                 puzzle_title=puzzle.title if puzzle else None,
+                context=context,
             )
         )
 
@@ -64,6 +73,8 @@ class ThematicValidationReport:
         self,
         message: str,
         puzzle: PuzzleSpec | None = None,
+        *,
+        context: str | None = None,
     ) -> None:
         self.issues.append(
             ValidationIssue(
@@ -71,22 +82,40 @@ class ThematicValidationReport:
                 message=message,
                 puzzle_index=puzzle.index if puzzle else None,
                 puzzle_title=puzzle.title if puzzle else None,
+                context=context,
             )
         )
 
     def print_summary(self) -> None:
-        print("\n=== Validation report ===")
+        print("\n=== Informe de validación ===")
+
         if not self.issues:
-            print("OK: no validation issues found.")
+            print("OK: no se han encontrado problemas de validación.")
             return
 
-        for issue in self.issues:
-            print(issue.format())
+        if self.errors:
+            print(f"\nERRORES BLOQUEANTES ({len(self.errors)}):")
+            for issue in self.errors:
+                print(f"  - {issue.format()}")
+        else:
+            print("\nERRORES BLOQUEANTES: ninguno.")
+
+        if self.warnings:
+            print(f"\nAVISOS NO BLOQUEANTES ({len(self.warnings)}):")
+            for issue in self.warnings:
+                print(f"  - {issue.format()}")
+        else:
+            print("\nAVISOS NO BLOQUEANTES: ninguno.")
 
         print(
-            f"\nSummary: {len(self.errors)} error(s), "
-            f"{len(self.warnings)} warning(s)."
+            f"\nResumen: {len(self.errors)} error(es), "
+            f"{len(self.warnings)} aviso(s)."
         )
+
+        if self.errors:
+            print("Resultado: la generación se detendrá para evitar un PDF con paginación incorrecta.")
+        else:
+            print("Resultado: se puede continuar con la generación del libro.")
 
 
 def validate_thematic_specs(
@@ -105,8 +134,10 @@ def validate_thematic_specs(
     report = ThematicValidationReport()
 
     if not specs:
-        report.add_error("No puzzles found in the thematic file.")
+        report.add_error("No se ha encontrado ningún puzzle en el archivo temático.")
         return report
+
+    warned_backgrounds: set[str] = set()
 
     for spec in specs:
         _validate_single_spec(
@@ -116,6 +147,7 @@ def validate_thematic_specs(
             min_words_per_puzzle=min_words_per_puzzle,
             max_fact_chars_warning=max_fact_chars_warning,
             check_background_files=check_background_files,
+            warned_backgrounds=warned_backgrounds,
         )
 
     return report
@@ -129,20 +161,21 @@ def _validate_single_spec(
     min_words_per_puzzle: int,
     max_fact_chars_warning: int,
     check_background_files: bool,
+    warned_backgrounds: set[str],
 ) -> None:
     if not spec.title or not spec.title.strip():
-        report.add_error("Missing puzzle title.", spec)
+        report.add_error("Falta el título del puzzle.", spec)
 
     if not spec.fact or not spec.fact.strip():
-        report.add_error("Missing fun fact.", spec)
+        report.add_error("Falta el fun fact del puzzle.", spec)
     elif len(spec.fact.strip()) > max_fact_chars_warning:
         report.add_warning(
-            f"Fun fact has {len(spec.fact.strip())} characters; it may be truncated in the layout.",
+            f"El fun fact tiene {len(spec.fact.strip())} caracteres; puede recortarse visualmente en el layout.",
             spec,
         )
 
     if not spec.words:
-        report.add_error("No words defined.", spec)
+        report.add_error("No hay palabras definidas.", spec)
         return
 
     normalized_seen: Dict[str, str] = {}
@@ -153,7 +186,7 @@ def _validate_single_spec(
 
         if not normalized:
             report.add_error(
-                f"Word '{original}' becomes empty after grid normalization.",
+                f"La palabra '{original}' queda vacía tras normalizarla para el grid.",
                 spec,
             )
             continue
@@ -162,14 +195,14 @@ def _validate_single_spec(
 
         if len(normalized) > grid_size:
             report.add_error(
-                f"Word '{original}' normalizes to '{normalized}' with length {len(normalized)}, "
-                f"which is greater than grid size {grid_size}.",
+                f"La palabra '{original}' se normaliza como '{normalized}' y mide {len(normalized)} letras; "
+                f"no cabe en un grid de tamaño {grid_size}.",
                 spec,
             )
 
         if normalized in normalized_seen and normalized_seen[normalized] != original:
             report.add_warning(
-                f"Words '{normalized_seen[normalized]}' and '{original}' normalize to the same grid text '{normalized}'.",
+                f"'{normalized_seen[normalized]}' y '{original}' se normalizan igual: '{normalized}'.",
                 spec,
             )
         else:
@@ -177,14 +210,31 @@ def _validate_single_spec(
 
     if valid_normalized_count < min_words_per_puzzle:
         report.add_error(
-            f"Only {valid_normalized_count} valid word(s) after normalization; "
-            f"minimum required is {min_words_per_puzzle}.",
+            f"Solo hay {valid_normalized_count} palabra(s) válida(s) tras normalizar; "
+            f"el mínimo requerido es {min_words_per_puzzle}.",
             spec,
         )
 
     if check_background_files and spec.block_background:
-        if not os.path.exists(spec.block_background):
-            report.add_warning(
-                f"Background file '{spec.block_background}' does not exist. White/default background will be used.",
-                spec,
-            )
+        _validate_background_once(spec, report, warned_backgrounds)
+
+
+def _validate_background_once(
+    spec: PuzzleSpec,
+    report: ThematicValidationReport,
+    warned_backgrounds: set[str],
+) -> None:
+    background = spec.block_background
+    if not background or os.path.exists(background):
+        return
+
+    if background in warned_backgrounds:
+        return
+
+    warned_backgrounds.add(background)
+
+    block_name = spec.block_name or "Bloque sin nombre"
+    report.add_warning(
+        f"No se encuentra el fondo '{background}'. Se usará fondo blanco/default.",
+        context=f"Bloque '{block_name}'",
+    )
