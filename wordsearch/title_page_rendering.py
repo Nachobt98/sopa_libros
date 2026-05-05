@@ -8,9 +8,9 @@ antes del índice para dar al PDF una estructura más editorial.
 from __future__ import annotations
 
 import os
-from typing import List, Optional, Tuple
+from typing import Optional
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 from wordsearch.constants_and_layout import (
     FONT_PATH,
@@ -21,73 +21,13 @@ from wordsearch.constants_and_layout import (
     title_font_size as TITLE_FONT_SIZE,
 )
 from wordsearch.image_rendering import BACKGROUND_PATH
-
-
-def _load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
-    try:
-        return ImageFont.truetype(path, size)
-    except Exception:
-        return ImageFont.load_default()
-
-
-def _text_size(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    font: ImageFont.FreeTypeFont,
-) -> Tuple[int, int]:
-    bbox = draw.textbbox((0, 0), text, font=font)
-    return bbox[2] - bbox[0], bbox[3] - bbox[1]
-
-
-def _wrap_text(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    font: ImageFont.FreeTypeFont,
-    max_width: int,
-) -> List[str]:
-    words = text.split()
-    lines: List[str] = []
-    current: List[str] = []
-
-    for word in words:
-        candidate = " ".join(current + [word]).strip()
-        width, _ = _text_size(draw, candidate, font)
-        if width <= max_width or not current:
-            current.append(word)
-        else:
-            lines.append(" ".join(current))
-            current = [word]
-
-    if current:
-        lines.append(" ".join(current))
-
-    return lines
-
-
-def _draw_centered_lines(
-    draw: ImageDraw.ImageDraw,
-    lines: List[str],
-    font: ImageFont.FreeTypeFont,
-    center_x: int,
-    start_y: int,
-    fill,
-    *,
-    line_spacing: float = 1.12,
-    shadow_fill=None,
-    shadow_offset: int = 0,
-) -> int:
-    y = start_y
-    for line in lines:
-        width, height = _text_size(draw, line, font)
-        x = center_x - width // 2
-
-        if shadow_fill is not None and shadow_offset:
-            draw.text((x + shadow_offset, y + shadow_offset), line, font=font, fill=shadow_fill)
-
-        draw.text((x, y), line, font=font, fill=fill)
-        y += int(height * line_spacing)
-
-    return y
+from wordsearch.rendering.common import (
+    draw_centered_lines,
+    load_font,
+    save_page,
+    text_size,
+    wrap_text,
+)
 
 
 def _draw_soft_panel(draw: ImageDraw.ImageDraw, scale: int) -> None:
@@ -175,26 +115,26 @@ def render_title_page(
     title = book_title.strip() or "Word Search Book"
 
     while title_size > min_title_size:
-        title_font = _load_font(FONT_TITLE, title_size)
-        title_lines = _wrap_text(draw, title, title_font, max_width)
-        widest = max((_text_size(draw, line, title_font)[0] for line in title_lines), default=0)
+        title_font = load_font(FONT_TITLE, title_size)
+        title_lines = wrap_text(draw, title, title_font, max_width)
+        widest = max((text_size(draw, line, title_font)[0] for line in title_lines), default=0)
         if widest <= max_width and len(title_lines) <= 4:
             break
         title_size = int(title_size * 0.90)
 
-    title_font = _load_font(FONT_TITLE, title_size)
-    title_lines = _wrap_text(draw, title, title_font, max_width)
+    title_font = load_font(FONT_TITLE, title_size)
+    title_lines = wrap_text(draw, title, title_font, max_width)
 
-    subtitle_font = _load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 1.03) * scale)
+    subtitle_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 1.03) * scale)
 
-    title_block_height = sum(_text_size(draw, line, title_font)[1] for line in title_lines)
+    title_block_height = sum(text_size(draw, line, title_font)[1] for line in title_lines)
     title_block_height += int(title_size * 0.12) * max(0, len(title_lines) - 1)
 
     title_start_y = int(height_hi * 0.265) - title_block_height // 2
     shadow = (0, 0, 0, 60)
     black = (0, 0, 0, 255)
 
-    y = _draw_centered_lines(
+    y = draw_centered_lines(
         draw,
         title_lines,
         title_font,
@@ -210,9 +150,9 @@ def render_title_page(
     sep_w = int(width_hi * 0.38)
     _draw_ornamental_separator(draw, center_x, sep_y, sep_w, scale)
 
-    subtitle_lines = _wrap_text(draw, subtitle, subtitle_font, max_width)
+    subtitle_lines = wrap_text(draw, subtitle, subtitle_font, max_width)
     subtitle_y = sep_y + int(95 * scale)
-    _draw_centered_lines(
+    draw_centered_lines(
         draw,
         subtitle_lines,
         subtitle_font,
@@ -225,7 +165,4 @@ def render_title_page(
     if filename is None:
         filename = os.path.join("output_puzzles_kdp", "00_title_page.png")
 
-    img_rgb = img.convert("RGB")
-    img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), resample=Image.LANCZOS)
-    img_final.save(filename, dpi=(300, 300))
-    return filename
+    return save_page(img, filename)
