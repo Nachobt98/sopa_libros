@@ -16,11 +16,3 @@ def test_new_rendering_modules_are_importable():
     assert callable(generate_pdf)
     assert callable(render_page)
     assert callable(render_title_page)
-
-
-def test_legacy_image_rendering_imports_still_work_during_transition():
-    from wordsearch.image_rendering import BACKGROUND_PATH, render_block_cover, render_page
-
-    assert isinstance(BACKGROUND_PATH, str)
-    assert callable(render_block_cover)
-    assert callable(render_page)
