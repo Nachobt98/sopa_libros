@@ -7,6 +7,12 @@ def test_new_rendering_modules_are_importable():
     )
     from wordsearch.rendering.grid import draw_letter_grid
     from wordsearch.rendering.highlights import build_solution_highlight_layer
+    from wordsearch.rendering.page_frame import (
+        PageFrame,
+        create_page_canvas,
+        draw_page_frame,
+        draw_wrapped_centered_title,
+    )
     from wordsearch.rendering.pdf import generate_pdf
     from wordsearch.rendering.puzzle_page import render_page
     from wordsearch.rendering.solution_page import render_solution_page
@@ -19,6 +25,10 @@ def test_new_rendering_modules_are_importable():
     assert callable(render_table_of_contents)
     assert callable(draw_letter_grid)
     assert callable(build_solution_highlight_layer)
+    assert callable(create_page_canvas)
+    assert callable(draw_page_frame)
+    assert callable(draw_wrapped_centered_title)
+    assert PageFrame.__name__ == "PageFrame"
     assert callable(generate_pdf)
     assert callable(render_page)
     assert callable(render_solution_page)

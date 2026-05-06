@@ -600,8 +600,8 @@ Prueba:
 El proyecto ya permite generar libros funcionales, pero todavía hay mejoras pendientes recomendables:
 
 - seguir unificando el modo simple con la pipeline temática;
-- extraer primitivas reutilizables de layout/renderizado;
-- mover dificultad y prompts de grid a paquetes específicos;
+- extraer primitivas reutilizables adicionales de renderizado cuando aparezca duplicación real;
+- reducir compatibilidad legacy interna del generador de grid;
 - documentar o automatizar instalación de fuentes;
 - ampliar tests de validación, render orchestration y modo simple.
 
