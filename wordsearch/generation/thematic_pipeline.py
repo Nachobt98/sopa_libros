@@ -17,7 +17,7 @@ from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.grid import GridGenerationFailure
 from wordsearch.domain.page_plan import build_page_plan
-from wordsearch.grid_generation import generate_word_search_grid
+from wordsearch.generation.grid import generate_word_search_grid
 from wordsearch.puzzle_parser import PuzzleParseError, PuzzleSpec, parse_puzzle_file
 from wordsearch.rendering.block_cover import render_block_cover
 from wordsearch.rendering.front_matter import render_instructions_page, render_table_of_contents
