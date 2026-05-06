@@ -11,13 +11,13 @@ from __future__ import annotations
 import random
 from typing import Iterable
 
-from wordsearch.difficulty_levels import DifficultyLevel, difficulty_settings
 from wordsearch.domain.grid import (
     GridGenerationFailure,
     GridGenerationOutcome,
     GridGenerationResult,
     PlacedWord,
 )
+from wordsearch.generation.difficulty import DifficultyLevel, difficulty_settings
 
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 DEFAULT_MAX_ATTEMPTS = 50
