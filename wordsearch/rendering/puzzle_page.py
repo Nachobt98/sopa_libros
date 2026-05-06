@@ -1,11 +1,9 @@
-"""
-Puzzle and solution page renderer.
-"""
+"""Puzzle page renderer."""
 
 from __future__ import annotations
 
 import os
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import Iterable, Optional, Sequence
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -32,7 +30,7 @@ from wordsearch.rendering.common import (
     text_size,
     wrap_text,
 )
-from wordsearch.rendering.highlights import build_solution_highlight_layer
+from wordsearch.rendering.grid import draw_letter_grid
 from wordsearch.rendering.word_list import draw_word_list
 
 
@@ -65,16 +63,13 @@ def render_page(
     grid: Sequence[Sequence[str]],
     words: Iterable[str],
     idx: int,
-    is_solution: bool = False,
-    solution_positions=None,  # compatibilidad con código viejo
     background_path: Optional[str] = None,
     filename: Optional[str] = None,
-    placed_words: Optional[Sequence[Tuple[str, Tuple[int, int, int, int]]]] = None,
     puzzle_title: Optional[str] = None,
     fun_fact: Optional[str] = None,
     solution_page_number: Optional[int] = None,
 ) -> str:
-    """Renderiza una página de puzzle o solución."""
+    """Renderiza una página de puzzle."""
     scale = 3
     page_w_hi = PAGE_W_PX * scale
     page_h_hi = PAGE_H_PX * scale
@@ -158,12 +153,9 @@ def render_page(
     # TÍTULO (con wrap)
     # --------------------------------------------------------
     if puzzle_title:
-        if is_solution:
-            title_text = f"Solution – {idx}. {puzzle_title}"
-        else:
-            title_text = f"{idx}. {puzzle_title}"
+        title_text = f"{idx}. {puzzle_title}"
     else:
-        title_text = f"Solution {idx}" if is_solution else f"Puzzle {idx}"
+        title_text = f"Puzzle {idx}"
 
     title_max_width = int(content_right_hi - content_left_hi)
     y_after_title = _draw_wrapped_centered_title(
@@ -183,7 +175,7 @@ def render_page(
     # --------------------------------------------------------
     # FUN FACT – tarjeta con cabecera
     # --------------------------------------------------------
-    if (not is_solution) and fun_fact:
+    if fun_fact:
         fact_label_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.9) * scale)
         fact_text_font_size_hi = int(WORDLIST_FONT_SIZE * 0.5) * scale
 
@@ -297,109 +289,28 @@ def render_page(
     cell_size_hi = int(grid_width_target_hi / max(cols, 1))
 
     grid_w_hi = cell_size_hi * cols
-    grid_h_hi = cell_size_hi * rows
 
     grid_top_hi = grid_top_base
     grid_left_hi = int((content_left_hi + content_right_hi - grid_w_hi) // 2)
 
-    letter_font_size_hi = max(int(cell_size_hi * 0.70), int(18 * scale))
-    font_letter = load_font(FONT_PATH, letter_font_size_hi)
-    font_letter_bold = load_font(FONT_PATH_BOLD, letter_font_size_hi)
-
-    grid_line_width_hi = max(1, int(1.2 * scale))
-    grid_line_color = "#444444"
-
-    highlight_layer = build_solution_highlight_layer(
-        placed_words=placed_words if is_solution else None,
-        rows=rows,
-        cols=cols,
+    grid_bottom_hi = draw_letter_grid(
+        img=img,
+        draw=draw,
+        grid=grid,
+        placed_words=None,
+        is_solution=False,
         grid_left_hi=grid_left_hi,
         grid_top_hi=grid_top_hi,
         cell_size_hi=cell_size_hi,
+        scale=scale,
         page_w_hi=page_w_hi,
         page_h_hi=page_h_hi,
-        scale=scale,
         highlight_fill=highlight_fill,
         highlight_border=highlight_border,
     )
 
     # --------------------------------------------------------
     # GRID (líneas + letras normales)
-    # --------------------------------------------------------
-    for r in range(rows + 1):
-        y = grid_top_hi + r * cell_size_hi
-        draw.line(
-            (grid_left_hi, y, grid_left_hi + grid_w_hi, y),
-            fill=grid_line_color,
-            width=grid_line_width_hi,
-        )
-    for c in range(cols + 1):
-        x = grid_left_hi + c * cell_size_hi
-        draw.line(
-            (x, grid_top_hi, x, grid_top_hi + grid_h_hi),
-            fill=grid_line_color,
-            width=grid_line_width_hi,
-        )
-
-    for r in range(rows):
-        for c in range(cols):
-            x0 = grid_left_hi + c * cell_size_hi
-            y0 = grid_top_hi + r * cell_size_hi
-            cx = x0 + cell_size_hi / 2
-            cy = y0 + cell_size_hi / 2
-            letter = grid[r][c]
-
-            try:
-                draw.text(
-                    (cx, cy),
-                    letter,
-                    fill="black",
-                    font=font_letter,
-                    anchor="mm",
-                )
-            except TypeError:
-                letter_w, letter_h = text_size(draw, letter, font_letter)
-                draw.text(
-                    (cx - letter_w / 2, cy - letter_h / 2),
-                    letter,
-                    fill="black",
-                    font=font_letter,
-                )
-
-
-    # Redibujar letras de las posiciones resaltadas en negrita
-    img.alpha_composite(highlight_layer.overlay)
-    highlight_positions = highlight_layer.positions
-    if is_solution and highlight_positions:
-        for r in range(rows):
-            for c in range(cols):
-                if (r, c) not in highlight_positions:
-                    continue
-                x0 = grid_left_hi + c * cell_size_hi
-                y0 = grid_top_hi + r * cell_size_hi
-                cx = x0 + cell_size_hi / 2
-                cy = y0 + cell_size_hi / 2
-                letter = grid[r][c]
-                try:
-                    draw.text(
-                        (cx, cy),
-                        letter,
-                        fill="black",
-                        font=font_letter_bold,
-                        anchor="mm",
-                    )
-                except TypeError:
-                    letter_w, letter_h = text_size(draw, letter, font_letter_bold)
-                    draw.text(
-                        (cx - letter_w / 2, cy - letter_h / 2),
-                        letter,
-                        fill="black",
-                        font=font_letter_bold,
-                    )
-
-    grid_bottom_hi = grid_top_hi + grid_h_hi
-
-    # --------------------------------------------------------
     # ÁREA INFERIOR (pill + lista)
     # --------------------------------------------------------
     base_gap_hi = int(60 * scale)
@@ -411,7 +322,7 @@ def render_page(
     # PASTILLA "Solution on page X"
     pill_box_h = 0
     pill_y = grid_bottom_hi + base_gap_hi
-    if (not is_solution) and solution_page_number is not None:
+    if solution_page_number is not None:
         pill_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75) * scale)
         pill_text = f"Solution on page {solution_page_number}"
         tw_pill, th_pill = text_size(draw, pill_text, pill_font)
@@ -467,7 +378,7 @@ def render_page(
     if filename is None:
         filename = os.path.join(
             "output_puzzles_kdp",
-            f"puzzle_{idx}{'_sol' if is_solution else ''}.png",
+            f"puzzle_{idx}.png",
         )
 
     return save_page(img, filename)
