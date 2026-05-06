@@ -112,7 +112,7 @@ wordsearch/validation/thematic.py
 Current module:
 
 ```text
-wordsearch/grid_generation.py
+wordsearch/generation/grid.py
 ```
 
 Responsibility:
@@ -122,14 +122,15 @@ Responsibility:
 - Return the generated grid and placed word positions.
 ```
 
-Future target:
+Compatibility wrapper:
 
 ```text
-wordsearch/generation/grid.py
-wordsearch/domain/puzzle.py
+wordsearch/grid_generation.py
 ```
 
-The generated result should eventually use explicit dataclasses instead of raw tuples.
+The generated result uses explicit dataclasses in `wordsearch/domain/grid.py`.
+The root-level module remains as a backward-compatible import wrapper during
+the package reorganization.
 
 ### Difficulty and grid size
 
@@ -239,11 +240,10 @@ Eventually this should move from global constants to explicit layout/font/theme 
 
 ```text
 1. Rendering submodules can still be split further: highlights, word list and solution-page concerns.
-2. Grid placement uses tuple-heavy structures.
-3. Coverage is still low outside parser, normalization and page planning.
-4. No lint/format/type tooling yet.
-5. Simple and thematic generation do not share a unified pipeline.
-6. Layout/font/theme config still lives in global constants.
+2. Coverage is still low outside parser, normalization, grid generation and page planning.
+3. Ruff is enabled only for basic correctness checks so far.
+4. Simple and thematic generation do not share a unified pipeline.
+5. Layout/font/theme config still lives in global constants.
 ```
 
 ## Refactor direction

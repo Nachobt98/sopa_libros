@@ -2,10 +2,10 @@ import random
 
 import pytest
 
-from wordsearch import grid_generation as gg
 from wordsearch.difficulty_levels import DifficultyLevel
 from wordsearch.domain.grid import GridGenerationFailure, GridGenerationResult, PlacedWord
-from wordsearch.grid_generation import generate_word_search_grid, place_words_on_grid
+from wordsearch.generation import grid as gg
+from wordsearch.generation.grid import generate_word_search_grid, place_words_on_grid
 
 
 def test_generate_word_search_grid_returns_structured_result():
