@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from typing import Iterable, Optional, Sequence, Tuple
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import ImageDraw
 
 from wordsearch.config.fonts import (
     FONT_PATH,
@@ -13,45 +13,14 @@ from wordsearch.config.fonts import (
     title_font_size as TITLE_FONT_SIZE,
     wordlist_font_size as WORDLIST_FONT_SIZE,
 )
-from wordsearch.config.layout import (
-    PAGE_H_PX,
-    PAGE_W_PX,
-    SAFE_BOTTOM,
-    SAFE_LEFT,
-    SAFE_RIGHT,
-    TOP_PX,
-)
-from wordsearch.rendering.backgrounds import BACKGROUND_PATH
-from wordsearch.rendering.common import (
-    load_font,
-    rounded_rectangle,
-    save_page,
-    text_size,
-    wrap_text,
-)
+from wordsearch.rendering.common import load_font, save_page
 from wordsearch.rendering.grid import draw_letter_grid
+from wordsearch.rendering.page_frame import (
+    create_page_canvas,
+    draw_page_frame,
+    draw_wrapped_centered_title,
+)
 from wordsearch.rendering.word_list import draw_word_list
-
-
-def _draw_wrapped_centered_title(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    font: ImageFont.FreeTypeFont,
-    max_width: int,
-    start_y: int,
-    area_left: int,
-    area_right: int,
-    line_spacing: float = 1.05,
-) -> int:
-    lines = wrap_text(draw, text, font, max_width)
-    y = start_y
-    container_width = max(0, area_right - area_left)
-    for line in lines:
-        width, height = text_size(draw, line, font)
-        x = area_left + max(0, (container_width - width) // 2)
-        draw.text((x, y), line, font=font, fill=(0, 0, 0, 255))
-        y += int(height * line_spacing)
-    return y
 
 
 def render_solution_page(
@@ -66,52 +35,17 @@ def render_solution_page(
 ) -> str:
     """Render a solution page with highlighted placed words."""
     scale = 3
-    page_w_hi = PAGE_W_PX * scale
-    page_h_hi = PAGE_H_PX * scale
-
-    safe_left_hi = SAFE_LEFT * scale
-    safe_right_hi = SAFE_RIGHT * scale
-    safe_bottom_hi = SAFE_BOTTOM * scale
-    top_px_hi = TOP_PX * scale
-
-    bg_path = background_path or BACKGROUND_PATH
-    if bg_path and os.path.exists(bg_path):
-        bg = Image.open(bg_path).convert("RGBA")
-        bg = bg.resize((page_w_hi, page_h_hi), Image.LANCZOS)
-        if bg.mode == "RGBA":
-            red, green, blue, alpha = bg.split()
-            alpha = alpha.point(lambda value: int(value * 0.7))
-            bg = Image.merge("RGBA", (red, green, blue, alpha))
-        img = bg
-    else:
-        img = Image.new("RGBA", (page_w_hi, page_h_hi), (255, 255, 255, 255))
-
+    img = create_page_canvas(background_path, scale)
     draw = ImageDraw.Draw(img)
+    frame = draw_page_frame(draw=draw, scale=scale)
 
-    panel_pad_x = int(30 * scale)
-    panel_pad_top = int(40 * scale)
-    panel_pad_bottom = int(40 * scale)
-
-    panel_left = max(0, safe_left_hi - panel_pad_x)
-    panel_top = max(0, top_px_hi - panel_pad_top)
-    panel_right = min(page_w_hi, safe_right_hi + panel_pad_x)
-    panel_bottom = min(page_h_hi, safe_bottom_hi + panel_pad_bottom)
-
-    title_fact_area_hi = int(600 * scale)
-    grid_top_base = panel_top + title_fact_area_hi
-
-    rounded_rectangle(
-        draw,
-        (panel_left, panel_top, panel_right, panel_bottom),
-        radius=int(35 * scale),
-        fill=(255, 255, 255, 150),
-        outline=(0, 0, 0, 60),
-        width=max(1, int(3 * scale)),
-    )
-
-    content_margin_x = int(40 * scale)
-    content_left_hi = panel_left + content_margin_x
-    content_right_hi = panel_right - content_margin_x
+    page_w_hi = frame.page_w_hi
+    page_h_hi = frame.page_h_hi
+    safe_bottom_hi = frame.safe_bottom_hi
+    panel_top = frame.panel_top
+    content_left_hi = frame.content_left_hi
+    content_right_hi = frame.content_right_hi
+    grid_top_base = frame.grid_top_base
 
     font_title = load_font(FONT_TITLE, TITLE_FONT_SIZE * scale)
     text_color = (0, 0, 0, 255)
@@ -119,7 +53,7 @@ def render_solution_page(
     highlight_border = (0, 0, 0, 255)
 
     title_text = f"Solution – {idx}. {puzzle_title}" if puzzle_title else f"Solution {idx}"
-    _draw_wrapped_centered_title(
+    draw_wrapped_centered_title(
         draw,
         title_text,
         font_title,

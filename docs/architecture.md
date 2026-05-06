@@ -187,6 +187,7 @@ wordsearch/rendering/block_cover.py
 wordsearch/rendering/grid.py
 wordsearch/rendering/highlights.py
 wordsearch/rendering/word_list.py
+wordsearch/rendering/page_frame.py
 wordsearch/rendering/puzzle_page.py
 wordsearch/rendering/solution_page.py
 wordsearch/rendering/pdf.py
@@ -196,6 +197,7 @@ Responsibility:
 
 ```text
 - Render puzzle pages and solution pages.
+- Share common puzzle/solution page frame, background and title layout.
 - Render title page, table of contents and instructions.
 - Render block covers.
 - Export final PDF.

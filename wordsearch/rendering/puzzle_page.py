@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from typing import Iterable, Optional, Sequence
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import ImageDraw
 
 from wordsearch.config.fonts import (
     FONT_PATH,
@@ -14,15 +14,6 @@ from wordsearch.config.fonts import (
     title_font_size as TITLE_FONT_SIZE,
     wordlist_font_size as WORDLIST_FONT_SIZE,
 )
-from wordsearch.config.layout import (
-    PAGE_H_PX,
-    PAGE_W_PX,
-    SAFE_BOTTOM,
-    SAFE_LEFT,
-    SAFE_RIGHT,
-    TOP_PX,
-)
-from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import (
     load_font,
     rounded_rectangle,
@@ -31,32 +22,12 @@ from wordsearch.rendering.common import (
     wrap_text,
 )
 from wordsearch.rendering.grid import draw_letter_grid
+from wordsearch.rendering.page_frame import (
+    create_page_canvas,
+    draw_page_frame,
+    draw_wrapped_centered_title,
+)
 from wordsearch.rendering.word_list import draw_word_list
-
-
-def _draw_wrapped_centered_title(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    font: ImageFont.FreeTypeFont,
-    max_width: int,
-    start_y: int,
-    area_left: int,
-    area_right: int,
-    line_spacing: float = 1.05,
-) -> int:
-    """
-    Dibuja el título centrado con word-wrap si es muy largo.
-    Devuelve la coordenada y justo debajo del bloque de título.
-    """
-    lines = wrap_text(draw, text, font, max_width)
-    y = start_y
-    container_width = max(0, area_right - area_left)
-    for line in lines:
-        width, height = text_size(draw, line, font)
-        x = area_left + max(0, (container_width - width) // 2)
-        draw.text((x, y), line, font=font, fill=(0, 0, 0, 255))
-        y += int(height * line_spacing)
-    return y
 
 
 def render_page(
@@ -71,64 +42,17 @@ def render_page(
 ) -> str:
     """Renderiza una página de puzzle."""
     scale = 3
-    page_w_hi = PAGE_W_PX * scale
-    page_h_hi = PAGE_H_PX * scale
-
-    safe_left_hi = SAFE_LEFT * scale
-    safe_right_hi = SAFE_RIGHT * scale
-    safe_bottom_hi = SAFE_BOTTOM * scale
-    top_px_hi = TOP_PX * scale
-
-    # --- Fondo de página (PNG opcional) ---
-    bg_path = background_path or BACKGROUND_PATH
-
-    if bg_path and os.path.exists(bg_path):
-        bg = Image.open(bg_path).convert("RGBA")
-        bg = bg.resize((page_w_hi, page_h_hi), Image.LANCZOS)
-
-        if bg.mode == "RGBA":
-            r, g, b, a = bg.split()
-            a = a.point(lambda value: int(value * 0.7))  # 70% opacidad
-            bg = Image.merge("RGBA", (r, g, b, a))
-
-        img = bg
-    else:
-        img = Image.new("RGBA", (page_w_hi, page_h_hi), (255, 255, 255, 255))
-
+    img = create_page_canvas(background_path, scale)
     draw = ImageDraw.Draw(img)
+    frame = draw_page_frame(draw=draw, scale=scale)
 
-    # === PANEL BLANCO PRINCIPAL PARA TODO EL CONTENIDO ===
-    panel_pad_x = int(30 * scale)
-    panel_pad_top = int(40 * scale)
-    panel_pad_bottom = int(40 * scale)
-
-    panel_left = safe_left_hi - panel_pad_x
-    panel_right = safe_right_hi + panel_pad_x
-    panel_top = top_px_hi - panel_pad_top
-    panel_bottom = safe_bottom_hi + panel_pad_bottom
-
-    # Altura máxima permitida para título + FUN FACT
-    title_fact_area_hi = int(600 * scale)
-    grid_top_base = panel_top + title_fact_area_hi
-
-    panel_left = max(0, panel_left)
-    panel_top = max(0, panel_top)
-    panel_right = min(page_w_hi, panel_right)
-    panel_bottom = min(page_h_hi, panel_bottom)
-
-    rounded_rectangle(
-        draw,
-        (panel_left, panel_top, panel_right, panel_bottom),
-        radius=int(35 * scale),
-        fill=(255, 255, 255, 150),
-        outline=(0, 0, 0, 60),
-        width=max(1, int(3 * scale)),
-    )
-
-    # Área común de contenido dentro del panel
-    content_margin_x = int(40 * scale)
-    content_left_hi = panel_left + content_margin_x
-    content_right_hi = panel_right - content_margin_x
+    page_w_hi = frame.page_w_hi
+    page_h_hi = frame.page_h_hi
+    safe_bottom_hi = frame.safe_bottom_hi
+    panel_top = frame.panel_top
+    content_left_hi = frame.content_left_hi
+    content_right_hi = frame.content_right_hi
+    grid_top_base = frame.grid_top_base
     min_gap_hi = int(30 * scale)
 
     # Fuentes
@@ -158,7 +82,7 @@ def render_page(
         title_text = f"Puzzle {idx}"
 
     title_max_width = int(content_right_hi - content_left_hi)
-    y_after_title = _draw_wrapped_centered_title(
+    y_after_title = draw_wrapped_centered_title(
         draw,
         title_text,
         font_title,
@@ -310,7 +234,6 @@ def render_page(
     )
 
     # --------------------------------------------------------
-    # GRID (líneas + letras normales)
     # ÁREA INFERIOR (pill + lista)
     # --------------------------------------------------------
     base_gap_hi = int(60 * scale)
