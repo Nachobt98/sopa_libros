@@ -18,7 +18,7 @@ from wordsearch.generation.grid_batch import generate_thematic_grids
 from wordsearch.puzzle_parser import PuzzleParseError, parse_puzzle_file
 from wordsearch.rendering.pdf import generate_pdf
 from wordsearch.thematic_validation import validate_thematic_specs
-from wordsearch.wordlist_utils import slugify
+from wordsearch.utils.slug import slugify
 
 
 def print_run_summary(options: ThematicGenerationOptions) -> None:

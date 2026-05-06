@@ -87,15 +87,17 @@ Responsibility:
 
 ### Validation
 
-Current module:
+Current modules:
 
 ```text
+wordsearch/validation/simple_wordlists.py
 wordsearch/thematic_validation.py
 ```
 
 Responsibility:
 
 ```text
+- Validate simple word lists before legacy/simple generation.
 - Validate parsed puzzle specs before rendering.
 - Detect blocking errors such as words that do not fit the grid.
 - Report non-blocking warnings such as missing backgrounds or duplicate normalized words.
@@ -174,6 +176,33 @@ Responsibility:
 ```
 
 The current page plan is represented by an explicit `PagePlan` dataclass.
+
+### Word list input and slugs
+
+Current modules:
+
+```text
+wordsearch/io/wordlists.py
+wordsearch/cli/wordlist_prompts.py
+wordsearch/utils/slug.py
+```
+
+Responsibility:
+
+```text
+- Load simple word lists from TXT files.
+- Prompt for simple word list source in the legacy/simple CLI.
+- Build filesystem-safe output slugs for book folders and filenames.
+```
+
+Compatibility wrapper:
+
+```text
+wordsearch/wordlist_utils.py
+```
+
+The old mixed utility module remains as a backward-compatible import wrapper
+while internal code imports from the responsibility-specific modules.
 
 ### Rendering
 
