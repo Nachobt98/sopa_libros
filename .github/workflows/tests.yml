@@ -34,7 +34,11 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          python -m pytest --cov=wordsearch --cov-report=term-missing --cov-report=xml:coverage.xml
+          python -m pytest --cov=wordsearch --cov-report=term-missing --cov-report=xml
+
+      - name: Verify coverage report
+        run: |
+          test -f coverage.xml
 
       - name: Run SonarCloud analysis
         if: ${{ env.SONAR_TOKEN != '' }}
