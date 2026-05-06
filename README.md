@@ -432,7 +432,10 @@ Algunos archivos temáticos referencian fondos como:
 assets/world.png
 ```
 
-Si el fondo existe, se usa como background de página/bloque. Si no existe, el renderizado cae a fondo blanco.
+Antes de generar, el proyecto valida fuentes requeridas, fondos configurados y
+que la carpeta de salida se pueda escribir. Si falta una fuente, la generación
+se detiene. Si falta un fondo, se muestra un aviso y el renderizado cae a fondo
+blanco.
 
 Para añadir fondos propios:
 
@@ -600,7 +603,6 @@ Prueba:
 El proyecto ya permite generar libros funcionales, pero todavía hay mejoras pendientes recomendables:
 
 - extraer primitivas reutilizables adicionales de renderizado cuando aparezca duplicación real;
-- documentar o automatizar instalación de fuentes;
 - ampliar tests de validación y rendering de bajo nivel.
 
 ---

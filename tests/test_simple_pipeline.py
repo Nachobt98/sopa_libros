@@ -2,6 +2,7 @@ from wordsearch.domain.book import SimpleGenerationOptions
 from wordsearch.domain.grid import GridGenerationFailure, GridGenerationResult, PlacedWord
 from wordsearch.generation import simple_pipeline
 from wordsearch.generation.difficulty import DifficultyLevel
+from wordsearch.validation.assets import AssetValidationReport
 
 
 def make_options() -> SimpleGenerationOptions:
@@ -48,6 +49,11 @@ def test_generate_simple_book_renders_images_and_pdf(monkeypatch, tmp_path):
         return outname
 
     monkeypatch.setattr(simple_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setattr(
+        simple_pipeline,
+        "validate_generation_assets",
+        lambda **kwargs: AssetValidationReport(),
+    )
     monkeypatch.setattr(simple_pipeline, "validate_wordlists_for_grid", lambda *args, **kwargs: [])
     monkeypatch.setattr(simple_pipeline, "generate_word_search_grid", fake_generate_word_search_grid)
     monkeypatch.setattr(simple_pipeline, "render_page", fake_render_page)
@@ -80,6 +86,11 @@ def test_generate_simple_book_stops_on_validation_errors(monkeypatch, tmp_path):
     monkeypatch.setattr(simple_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
     monkeypatch.setattr(
         simple_pipeline,
+        "validate_generation_assets",
+        lambda **kwargs: AssetValidationReport(),
+    )
+    monkeypatch.setattr(
+        simple_pipeline,
         "validate_wordlists_for_grid",
         lambda *args, **kwargs: validation_errors,
     )
@@ -96,8 +107,31 @@ def test_generate_simple_book_stops_on_validation_errors(monkeypatch, tmp_path):
     assert called["grid"] is False
 
 
+def test_generate_simple_book_stops_on_asset_errors(monkeypatch, tmp_path):
+    asset_report = AssetValidationReport()
+    asset_report.add_error("missing font", path="font.ttf")
+    called = {"word_validation": False}
+
+    monkeypatch.setattr(simple_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setattr(simple_pipeline, "validate_generation_assets", lambda **kwargs: asset_report)
+
+    def fake_validate_wordlists_for_grid(*args, **kwargs):
+        called["word_validation"] = True
+        raise AssertionError("word validation should not run after asset errors")
+
+    monkeypatch.setattr(simple_pipeline, "validate_wordlists_for_grid", fake_validate_wordlists_for_grid)
+
+    assert simple_pipeline.generate_simple_book(make_options()) is None
+    assert called["word_validation"] is False
+
+
 def test_generate_simple_book_stops_on_grid_failure(monkeypatch, tmp_path):
     monkeypatch.setattr(simple_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setattr(
+        simple_pipeline,
+        "validate_generation_assets",
+        lambda **kwargs: AssetValidationReport(),
+    )
     monkeypatch.setattr(simple_pipeline, "validate_wordlists_for_grid", lambda *args, **kwargs: [])
     monkeypatch.setattr(simple_pipeline._WORD_SHUFFLER, "shuffle", lambda words: None)
     monkeypatch.setattr(
@@ -124,6 +158,11 @@ def test_generate_simple_book_stops_on_grid_failure(monkeypatch, tmp_path):
 
 def test_generate_simple_book_returns_none_when_pdf_is_locked(monkeypatch, tmp_path):
     monkeypatch.setattr(simple_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setattr(
+        simple_pipeline,
+        "validate_generation_assets",
+        lambda **kwargs: AssetValidationReport(),
+    )
     monkeypatch.setattr(simple_pipeline, "validate_wordlists_for_grid", lambda *args, **kwargs: [])
     monkeypatch.setattr(simple_pipeline._WORD_SHUFFLER, "shuffle", lambda words: None)
     monkeypatch.setattr(
