@@ -239,9 +239,9 @@ testing or format customization.
 ## Current pain points
 
 ```text
-1. Coverage is still low outside parser, normalization, grid generation and page planning.
+1. Coverage is still low in low-level rendering modules.
 2. Ruff is enabled only for basic correctness checks so far.
-3. Simple and thematic generation still have separate orchestration details.
+3. Simple and thematic generation still have some duplicated orchestration concepts.
 4. Layout/font/theme config still uses module constants instead of explicit config objects.
 ```
 
@@ -252,7 +252,7 @@ The refactor should be incremental. Avoid large PRs that move files, change beha
 Recommended order:
 
 ```text
-1. Expand coverage around validation, rendering orchestration and simple generation.
+1. Expand coverage around validation and low-level rendering helpers.
 2. Introduce explicit layout/font/theme config objects when customization requires it.
 3. Add advanced CLI options such as --seed, --validate-only and --clean-output.
 ```

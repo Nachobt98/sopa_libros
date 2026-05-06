@@ -599,10 +599,9 @@ Prueba:
 
 El proyecto ya permite generar libros funcionales, pero todavía hay mejoras pendientes recomendables:
 
-- ampliar tests de orquestación del modo simple y temático;
 - extraer primitivas reutilizables adicionales de renderizado cuando aparezca duplicación real;
 - documentar o automatizar instalación de fuentes;
-- ampliar tests de validación y render orchestration.
+- ampliar tests de validación y rendering de bajo nivel.
 
 ---
 
