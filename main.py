@@ -1,140 +1,72 @@
-"""
-Script principal para generar libros de sopas de letras con niveles de dificultad.
-"""
+"""Interactive entry point for the simple word-search book generator."""
 
-import os
-import random
+from __future__ import annotations
 
 from wordsearch.cli.grid_size_prompts import ask_grid_size
 from wordsearch.cli.wordlist_prompts import prompt_wordlists
-from wordsearch.config.paths import BASE_OUTPUT_DIR
-from wordsearch.domain.grid import GridGenerationFailure
+from wordsearch.domain.book import SimpleGenerationOptions
 from wordsearch.generation.difficulty import DifficultyLevel, difficulty_settings
-from wordsearch.generation.grid import generate_word_search_grid
-from wordsearch.rendering.pdf import generate_pdf
-from wordsearch.rendering.puzzle_page import render_page
-from wordsearch.rendering.solution_page import render_solution_page
-from wordsearch.utils.slug import slugify
-from wordsearch.validation.simple_wordlists import validate_wordlists_for_grid
+from wordsearch.generation.simple_pipeline import generate_simple_book
 
-# Puedes expandir este main para pedir dificultad, etc.
-def main():
+
+def _ask_book_title() -> str:
     book_title = input("Título del libro (p.ej. 'Wordsearch Animals Vol 1'): ").strip()
-    if not book_title:
-        book_title = "Wordsearch Book"
-    slug = slugify(book_title)
-    output_dir = os.path.join(BASE_OUTPUT_DIR, slug)
-    os.makedirs(output_dir, exist_ok=True)
-    print(f"\nLos archivos se guardarán en: {output_dir}")
+    return book_title or "Wordsearch Book"
 
-    # Selección de dificultad
+
+def _ask_difficulty() -> DifficultyLevel:
     print("\nNiveles de dificultad disponibles:")
-    for i, lvl in enumerate(DifficultyLevel, 1):
-        print(f"{i}) {difficulty_settings[lvl]['name']} ({lvl.value})")
+    for index, level in enumerate(DifficultyLevel, 1):
+        print(f"{index}) {difficulty_settings[level]['name']} ({level.value})")
+
     diff_choice = input("Elige dificultad [1/2/3, por defecto 1]: ").strip() or "1"
     try:
-        diff = list(DifficultyLevel)[int(diff_choice)-1]
-    except Exception:
-        diff = DifficultyLevel.EASY
+        return list(DifficultyLevel)[int(diff_choice) - 1]
+    except (ValueError, IndexError):
+        return DifficultyLevel.EASY
 
-    settings = difficulty_settings[diff]
-    grid_size = ask_grid_size(settings)
 
-    # -------------------------------------------------
-    # 4) Listas de palabras
-    # -------------------------------------------------
+def _ask_total_puzzles(source_type: str, wordlist_count: int) -> int:
+    if source_type == "txt":
+        print(f"\nOrigen TXT detectado: se generarán {wordlist_count} sopas de letras (una por lista).")
+        return wordlist_count
+
+    default_total = 10
+    while True:
+        total_raw = input(f"\n¿Cuántos puzzles quieres generar? [por defecto {default_total}]: ").strip()
+        if not total_raw:
+            return default_total
+        try:
+            total = int(total_raw)
+            if total <= 0:
+                raise ValueError
+            return total
+        except ValueError:
+            print("Introduce un número entero positivo, por favor.")
+
+
+def main() -> None:
+    book_title = _ask_book_title()
+    difficulty = _ask_difficulty()
+    grid_size = ask_grid_size(difficulty_settings[difficulty])
+
     predefined_wordlists = [
         ["gato", "perro", "casa", "luna", "sol", "arbol", "cielo", "mar"],
         ["python", "codigo", "amazon", "kdp", "libro", "puzzle", "print"],
     ]
-
     wordlists, source_type = prompt_wordlists(predefined_wordlists)
+    total_puzzles = _ask_total_puzzles(source_type, len(wordlists))
 
-    # -------------------------------------------------
-    # 5) Validar que todas las palabras caben en el grid
-    # -------------------------------------------------
-    problems = validate_wordlists_for_grid(wordlists, grid_size, remove_spaces=True)
-
-    if problems:
-        print("\n[ERROR] Se han encontrado palabras que no caben en el grid seleccionado.")
-        print(f"Tamaño del grid: {grid_size}x{grid_size}")
-        print("Revisa y corrige estas palabras en tus listas (o aumenta el tamaño de grid):\n")
-
-        # Agrupar por lista para que sea más legible
-        by_list = {}
-        for p in problems:
-            by_list.setdefault(p["list_index"], []).append(p)
-
-        for li, items in by_list.items():
-            print(f"  - Lista #{li + 1}:")
-            for p in items:
-                print(
-                    f"      • '{p['word']}' (limpia: '{p['clean_word']}') "
-                    f"tiene longitud {p['length']} > {grid_size}"
-                )
-            print()
-
-        print("Corrige el archivo de palabras (o el tamaño de grid) y vuelve a ejecutar el script.")
-        # Salir sin intentar generar nada
-        return
-
-
-    # -------------------------------------------------
-    # 6) Número de puzzles
-    # -------------------------------------------------
-    if source_type == "txt":
-        # Un puzzle por cada lista en el archivo
-        total = len(wordlists)
-        print(f"\nOrigen TXT detectado: se generarán {total} sopas de letras (una por lista).")
-    else:
-        default_total = 10
-        while True:
-            total_raw = input(f"\n¿Cuántos puzzles quieres generar? [por defecto {default_total}]: ").strip()
-            if not total_raw:
-                total = default_total
-                break
-            try:
-                total = int(total_raw)
-                if total <= 0:
-                    raise ValueError
-                break
-            except ValueError:
-                print("Introduce un número entero positivo, por favor.")
-
-
-
-    puzzles = []
-    solutions = []
-    for i in range(1, total + 1):
-        wl = wordlists[(i-1) % len(wordlists)].copy()
-        random.shuffle(wl)
-        max_tries = 10
-        grid_result = generate_word_search_grid(
-            wl,
-            difficulty=diff,
+    generate_simple_book(
+        SimpleGenerationOptions(
+            book_title=book_title,
+            wordlists=wordlists,
+            difficulty=difficulty,
             grid_size=grid_size,
-            max_attempts=max_tries,
+            total_puzzles=total_puzzles,
         )
-        if isinstance(grid_result, GridGenerationFailure):
-            print(f"[Aviso] Puzzle #{i}: no se ha podido generar un grid válido tras {max_tries} intentos.")
-            print("Probablemente hay demasiadas palabras o la lista es muy densa para este tamaño de grid.")
-            print("Ajusta manualmente la lista o el tamaño y vuelve a intentarlo.")
-            return
+    )
 
-        puzzle_img = render_page(
-            grid_result.grid, wl, i,
-            filename=os.path.join(output_dir, f"puzzle_{i}.png"),
-        )
-        solution_img = render_solution_page(
-            grid_result.grid, wl, i,
-            filename=os.path.join(output_dir, f"puzzle_{i}_sol.png"),
-            placed_words=grid_result.placed_words,
-        )
-        puzzles.append(puzzle_img)
-        solutions.append(solution_img)
-    pdf_name = f"{slug}.pdf"
-    pdf_final = generate_pdf(puzzles, solutions, outname=os.path.join(output_dir, pdf_name))
-    print("\nPDF generado:", pdf_final)
 
 if __name__ == "__main__":
     main()

@@ -40,7 +40,8 @@ py main_thematic.py --title "Black History Word Search Collection" --input wordl
 
 ### `main.py`
 
-Simple generator entry point. It should eventually share more infrastructure with the thematic pipeline.
+Simple generator entry point. It resolves interactive options and delegates
+generation to `wordsearch/generation/simple_pipeline.py`.
 
 ## Core modules
 
@@ -106,6 +107,10 @@ Current module:
 
 ```text
 wordsearch/generation/grid.py
+wordsearch/generation/simple_pipeline.py
+wordsearch/generation/thematic_pipeline.py
+wordsearch/generation/grid_batch.py
+wordsearch/generation/book_assembly.py
 ```
 
 Responsibility:
@@ -113,6 +118,7 @@ Responsibility:
 ```text
 - Place words into a letter grid according to difficulty.
 - Return the generated grid and placed word positions.
+- Orchestrate simple and thematic book generation after CLI options are resolved.
 ```
 
 The generated result uses explicit dataclasses in `wordsearch/domain/grid.py`.
@@ -235,7 +241,7 @@ testing or format customization.
 ```text
 1. Coverage is still low outside parser, normalization, grid generation and page planning.
 2. Ruff is enabled only for basic correctness checks so far.
-3. Simple and thematic generation do not share a unified pipeline.
+3. Simple and thematic generation still have separate orchestration details.
 4. Layout/font/theme config still uses module constants instead of explicit config objects.
 ```
 
@@ -246,10 +252,9 @@ The refactor should be incremental. Avoid large PRs that move files, change beha
 Recommended order:
 
 ```text
-1. Introduce explicit layout/font/theme config objects when customization requires it.
-2. Unify the simple generator with the thematic pipeline structure.
+1. Expand coverage around validation, rendering orchestration and simple generation.
+2. Introduce explicit layout/font/theme config objects when customization requires it.
 3. Add advanced CLI options such as --seed, --validate-only and --clean-output.
-4. Expand coverage around validation, rendering orchestration and simple generation.
 ```
 
 ## Stability rule
