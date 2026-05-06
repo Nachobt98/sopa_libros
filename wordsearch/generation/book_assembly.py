@@ -12,7 +12,7 @@ from wordsearch.rendering.block_cover import render_block_cover
 from wordsearch.rendering.front_matter import render_instructions_page, render_table_of_contents
 from wordsearch.rendering.puzzle_page import render_page
 from wordsearch.rendering.title_page import render_title_page
-from wordsearch.wordlist_utils import slugify
+from wordsearch.utils.slug import slugify
 
 TocEntry = Tuple[str, int, bool]
 
