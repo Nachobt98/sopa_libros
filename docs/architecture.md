@@ -138,8 +138,8 @@ wordsearch/grid_generation.py
 ```
 
 The generated result uses explicit dataclasses in `wordsearch/domain/grid.py`.
-The root-level module remains as a backward-compatible import wrapper during
-the package reorganization.
+The root-level module remains as a backward-compatible import wrapper, but
+internal code should import from `wordsearch/generation/grid.py`.
 
 ### Difficulty and grid size
 
@@ -271,8 +271,9 @@ wordsearch/constants_and_layout.py
 ```
 
 The root-level constants module remains as a backward-compatible import wrapper.
-The next step is to move from module constants to explicit layout/font/theme
-config objects where that improves testing or format customization.
+Internal code should import directly from `wordsearch/config/`. The next step is
+to move from module constants to explicit layout/font/theme config objects where
+that improves testing or format customization.
 
 ## Current pain points
 

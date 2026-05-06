@@ -3,11 +3,11 @@ Script principal para generar libros de sopas de letras con niveles de dificulta
 """
 
 import os
-from wordsearch.constants_and_layout import BASE_OUTPUT_DIR
 from wordsearch.cli.wordlist_prompts import prompt_wordlists
+from wordsearch.config.paths import BASE_OUTPUT_DIR
+from wordsearch.generation.grid import place_words_on_grid
 from wordsearch.utils.slug import slugify
 from wordsearch.validation.simple_wordlists import validate_wordlists_for_grid
-from wordsearch.grid_generation import place_words_on_grid
 from wordsearch.rendering.puzzle_page import render_page
 from wordsearch.rendering.pdf import generate_pdf
 from wordsearch.difficulty_levels import DifficultyLevel, difficulty_settings
