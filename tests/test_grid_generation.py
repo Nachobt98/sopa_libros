@@ -2,9 +2,9 @@ import random
 
 import pytest
 
-from wordsearch.difficulty_levels import DifficultyLevel
 from wordsearch.domain.grid import GridGenerationFailure, GridGenerationResult, PlacedWord
 from wordsearch.generation import grid as gg
+from wordsearch.generation.difficulty import DifficultyLevel
 from wordsearch.generation.grid import generate_word_search_grid, place_words_on_grid
 
 

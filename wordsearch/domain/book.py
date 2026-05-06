@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from wordsearch.difficulty_levels import DifficultyLevel
+from wordsearch.generation.difficulty import DifficultyLevel
 
 
 @dataclass

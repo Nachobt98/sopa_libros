@@ -122,8 +122,8 @@ The generated result uses explicit dataclasses in `wordsearch/domain/grid.py`.
 Current modules:
 
 ```text
-wordsearch/difficulty_levels.py
-wordsearch/grid_size_utils.py
+wordsearch/generation/difficulty.py
+wordsearch/cli/grid_size_prompts.py
 ```
 
 Responsibility:
@@ -131,13 +131,6 @@ Responsibility:
 ```text
 - Define difficulty settings.
 - Ask for or validate grid sizes.
-```
-
-Future target:
-
-```text
-wordsearch/generation/difficulty.py
-wordsearch/cli/prompts.py
 ```
 
 Difficulty data should remain separate from interactive prompts.

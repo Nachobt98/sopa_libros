@@ -10,10 +10,10 @@ from __future__ import annotations
 import argparse
 import os
 
-from wordsearch.difficulty_levels import DifficultyLevel, difficulty_settings
+from wordsearch.cli.grid_size_prompts import ask_grid_size
 from wordsearch.domain.book import ThematicGenerationOptions
+from wordsearch.generation.difficulty import DifficultyLevel, difficulty_settings
 from wordsearch.generation.thematic_pipeline import generate_thematic_book
-from wordsearch.grid_size_utils import ask_grid_size
 
 
 def _parse_args() -> argparse.Namespace:

@@ -91,8 +91,6 @@ sopa_libros/
 ├─ wordsearch/
 │  ├─ __init__.py
 │  ├─ config/                      # Layout, fuentes y rutas base
-│  ├─ difficulty_levels.py         # EASY / MEDIUM / HARD y direcciones permitidas
-│  ├─ grid_size_utils.py           # Input y validación del tamaño de grid
 │  ├─ domain/                      # Dataclasses y modelos de dominio
 │  ├─ generation/                  # Grid, batch generation y orquestación
 │  ├─ io/                          # Carga de entradas externas
