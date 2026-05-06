@@ -185,6 +185,8 @@ wordsearch/rendering/backgrounds.py
 wordsearch/rendering/title_page.py
 wordsearch/rendering/front_matter.py
 wordsearch/rendering/block_cover.py
+wordsearch/rendering/highlights.py
+wordsearch/rendering/word_list.py
 wordsearch/rendering/puzzle_page.py
 wordsearch/rendering/pdf.py
 ```
@@ -202,8 +204,6 @@ Future target:
 
 ```text
 wordsearch/rendering/solution_page.py
-wordsearch/rendering/highlights.py
-wordsearch/rendering/word_list.py
 ```
 
 The old root-level rendering wrappers have been removed. Rendering code now lives under `wordsearch/rendering/`.
@@ -239,7 +239,7 @@ Eventually this should move from global constants to explicit layout/font/theme 
 ## Current pain points
 
 ```text
-1. Rendering submodules can still be split further: highlights, word list and solution-page concerns.
+1. Rendering submodules can still be split further: solution-page concerns and layout configuration.
 2. Coverage is still low outside parser, normalization, grid generation and page planning.
 3. Ruff is enabled only for basic correctness checks so far.
 4. Simple and thematic generation do not share a unified pipeline.
