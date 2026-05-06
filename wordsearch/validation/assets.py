@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 
 from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD, FONT_TITLE
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
@@ -155,5 +155,5 @@ def _validate_optional_background(background_path: str, report: AssetValidationR
     try:
         with Image.open(background_path) as image:
             image.verify()
-    except (OSError, UnidentifiedImageError) as exc:
+    except OSError as exc:
         report.add_error(f"El fondo existe pero no se pudo abrir como imagen ({exc})", path=background_path)
