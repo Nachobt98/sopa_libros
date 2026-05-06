@@ -1,6 +1,6 @@
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.page_plan import build_page_plan
-from wordsearch.puzzle_parser import PuzzleSpec
+from wordsearch.domain.puzzle import PuzzleSpec
 
 
 def make_generated(index: int, title: str, block_name: str | None = None) -> GeneratedPuzzle:
