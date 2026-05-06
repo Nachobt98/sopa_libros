@@ -1,3 +1,5 @@
+from wordsearch.cli.simple import main as simple_cli_main
+from wordsearch.cli.thematic import main as thematic_cli_main
 from wordsearch.cli.wordlist_prompts import prompt_wordlists
 from wordsearch.io.wordlists import load_wordlists_from_txt
 from wordsearch.utils.slug import slugify
@@ -7,6 +9,8 @@ from wordsearch.validation.simple_wordlists import validate_wordlists_for_grid
 def test_new_wordlist_modules_are_importable():
     assert callable(load_wordlists_from_txt)
     assert callable(prompt_wordlists)
+    assert callable(simple_cli_main)
+    assert callable(thematic_cli_main)
     assert callable(slugify)
     assert callable(validate_wordlists_for_grid)
 

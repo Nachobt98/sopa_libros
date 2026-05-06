@@ -4,8 +4,8 @@ Generador en Python para crear libros de sopas de letras orientados a Amazon KDP
 
 El repositorio tiene dos formas principales de uso:
 
-1. **Modo simple** (`main.py`): genera puzzles a partir de listas básicas de palabras.
-2. **Modo temático** (`main_thematic.py`): genera un libro más completo a partir de un archivo con bloques, títulos, facts y listas de palabras.
+1. **Modo simple** (`sopa-libros` o `main.py`): genera puzzles a partir de listas básicas de palabras.
+2. **Modo temático** (`sopa-libros-thematic` o `main_thematic.py`): genera un libro más completo a partir de un archivo con bloques, títulos, facts y listas de palabras.
 
 ---
 
@@ -28,6 +28,12 @@ Instala las dependencias con:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Para usar los comandos instalables del proyecto durante desarrollo:
+
+```bash
+pip install -e .
 ```
 
 Para desarrollo del proyecto, incluyendo tests, cobertura y lint, usa la guia
@@ -84,8 +90,8 @@ principalmente bajo `wordsearch/config/`, `wordsearch/generation/`,
 
 ```text
 sopa_libros/
-├─ main.py                         # Generador simple/interactivo
-├─ main_thematic.py                # Generador temático completo
+├─ main.py                         # Wrapper de compatibilidad del generador simple
+├─ main_thematic.py                # Wrapper de compatibilidad del generador temático
 ├─ requirements.txt                # Dependencias Python
 ├─ README.md                       # Documentación de uso
 ├─ wordsearch/
@@ -148,11 +154,17 @@ Texto breve mostrado en la página del puzzle. Sirve para añadir valor editoria
 
 ---
 
-## 5. Modo simple: `main.py`
+## 5. Modo simple: `sopa-libros`
 
 Usa este modo para pruebas rápidas o libros sencillos sin bloques editoriales.
 
 Ejecuta:
+
+```bash
+sopa-libros
+```
+
+Tambien se mantiene el wrapper historico:
 
 ```bash
 python main.py
@@ -204,11 +216,17 @@ wordlists/tiburones_10_sopas.txt
 
 ---
 
-## 6. Modo temático: `main_thematic.py`
+## 6. Modo temático: `sopa-libros-thematic`
 
 Este es el modo recomendado para crear libros más profesionales.
 
 Ejecuta:
+
+```bash
+sopa-libros-thematic
+```
+
+Tambien se mantiene el wrapper historico:
 
 ```bash
 python main_thematic.py
@@ -242,7 +260,7 @@ El flujo temático puede generar:
 ### Ejecución recomendada
 
 ```bash
-python main_thematic.py
+sopa-libros-thematic
 ```
 
 Cuando pregunte por el archivo, puedes usar por ejemplo:
@@ -459,7 +477,7 @@ Recomendación: usa imágenes con buena resolución y proporción compatible con
 ### Generar libro simple de tiburones
 
 ```bash
-python main.py
+sopa-libros
 ```
 
 Cuando pregunte por palabras:
@@ -472,7 +490,7 @@ wordlists/tiburones_10_sopas.txt
 ### Generar libro temático de prueba con bloques
 
 ```bash
-python main_thematic.py
+sopa-libros-thematic
 ```
 
 Cuando pregunte por archivo:
@@ -484,7 +502,7 @@ wordlists/book_block.txt
 ### Generar libro temático grande
 
 ```bash
-python main_thematic.py
+sopa-libros-thematic
 ```
 
 Cuando pregunte por archivo:
@@ -588,7 +606,7 @@ Prueba:
 ## 16. Flujo recomendado de producción
 
 1. Crear o editar un archivo temático en `wordlists/`.
-2. Ejecutar `python main_thematic.py`.
+2. Ejecutar `sopa-libros-thematic`.
 3. Generar una versión de prueba con pocos puzzles.
 4. Revisar visualmente PNGs y PDF.
 5. Ajustar palabras, facts, fondos o dificultad.
@@ -618,13 +636,13 @@ pip install -r requirements.txt
 Ejecutar modo simple:
 
 ```bash
-python main.py
+sopa-libros
 ```
 
 Ejecutar modo temático:
 
 ```bash
-python main_thematic.py
+sopa-libros-thematic
 ```
 
 Ejecutar checks locales:
