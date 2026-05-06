@@ -76,9 +76,8 @@ python -c "from PIL import Image; import reportlab; print('OK')"
 
 ## 3. Estructura del proyecto
 
-Nota: la estructura interna se esta reorganizando por responsabilidades. Los
-wrappers raiz existen solo para compatibilidad con imports antiguos; el codigo
-nuevo vive principalmente bajo `wordsearch/config/`, `wordsearch/generation/`,
+Nota: la estructura interna se organiza por responsabilidades. El codigo vive
+principalmente bajo `wordsearch/config/`, `wordsearch/generation/`,
 `wordsearch/rendering/`, `wordsearch/parsing/`, `wordsearch/domain/`,
 `wordsearch/io/`, `wordsearch/cli/`, `wordsearch/utils/` y
 `wordsearch/validation/`.
@@ -91,14 +90,17 @@ sopa_libros/
 ├─ README.md                       # Documentación de uso
 ├─ wordsearch/
 │  ├─ __init__.py
-│  ├─ constants_and_layout.py      # Tamaño KDP, DPI, márgenes, fuentes, rutas base
+│  ├─ config/                      # Layout, fuentes y rutas base
 │  ├─ difficulty_levels.py         # EASY / MEDIUM / HARD y direcciones permitidas
 │  ├─ grid_size_utils.py           # Input y validación del tamaño de grid
-│  ├─ grid_generation.py           # Colocación de palabras en el grid
-│  ├─ image_rendering.py           # Renderizado de puzzles, soluciones, TOC, instrucciones y bloques
-│  ├─ pdf_book_generation.py       # Ensamblado del PDF final
-│  ├─ puzzle_parser.py             # Parser de archivos temáticos [Block] / [Puzzle]
-│  └─ wordlist_utils.py            # Utilidades para listas simples de palabras
+│  ├─ domain/                      # Dataclasses y modelos de dominio
+│  ├─ generation/                  # Grid, batch generation y orquestación
+│  ├─ io/                          # Carga de entradas externas
+│  ├─ parsing/                     # Parsers de archivos de entrada
+│  ├─ rendering/                   # Renderizado de páginas e imágenes
+│  ├─ utils/                       # Utilidades generales
+│  ├─ validation/                  # Validadores por flujo
+│  └─ text_normalization.py        # Normalización de palabras para el grid
 ├─ wordlists/
 │  ├─ book_thematic.txt            # Ejemplo temático sin bloques
 │  ├─ book_block.txt               # Ejemplo temático con bloques
@@ -373,7 +375,9 @@ La carpeta de salida está ignorada por Git para evitar subir archivos pesados g
 La configuración principal está en:
 
 ```text
-wordsearch/constants_and_layout.py
+wordsearch/config/layout.py
+wordsearch/config/fonts.py
+wordsearch/config/paths.py
 ```
 
 Actualmente el proyecto está configurado para:
@@ -597,12 +601,11 @@ Prueba:
 
 El proyecto ya permite generar libros funcionales, pero todavía hay mejoras pendientes recomendables:
 
-- centralizar la normalización de palabras;
-- validar libros temáticos antes de generar;
-- mejorar manejo de puzzles que no caben;
+- seguir unificando el modo simple con la pipeline temática;
+- extraer responsabilidades pendientes de renderizado de `puzzle_page.py`;
+- mover dificultad y prompts de grid a paquetes específicos;
 - documentar o automatizar instalación de fuentes;
-- separar `image_rendering.py` en módulos más pequeños;
-- añadir tests unitarios para parser, grid y normalización.
+- ampliar tests de validación, render orchestration y modo simple.
 
 ---
 

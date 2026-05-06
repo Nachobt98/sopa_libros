@@ -1,8 +1,5 @@
 """
 Puzzle and solution page renderer.
-
-This module contains the main word-search page renderer previously hosted in
-`wordsearch.image_rendering`.
 """
 
 from __future__ import annotations

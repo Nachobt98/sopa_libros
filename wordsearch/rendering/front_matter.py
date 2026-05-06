@@ -1,8 +1,5 @@
 """
 Renderizado de páginas preliminares del libro: índice e instrucciones.
-
-Se mantiene separado de image_rendering.py para evitar seguir creciendo un
-módulo que ya contiene el render principal de puzzles y soluciones.
 """
 
 from __future__ import annotations
