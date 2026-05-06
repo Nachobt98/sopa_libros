@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from wordsearch.puzzle_parser import PuzzleParseError, parse_puzzle_file
+from wordsearch.parsing.thematic import PuzzleParseError, parse_puzzle_file
 
 
 def write_tmp_file(tmp_path: Path, content: str) -> str:

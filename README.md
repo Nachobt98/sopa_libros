@@ -80,8 +80,9 @@ Nota: la estructura interna se esta reorganizando por responsabilidades. Los
 modulos raiz `constants_and_layout.py`, `grid_generation.py` y
 `wordlist_utils.py` se mantienen como wrappers de compatibilidad; el codigo
 nuevo vive principalmente bajo `wordsearch/config/`, `wordsearch/generation/`,
-`wordsearch/rendering/`, `wordsearch/io/`, `wordsearch/cli/`,
-`wordsearch/utils/` y `wordsearch/validation/`.
+`wordsearch/rendering/`, `wordsearch/parsing/`, `wordsearch/domain/`,
+`wordsearch/io/`, `wordsearch/cli/`, `wordsearch/utils/` y
+`wordsearch/validation/`.
 
 ```text
 sopa_libros/

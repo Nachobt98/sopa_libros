@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import List, Sequence
 
 from wordsearch.domain.grid import LegacyPlacedWord
-from wordsearch.puzzle_parser import PuzzleSpec
+from wordsearch.domain.puzzle import PuzzleSpec
 
 
 @dataclass

@@ -46,10 +46,11 @@ Legacy/simple generator entry point. It should eventually share more infrastruct
 
 ### Parsing
 
-Current module:
+Current modules:
 
 ```text
-wordsearch/puzzle_parser.py
+wordsearch/parsing/thematic.py
+wordsearch/domain/puzzle.py
 ```
 
 Responsibility:
@@ -60,14 +61,14 @@ Responsibility:
 - Raise parse errors for malformed input.
 ```
 
-Future target:
+Compatibility wrapper:
 
 ```text
-wordsearch/parsing/thematic_parser.py
-wordsearch/domain/puzzle.py
+wordsearch/puzzle_parser.py
 ```
 
-The parser should parse input, but the domain model should live outside the parser.
+The parser owns file parsing. `PuzzleSpec` lives in the domain package so
+generation, validation and page planning do not depend on a parser module.
 
 ### Text normalization
 
@@ -91,7 +92,7 @@ Current modules:
 
 ```text
 wordsearch/validation/simple_wordlists.py
-wordsearch/thematic_validation.py
+wordsearch/validation/thematic.py
 ```
 
 Responsibility:
@@ -106,7 +107,13 @@ Responsibility:
 Future target:
 
 ```text
-wordsearch/validation/thematic.py
+wordsearch/validation/*.py
+```
+
+Compatibility wrapper:
+
+```text
+wordsearch/thematic_validation.py
 ```
 
 ### Grid generation
@@ -284,17 +291,12 @@ The refactor should be incremental. Avoid large PRs that move files, change beha
 Recommended order:
 
 ```text
-1. Document architecture and manual regression checklist.
-2. Extract CLI from main_thematic.py.
-3. Extract thematic generation pipeline.
-4. Add explicit domain models.
-5. Add tests for parser, normalization, validation and page planning.
-6. Extract common rendering helpers.
-7. Move already-separated renderers into a rendering package.
-8. Split image_rendering.py.
-9. Remove legacy rendering wrappers.
-10. Add tooling: pytest, ruff, CI.
-11. Add advanced CLI options such as --seed, --validate-only and --clean-output.
+1. Split remaining rendering concerns: solution-page concerns and reusable layout primitives.
+2. Move difficulty settings and grid-size prompts into responsibility-specific packages.
+3. Introduce explicit layout/font/theme config objects when customization requires it.
+4. Unify the legacy/simple generator with the thematic pipeline structure.
+5. Add advanced CLI options such as --seed, --validate-only and --clean-output.
+6. Expand coverage around validation, rendering orchestration and simple generation.
 ```
 
 ## Stability rule

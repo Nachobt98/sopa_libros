@@ -8,8 +8,8 @@ from typing import List, Sequence
 from wordsearch.difficulty_levels import DifficultyLevel
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.grid import GridGenerationFailure
+from wordsearch.domain.puzzle import PuzzleSpec
 from wordsearch.generation.grid import generate_word_search_grid
-from wordsearch.puzzle_parser import PuzzleSpec
 from wordsearch.text_normalization import normalize_words_for_grid
 
 
