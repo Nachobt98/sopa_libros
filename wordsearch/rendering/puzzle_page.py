@@ -7,9 +7,8 @@ This module contains the main word-search page renderer previously hosted in
 
 from __future__ import annotations
 
-import math
 import os
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, Optional, Sequence, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -34,6 +33,8 @@ from wordsearch.rendering.common import (
     text_size,
     wrap_text,
 )
+from wordsearch.rendering.highlights import build_solution_highlight_layer
+from wordsearch.rendering.word_list import draw_word_list
 
 
 def _draw_wrapped_centered_title(
@@ -309,104 +310,19 @@ def render_page(
     grid_line_width_hi = max(1, int(1.2 * scale))
     grid_line_color = "#444444"
 
-    # --------------------------------------------------------
-    # CAPA DE RESALTADO (solo soluciones, con cápsula)
-    # --------------------------------------------------------
-    highlight_positions = set()
-
-    overlay_fill = Image.new("RGBA", (page_w_hi, page_h_hi), (0, 0, 0, 0))
-    overlay_border = Image.new("RGBA", (page_w_hi, page_h_hi), (0, 0, 0, 0))
-    odraw_fill = ImageDraw.Draw(overlay_fill)
-
-    if is_solution and placed_words:
-        for word, (row, col, d_row, d_col) in placed_words:
-            word_len = len(word)
-            if word_len < 2:
-                continue
-
-            centers: List[Tuple[float, float]] = []
-            for i in range(word_len):
-                rr = row + d_row * i
-                cc = col + d_col * i
-                if rr < 0 or rr >= rows or cc < 0 or cc >= cols:
-                    break
-
-                x0 = grid_left_hi + cc * cell_size_hi
-                y0 = grid_top_hi + rr * cell_size_hi
-                cx = x0 + cell_size_hi / 2
-                cy = y0 + cell_size_hi / 2
-                centers.append((cx, cy))
-                highlight_positions.add((rr, cc))
-
-            if len(centers) < 2:
-                continue
-
-            p0 = centers[0]
-            p1 = centers[-1]
-
-            thickness = cell_size_hi * 0.67
-            radius = thickness / 2
-
-            # 1) Relleno beige
-            odraw_fill.line(
-                centers,
-                fill=highlight_fill,
-                width=int(thickness),
-                joint="curve",
-            )
-            for cx, cy in (p0, p1):
-                odraw_fill.ellipse(
-                    (cx - radius, cy - radius, cx + radius, cy + radius),
-                    fill=highlight_fill,
-                )
-
-            # 2) Borde tipo anillo en capa temporal
-            tmp_border = Image.new("RGBA", (page_w_hi, page_h_hi), (0, 0, 0, 0))
-            bdraw = ImageDraw.Draw(tmp_border)
-
-            outer_width = int(thickness + 8 * scale)
-            inner_width = int(thickness)
-            outer_radius = radius + 4 * scale
-            inner_radius = radius
-
-            # Exterior
-            bdraw.line(
-                centers,
-                fill=highlight_border,
-                width=outer_width,
-                joint="curve",
-            )
-            for cx, cy in (p0, p1):
-                bdraw.ellipse(
-                    (
-                        cx - outer_radius,
-                        cy - outer_radius,
-                        cx + outer_radius,
-                        cy + outer_radius,
-                    ),
-                    fill=highlight_border,
-                )
-
-            # Vaciar interior con transparente
-            transparent = (0, 0, 0, 0)
-            bdraw.line(
-                centers,
-                fill=transparent,
-                width=inner_width,
-                joint="curve",
-            )
-            for cx, cy in (p0, p1):
-                bdraw.ellipse(
-                    (
-                        cx - inner_radius,
-                        cy - inner_radius,
-                        cx + inner_radius,
-                        cy + inner_radius,
-                    ),
-                    fill=transparent,
-                )
-
-            overlay_border.alpha_composite(tmp_border)
+    highlight_layer = build_solution_highlight_layer(
+        placed_words=placed_words if is_solution else None,
+        rows=rows,
+        cols=cols,
+        grid_left_hi=grid_left_hi,
+        grid_top_hi=grid_top_hi,
+        cell_size_hi=cell_size_hi,
+        page_w_hi=page_w_hi,
+        page_h_hi=page_h_hi,
+        scale=scale,
+        highlight_fill=highlight_fill,
+        highlight_border=highlight_border,
+    )
 
     # --------------------------------------------------------
     # GRID (líneas + letras normales)
@@ -451,16 +367,10 @@ def render_page(
                     font=font_letter,
                 )
 
-    # --------------------------------------------------------
-    # Mezclar resaltado sobre el grid
-    # --------------------------------------------------------
-    overlay = Image.new("RGBA", (page_w_hi, page_h_hi), (0, 0, 0, 0))
-    # Primero el relleno, luego el borde tipo “donut”
-    overlay.alpha_composite(overlay_fill)
-    overlay.alpha_composite(overlay_border)
-    img.alpha_composite(overlay)
 
     # Redibujar letras de las posiciones resaltadas en negrita
+    img.alpha_composite(highlight_layer.overlay)
+    highlight_positions = highlight_layer.positions
     if is_solution and highlight_positions:
         for r in range(rows):
             for c in range(cols):
@@ -539,76 +449,18 @@ def render_page(
         words_top_hi = desired_words_top_hi
     if words_top_hi > words_bottom_hi:
         words_top_hi = words_bottom_hi
-    words_height_hi = max(0, words_bottom_hi - words_top_hi)
-
-    # LISTA DE PALABRAS
-    words_upper = [str(word).upper() for word in words]
-    if words_upper and words_height_hi > 0:
-        words_inner_margin_hi = int(35 * scale)
-        area_left_hi = content_left_hi + words_inner_margin_hi
-        area_right_hi = content_right_hi - words_inner_margin_hi
-        total_w_hi = area_right_hi - area_left_hi
-
-        font_words_real = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.6) * scale)
-        line_h_hi = int(font_words_real.size * 1.12)
-
-        max_lines_per_col = max(1, words_height_hi // line_h_hi)
-        word_max_w = max(text_size(draw, word, font_words_real)[0] for word in words_upper)
-
-        best_layout = None
-        for col_count in range(2, 6):
-            if col_count * max_lines_per_col < len(words_upper):
-                continue
-            col_w_hi = total_w_hi / col_count
-            if word_max_w <= col_w_hi * 0.92:
-                best_layout = (col_count, col_w_hi)
-                break
-
-        if best_layout is None:
-            col_count = max(2, min(5, math.ceil(len(words_upper) / max_lines_per_col)))
-            col_w_hi = total_w_hi / col_count
-            best_layout = (col_count, col_w_hi)
-
-        col_count, col_w_hi = best_layout
-
-        base_len = len(words_upper) // col_count
-        remainder = len(words_upper) % col_count
-        col_sizes = [base_len + (1 if i < remainder else 0) for i in range(col_count)]
-
-        col_words: List[List[str]] = []
-        idx_tmp = 0
-        for size in col_sizes:
-            col_words.append(words_upper[idx_tmp : idx_tmp + size])
-            idx_tmp += size
-
-        max_used_h = max(len(col) * line_h_hi for col in col_words) if col_words else 0
-        group_y_start = words_top_hi + (words_height_hi - max_used_h) // 2
-
-        for col_idx, col in enumerate(col_words):
-            if not col:
-                continue
-
-            col_center_x = int(area_left_hi + (col_idx + 0.5) * col_w_hi)
-            y_hi = int(group_y_start)
-
-            for word_text in col:
-                try:
-                    draw.text(
-                        (col_center_x, y_hi),
-                        word_text,
-                        fill=text_color,
-                        font=font_words_real,
-                        anchor="mm",
-                    )
-                except TypeError:
-                    word_w, word_h = text_size(draw, word_text, font_words_real)
-                    draw.text(
-                        (col_center_x - word_w / 2, y_hi - word_h / 2),
-                        word_text,
-                        fill=text_color,
-                        font=font_words_real,
-                    )
-                y_hi += line_h_hi
+    draw_word_list(
+        draw=draw,
+        words=words,
+        words_top_hi=words_top_hi,
+        words_bottom_hi=words_bottom_hi,
+        content_left_hi=content_left_hi,
+        content_right_hi=content_right_hi,
+        scale=scale,
+        font_path=FONT_PATH,
+        wordlist_font_size=WORDLIST_FONT_SIZE,
+        text_color=text_color,
+    )
 
     # --------------------------------------------------------
     # Guardar
