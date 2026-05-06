@@ -3,16 +3,19 @@ Script principal para generar libros de sopas de letras con niveles de dificulta
 """
 
 import os
+import random
+
 from wordsearch.cli.grid_size_prompts import ask_grid_size
 from wordsearch.cli.wordlist_prompts import prompt_wordlists
 from wordsearch.config.paths import BASE_OUTPUT_DIR
+from wordsearch.domain.grid import GridGenerationFailure
 from wordsearch.generation.difficulty import DifficultyLevel, difficulty_settings
-from wordsearch.generation.grid import place_words_on_grid
-from wordsearch.utils.slug import slugify
-from wordsearch.validation.simple_wordlists import validate_wordlists_for_grid
+from wordsearch.generation.grid import generate_word_search_grid
+from wordsearch.rendering.pdf import generate_pdf
 from wordsearch.rendering.puzzle_page import render_page
 from wordsearch.rendering.solution_page import render_solution_page
-from wordsearch.rendering.pdf import generate_pdf
+from wordsearch.utils.slug import slugify
+from wordsearch.validation.simple_wordlists import validate_wordlists_for_grid
 
 # Puedes expandir este main para pedir dificultad, etc.
 def main():
@@ -104,29 +107,28 @@ def main():
     solutions = []
     for i in range(1, total + 1):
         wl = wordlists[(i-1) % len(wordlists)].copy()
-        import random
         random.shuffle(wl)
         max_tries = 10
-        placed_result = None
-        for attempt in range(1, max_tries + 1):
-            placed_result = place_words_on_grid(wl, difficulty=diff, grid_size=grid_size)
-            if placed_result:
-                break
-            if not placed_result:
-                print(f"[Aviso] Puzzle #{i}: no se ha podido generar un grid válido tras {max_tries} intentos.")
-                print("Probablemente hay demasiadas palabras o la lista es muy densa para este tamaño de grid.")
-                print("Ajusta manualmente la lista o el tamaño y vuelve a intentarlo.")
-            continue
-        grid, placed = placed_result
+        grid_result = generate_word_search_grid(
+            wl,
+            difficulty=diff,
+            grid_size=grid_size,
+            max_attempts=max_tries,
+        )
+        if isinstance(grid_result, GridGenerationFailure):
+            print(f"[Aviso] Puzzle #{i}: no se ha podido generar un grid válido tras {max_tries} intentos.")
+            print("Probablemente hay demasiadas palabras o la lista es muy densa para este tamaño de grid.")
+            print("Ajusta manualmente la lista o el tamaño y vuelve a intentarlo.")
+            return
 
         puzzle_img = render_page(
-            grid, wl, i,
+            grid_result.grid, wl, i,
             filename=os.path.join(output_dir, f"puzzle_{i}.png"),
         )
         solution_img = render_solution_page(
-            grid, wl, i,
+            grid_result.grid, wl, i,
             filename=os.path.join(output_dir, f"puzzle_{i}_sol.png"),
-            placed_words=placed
+            placed_words=grid_result.placed_words,
         )
         puzzles.append(puzzle_img)
         solutions.append(solution_img)

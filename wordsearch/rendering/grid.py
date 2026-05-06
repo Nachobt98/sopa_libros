@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Sequence, Tuple
+from typing import Sequence
 
 from PIL import Image, ImageDraw
 
 from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD
+from wordsearch.domain.grid import PlacedWord
 from wordsearch.rendering.common import load_font, text_size
 from wordsearch.rendering.highlights import build_solution_highlight_layer
 
@@ -16,7 +17,7 @@ def draw_letter_grid(
     img: Image.Image,
     draw: ImageDraw.ImageDraw,
     grid: Sequence[Sequence[str]],
-    placed_words: Sequence[Tuple[str, Tuple[int, int, int, int]]] | None,
+    placed_words: Sequence[PlacedWord] | None,
     is_solution: bool,
     grid_left_hi: int,
     grid_top_hi: int,

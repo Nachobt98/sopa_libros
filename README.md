@@ -601,7 +601,6 @@ El proyecto ya permite generar libros funcionales, pero todavía hay mejoras pen
 
 - seguir unificando el modo simple con la pipeline temática;
 - extraer primitivas reutilizables adicionales de renderizado cuando aparezca duplicación real;
-- reducir compatibilidad legacy interna del generador de grid;
 - documentar o automatizar instalación de fuentes;
 - ampliar tests de validación, render orchestration y modo simple.
 

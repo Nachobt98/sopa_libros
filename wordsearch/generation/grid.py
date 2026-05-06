@@ -1,9 +1,5 @@
 """
 Word search grid generation.
-
-The structured API is `generate_word_search_grid`. The legacy
-`place_words_on_grid` wrapper still returns `(grid, placed_words)` by default
-so older callers can migrate incrementally.
 """
 
 from __future__ import annotations
@@ -181,38 +177,3 @@ def generate_word_search_grid(
         attempts_used=max_attempts,
         failed_words=generation_words,
     )
-
-
-def place_words_on_grid(
-    words: Iterable[str],
-    difficulty: DifficultyLevel,
-    grid_size: int | None = None,
-    *,
-    seed: int | None = None,
-    rng: random.Random | None = None,
-    max_attempts: int = DEFAULT_MAX_ATTEMPTS,
-    return_result: bool = False,
-):
-    """
-    Backward-compatible wrapper around `generate_word_search_grid`.
-
-    By default it returns the historical `(grid, placed_words)` tuple or None
-    on failure. Pass `return_result=True` to receive the structured generation
-    outcome.
-    """
-    result = generate_word_search_grid(
-        words,
-        difficulty=difficulty,
-        grid_size=grid_size,
-        seed=seed,
-        rng=rng,
-        max_attempts=max_attempts,
-    )
-
-    if return_result:
-        return result
-
-    if isinstance(result, GridGenerationFailure):
-        return None
-
-    return result.as_legacy_tuple()
