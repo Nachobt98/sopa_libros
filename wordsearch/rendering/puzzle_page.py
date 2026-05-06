@@ -1,11 +1,9 @@
-"""
-Puzzle and solution page renderer.
-"""
+"""Puzzle page renderer."""
 
 from __future__ import annotations
 
 import os
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import Iterable, Optional, Sequence
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -65,16 +63,13 @@ def render_page(
     grid: Sequence[Sequence[str]],
     words: Iterable[str],
     idx: int,
-    is_solution: bool = False,
-    solution_positions=None,  # compatibilidad con código viejo
     background_path: Optional[str] = None,
     filename: Optional[str] = None,
-    placed_words: Optional[Sequence[Tuple[str, Tuple[int, int, int, int]]]] = None,
     puzzle_title: Optional[str] = None,
     fun_fact: Optional[str] = None,
     solution_page_number: Optional[int] = None,
 ) -> str:
-    """Renderiza una página de puzzle o solución."""
+    """Renderiza una página de puzzle."""
     scale = 3
     page_w_hi = PAGE_W_PX * scale
     page_h_hi = PAGE_H_PX * scale
@@ -158,12 +153,9 @@ def render_page(
     # TÍTULO (con wrap)
     # --------------------------------------------------------
     if puzzle_title:
-        if is_solution:
-            title_text = f"Solution – {idx}. {puzzle_title}"
-        else:
-            title_text = f"{idx}. {puzzle_title}"
+        title_text = f"{idx}. {puzzle_title}"
     else:
-        title_text = f"Solution {idx}" if is_solution else f"Puzzle {idx}"
+        title_text = f"Puzzle {idx}"
 
     title_max_width = int(content_right_hi - content_left_hi)
     y_after_title = _draw_wrapped_centered_title(
@@ -183,7 +175,7 @@ def render_page(
     # --------------------------------------------------------
     # FUN FACT – tarjeta con cabecera
     # --------------------------------------------------------
-    if (not is_solution) and fun_fact:
+    if fun_fact:
         fact_label_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.9) * scale)
         fact_text_font_size_hi = int(WORDLIST_FONT_SIZE * 0.5) * scale
 
@@ -305,8 +297,8 @@ def render_page(
         img=img,
         draw=draw,
         grid=grid,
-        placed_words=placed_words,
-        is_solution=is_solution,
+        placed_words=None,
+        is_solution=False,
         grid_left_hi=grid_left_hi,
         grid_top_hi=grid_top_hi,
         cell_size_hi=cell_size_hi,
@@ -330,7 +322,7 @@ def render_page(
     # PASTILLA "Solution on page X"
     pill_box_h = 0
     pill_y = grid_bottom_hi + base_gap_hi
-    if (not is_solution) and solution_page_number is not None:
+    if solution_page_number is not None:
         pill_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75) * scale)
         pill_text = f"Solution on page {solution_page_number}"
         tw_pill, th_pill = text_size(draw, pill_text, pill_font)
@@ -386,7 +378,7 @@ def render_page(
     if filename is None:
         filename = os.path.join(
             "output_puzzles_kdp",
-            f"puzzle_{idx}{'_sol' if is_solution else ''}.png",
+            f"puzzle_{idx}.png",
         )
 
     return save_page(img, filename)

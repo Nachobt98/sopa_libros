@@ -120,9 +120,8 @@ def main():
         grid, placed = placed_result
 
         puzzle_img = render_page(
-            grid, wl, i, is_solution=False,
+            grid, wl, i,
             filename=os.path.join(output_dir, f"puzzle_{i}.png"),
-            placed_words=None
         )
         solution_img = render_solution_page(
             grid, wl, i,
