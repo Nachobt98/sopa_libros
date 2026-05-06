@@ -15,8 +15,9 @@ from wordsearch.constants_and_layout import BASE_OUTPUT_DIR
 from wordsearch.difficulty_levels import DifficultyLevel
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
+from wordsearch.domain.grid import GridGenerationFailure
 from wordsearch.domain.page_plan import build_page_plan
-from wordsearch.grid_generation import place_words_on_grid
+from wordsearch.grid_generation import generate_word_search_grid
 from wordsearch.puzzle_parser import PuzzleParseError, PuzzleSpec, parse_puzzle_file
 from wordsearch.rendering.block_cover import render_block_cover
 from wordsearch.rendering.front_matter import render_instructions_page, render_table_of_contents
@@ -54,26 +55,26 @@ def _generate_all_grids(
     print("\n=== Generando grids ===")
     for spec in specs:
         words_for_grid = normalize_words_for_grid(spec.words)
-        placed_result = place_words_on_grid(
+        grid_result = generate_word_search_grid(
             words_for_grid,
             difficulty=difficulty,
             grid_size=grid_size,
         )
 
-        if placed_result is None:
+        if isinstance(grid_result, GridGenerationFailure):
             failures.append(
                 f"Puzzle {spec.index + 1} - {spec.title}: no se pudo colocar "
-                f"{len(words_for_grid)} palabra(s) en un grid {grid_size}x{grid_size}."
+                f"{len(words_for_grid)} palabra(s) en un grid {grid_size}x{grid_size}. "
+                f"{grid_result.reason}"
             )
             continue
 
-        grid, placed_words = placed_result
         generated.append(
             GeneratedPuzzle(
                 spec=spec,
                 words_for_grid=words_for_grid,
-                grid=grid,
-                placed_words=placed_words,
+                grid=grid_result.grid,
+                placed_words=grid_result.legacy_placed_words(),
             )
         )
 

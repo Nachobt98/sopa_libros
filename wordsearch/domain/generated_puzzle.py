@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Sequence, Tuple
+from typing import List, Sequence
 
+from wordsearch.domain.grid import LegacyPlacedWord
 from wordsearch.puzzle_parser import PuzzleSpec
 
 
@@ -15,4 +16,4 @@ class GeneratedPuzzle:
     spec: PuzzleSpec
     words_for_grid: List[str]
     grid: Sequence[Sequence[str]]
-    placed_words: Sequence[Tuple[str, Tuple[int, int, int, int]]]
+    placed_words: Sequence[LegacyPlacedWord]
