@@ -61,12 +61,6 @@ Responsibility:
 - Raise parse errors for malformed input.
 ```
 
-Compatibility wrapper:
-
-```text
-wordsearch/puzzle_parser.py
-```
-
 The parser owns file parsing. `PuzzleSpec` lives in the domain package so
 generation, validation and page planning do not depend on a parser module.
 
@@ -104,17 +98,7 @@ Responsibility:
 - Report non-blocking warnings such as missing backgrounds or duplicate normalized words.
 ```
 
-Future target:
-
-```text
-wordsearch/validation/*.py
-```
-
-Compatibility wrapper:
-
-```text
-wordsearch/thematic_validation.py
-```
+Validation code now lives under `wordsearch/validation/`.
 
 ### Grid generation
 
@@ -131,15 +115,7 @@ Responsibility:
 - Return the generated grid and placed word positions.
 ```
 
-Compatibility wrapper:
-
-```text
-wordsearch/grid_generation.py
-```
-
 The generated result uses explicit dataclasses in `wordsearch/domain/grid.py`.
-The root-level module remains as a backward-compatible import wrapper, but
-internal code should import from `wordsearch/generation/grid.py`.
 
 ### Difficulty and grid size
 
@@ -202,14 +178,8 @@ Responsibility:
 - Build filesystem-safe output slugs for book folders and filenames.
 ```
 
-Compatibility wrapper:
-
-```text
-wordsearch/wordlist_utils.py
-```
-
-The old mixed utility module remains as a backward-compatible import wrapper
-while internal code imports from the responsibility-specific modules.
+The old mixed utility module has been removed. Code should import from the
+responsibility-specific modules above.
 
 ### Rendering
 
@@ -264,16 +234,10 @@ Responsibility:
 - Output directory.
 ```
 
-Compatibility wrapper:
-
-```text
-wordsearch/constants_and_layout.py
-```
-
-The root-level constants module remains as a backward-compatible import wrapper.
-Internal code should import directly from `wordsearch/config/`. The next step is
-to move from module constants to explicit layout/font/theme config objects where
-that improves testing or format customization.
+The root-level constants wrapper has been removed. Internal code imports
+directly from `wordsearch/config/`. The next step is to move from module
+constants to explicit layout/font/theme config objects where that improves
+testing or format customization.
 
 ## Current pain points
 
