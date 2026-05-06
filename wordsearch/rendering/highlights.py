@@ -7,7 +7,7 @@ from typing import List, Sequence, Tuple
 
 from PIL import Image, ImageDraw
 
-PlacedWords = Sequence[Tuple[str, Tuple[int, int, int, int]]]
+from wordsearch.domain.grid import PlacedWord
 
 
 @dataclass
@@ -20,7 +20,7 @@ class SolutionHighlightLayer:
 
 def build_solution_highlight_layer(
     *,
-    placed_words: PlacedWords | None,
+    placed_words: Sequence[PlacedWord] | None,
     rows: int,
     cols: int,
     grid_left_hi: int,
@@ -39,8 +39,9 @@ def build_solution_highlight_layer(
     odraw_fill = ImageDraw.Draw(overlay_fill)
 
     if placed_words:
-        for word, (row, col, d_row, d_col) in placed_words:
-            word_len = len(word)
+        for placed_word in placed_words:
+            row, col, d_row, d_col = placed_word.position
+            word_len = len(placed_word.word)
             if word_len < 2:
                 continue
 

@@ -40,7 +40,7 @@ py main_thematic.py --title "Black History Word Search Collection" --input wordl
 
 ### `main.py`
 
-Legacy/simple generator entry point. It should eventually share more infrastructure with the thematic pipeline.
+Simple generator entry point. It should eventually share more infrastructure with the thematic pipeline.
 
 ## Core modules
 
@@ -92,7 +92,7 @@ wordsearch/validation/thematic.py
 Responsibility:
 
 ```text
-- Validate simple word lists before legacy/simple generation.
+- Validate simple word lists before simple generation.
 - Validate parsed puzzle specs before rendering.
 - Detect blocking errors such as words that do not fit the grid.
 - Report non-blocking warnings such as missing backgrounds or duplicate normalized words.
@@ -167,7 +167,7 @@ Responsibility:
 
 ```text
 - Load simple word lists from TXT files.
-- Prompt for simple word list source in the legacy/simple CLI.
+- Prompt for simple word list source in the simple CLI.
 - Build filesystem-safe output slugs for book folders and filenames.
 ```
 
@@ -233,11 +233,10 @@ testing or format customization.
 ## Current pain points
 
 ```text
-1. Rendering submodules can still be split further: solution-page concerns and reusable layout primitives.
-2. Coverage is still low outside parser, normalization, grid generation and page planning.
-3. Ruff is enabled only for basic correctness checks so far.
-4. Simple and thematic generation do not share a unified pipeline.
-5. Layout/font/theme config still uses module constants instead of explicit config objects.
+1. Coverage is still low outside parser, normalization, grid generation and page planning.
+2. Ruff is enabled only for basic correctness checks so far.
+3. Simple and thematic generation do not share a unified pipeline.
+4. Layout/font/theme config still uses module constants instead of explicit config objects.
 ```
 
 ## Refactor direction
@@ -247,12 +246,10 @@ The refactor should be incremental. Avoid large PRs that move files, change beha
 Recommended order:
 
 ```text
-1. Split remaining rendering concerns into reusable layout primitives.
-2. Move difficulty settings and grid-size prompts into responsibility-specific packages.
-3. Introduce explicit layout/font/theme config objects when customization requires it.
-4. Unify the legacy/simple generator with the thematic pipeline structure.
-5. Add advanced CLI options such as --seed, --validate-only and --clean-output.
-6. Expand coverage around validation, rendering orchestration and simple generation.
+1. Introduce explicit layout/font/theme config objects when customization requires it.
+2. Unify the simple generator with the thematic pipeline structure.
+3. Add advanced CLI options such as --seed, --validate-only and --clean-output.
+4. Expand coverage around validation, rendering orchestration and simple generation.
 ```
 
 ## Stability rule

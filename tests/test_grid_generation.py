@@ -5,7 +5,7 @@ import pytest
 from wordsearch.domain.grid import GridGenerationFailure, GridGenerationResult, PlacedWord
 from wordsearch.generation import grid as gg
 from wordsearch.generation.difficulty import DifficultyLevel
-from wordsearch.generation.grid import generate_word_search_grid, place_words_on_grid
+from wordsearch.generation.grid import generate_word_search_grid
 
 
 def test_generate_word_search_grid_returns_structured_result():
@@ -44,32 +44,23 @@ def test_generate_word_search_grid_is_reproducible_with_seed():
     assert first.placed_words == second.placed_words
 
 
-def test_place_words_on_grid_keeps_legacy_tuple_contract():
-    legacy_result = place_words_on_grid(
+def test_placed_words_expose_position_tuple():
+    result = generate_word_search_grid(
         ["CAT"],
         difficulty=DifficultyLevel.EASY,
         grid_size=8,
         seed=123,
-    )
-
-    assert legacy_result is not None
-    grid, placed_words = legacy_result
-    assert len(grid) == 8
-    assert placed_words
-    assert isinstance(placed_words[0], tuple)
-    assert placed_words[0][0] == "CAT"
-
-
-def test_place_words_on_grid_can_return_structured_result():
-    result = place_words_on_grid(
-        ["CAT"],
-        difficulty=DifficultyLevel.EASY,
-        grid_size=8,
-        seed=123,
-        return_result=True,
     )
 
     assert isinstance(result, GridGenerationResult)
+    placed_word = result.placed_words[0]
+    assert placed_word.word == "CAT"
+    assert placed_word.position == (
+        placed_word.row,
+        placed_word.col,
+        placed_word.d_row,
+        placed_word.d_col,
+    )
 
 
 def test_generate_word_search_grid_returns_failure_for_word_that_cannot_fit():

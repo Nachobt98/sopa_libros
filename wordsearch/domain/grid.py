@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Sequence, Tuple
-
-
-LegacyPlacedWord = Tuple[str, Tuple[int, int, int, int]]
+from typing import Sequence, Tuple
 
 
 @dataclass(frozen=True)
@@ -23,9 +20,6 @@ class PlacedWord:
     def position(self) -> Tuple[int, int, int, int]:
         return (self.row, self.col, self.d_row, self.d_col)
 
-    def as_legacy_tuple(self) -> LegacyPlacedWord:
-        return (self.word, self.position)
-
 
 @dataclass(frozen=True)
 class GridGenerationResult:
@@ -34,12 +28,6 @@ class GridGenerationResult:
     grid: Sequence[Sequence[str]]
     placed_words: Sequence[PlacedWord]
     attempts_used: int
-
-    def legacy_placed_words(self) -> List[LegacyPlacedWord]:
-        return [placed_word.as_legacy_tuple() for placed_word in self.placed_words]
-
-    def as_legacy_tuple(self) -> Tuple[Sequence[Sequence[str]], List[LegacyPlacedWord]]:
-        return self.grid, self.legacy_placed_words()
 
 
 @dataclass(frozen=True)

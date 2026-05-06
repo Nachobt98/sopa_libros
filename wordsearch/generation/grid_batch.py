@@ -60,7 +60,7 @@ def generate_thematic_grids(
                 spec=spec,
                 words_for_grid=words_for_grid,
                 grid=grid_result.grid,
-                placed_words=grid_result.legacy_placed_words(),
+                placed_words=grid_result.placed_words,
             )
         )
 

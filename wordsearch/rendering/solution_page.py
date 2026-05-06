@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Iterable, Optional, Sequence, Tuple
+from typing import Iterable, Optional, Sequence
 
 from PIL import ImageDraw
 
@@ -13,6 +13,7 @@ from wordsearch.config.fonts import (
     title_font_size as TITLE_FONT_SIZE,
     wordlist_font_size as WORDLIST_FONT_SIZE,
 )
+from wordsearch.domain.grid import PlacedWord
 from wordsearch.rendering.common import load_font, save_page
 from wordsearch.rendering.grid import draw_letter_grid
 from wordsearch.rendering.page_frame import (
@@ -30,7 +31,7 @@ def render_solution_page(
     *,
     background_path: Optional[str] = None,
     filename: Optional[str] = None,
-    placed_words: Optional[Sequence[Tuple[str, Tuple[int, int, int, int]]]] = None,
+    placed_words: Optional[Sequence[PlacedWord]] = None,
     puzzle_title: Optional[str] = None,
 ) -> str:
     """Render a solution page with highlighted placed words."""
