@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 
-from wordsearch.constants_and_layout import BASE_OUTPUT_DIR
+from wordsearch.config.paths import BASE_OUTPUT_DIR
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.page_plan import build_page_plan
 from wordsearch.generation.book_assembly import render_thematic_book_images
