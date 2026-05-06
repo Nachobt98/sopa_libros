@@ -32,7 +32,7 @@ from wordsearch.rendering.common import (
     text_size,
     wrap_text,
 )
-from wordsearch.rendering.highlights import build_solution_highlight_layer
+from wordsearch.rendering.grid import draw_letter_grid
 from wordsearch.rendering.word_list import draw_word_list
 
 
@@ -297,109 +297,28 @@ def render_page(
     cell_size_hi = int(grid_width_target_hi / max(cols, 1))
 
     grid_w_hi = cell_size_hi * cols
-    grid_h_hi = cell_size_hi * rows
 
     grid_top_hi = grid_top_base
     grid_left_hi = int((content_left_hi + content_right_hi - grid_w_hi) // 2)
 
-    letter_font_size_hi = max(int(cell_size_hi * 0.70), int(18 * scale))
-    font_letter = load_font(FONT_PATH, letter_font_size_hi)
-    font_letter_bold = load_font(FONT_PATH_BOLD, letter_font_size_hi)
-
-    grid_line_width_hi = max(1, int(1.2 * scale))
-    grid_line_color = "#444444"
-
-    highlight_layer = build_solution_highlight_layer(
-        placed_words=placed_words if is_solution else None,
-        rows=rows,
-        cols=cols,
+    grid_bottom_hi = draw_letter_grid(
+        img=img,
+        draw=draw,
+        grid=grid,
+        placed_words=placed_words,
+        is_solution=is_solution,
         grid_left_hi=grid_left_hi,
         grid_top_hi=grid_top_hi,
         cell_size_hi=cell_size_hi,
+        scale=scale,
         page_w_hi=page_w_hi,
         page_h_hi=page_h_hi,
-        scale=scale,
         highlight_fill=highlight_fill,
         highlight_border=highlight_border,
     )
 
     # --------------------------------------------------------
     # GRID (líneas + letras normales)
-    # --------------------------------------------------------
-    for r in range(rows + 1):
-        y = grid_top_hi + r * cell_size_hi
-        draw.line(
-            (grid_left_hi, y, grid_left_hi + grid_w_hi, y),
-            fill=grid_line_color,
-            width=grid_line_width_hi,
-        )
-    for c in range(cols + 1):
-        x = grid_left_hi + c * cell_size_hi
-        draw.line(
-            (x, grid_top_hi, x, grid_top_hi + grid_h_hi),
-            fill=grid_line_color,
-            width=grid_line_width_hi,
-        )
-
-    for r in range(rows):
-        for c in range(cols):
-            x0 = grid_left_hi + c * cell_size_hi
-            y0 = grid_top_hi + r * cell_size_hi
-            cx = x0 + cell_size_hi / 2
-            cy = y0 + cell_size_hi / 2
-            letter = grid[r][c]
-
-            try:
-                draw.text(
-                    (cx, cy),
-                    letter,
-                    fill="black",
-                    font=font_letter,
-                    anchor="mm",
-                )
-            except TypeError:
-                letter_w, letter_h = text_size(draw, letter, font_letter)
-                draw.text(
-                    (cx - letter_w / 2, cy - letter_h / 2),
-                    letter,
-                    fill="black",
-                    font=font_letter,
-                )
-
-
-    # Redibujar letras de las posiciones resaltadas en negrita
-    img.alpha_composite(highlight_layer.overlay)
-    highlight_positions = highlight_layer.positions
-    if is_solution and highlight_positions:
-        for r in range(rows):
-            for c in range(cols):
-                if (r, c) not in highlight_positions:
-                    continue
-                x0 = grid_left_hi + c * cell_size_hi
-                y0 = grid_top_hi + r * cell_size_hi
-                cx = x0 + cell_size_hi / 2
-                cy = y0 + cell_size_hi / 2
-                letter = grid[r][c]
-                try:
-                    draw.text(
-                        (cx, cy),
-                        letter,
-                        fill="black",
-                        font=font_letter_bold,
-                        anchor="mm",
-                    )
-                except TypeError:
-                    letter_w, letter_h = text_size(draw, letter, font_letter_bold)
-                    draw.text(
-                        (cx - letter_w / 2, cy - letter_h / 2),
-                        letter,
-                        fill="black",
-                        font=font_letter_bold,
-                    )
-
-    grid_bottom_hi = grid_top_hi + grid_h_hi
-
-    # --------------------------------------------------------
     # ÁREA INFERIOR (pill + lista)
     # --------------------------------------------------------
     base_gap_hi = int(60 * scale)
