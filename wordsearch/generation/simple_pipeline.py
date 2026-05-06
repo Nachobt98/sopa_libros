@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-import random
+from secrets import SystemRandom
 
 from wordsearch.config.paths import BASE_OUTPUT_DIR
 from wordsearch.domain.book import SimpleGenerationOptions
@@ -16,6 +16,7 @@ from wordsearch.utils.slug import slugify
 from wordsearch.validation.simple_wordlists import validate_wordlists_for_grid
 
 DEFAULT_MAX_GRID_ATTEMPTS = 10
+_WORD_SHUFFLER = SystemRandom()
 
 
 def _print_validation_errors(problems: list[dict], grid_size: int) -> None:
@@ -65,7 +66,7 @@ def generate_simple_book(options: SimpleGenerationOptions) -> str | None:
 
     for puzzle_number in range(1, options.total_puzzles + 1):
         words = list(options.wordlists[(puzzle_number - 1) % len(options.wordlists)])
-        random.shuffle(words)
+        _WORD_SHUFFLER.shuffle(words)
 
         grid_result = generate_word_search_grid(
             words,
