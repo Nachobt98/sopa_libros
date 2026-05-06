@@ -29,6 +29,7 @@ addopts = "-ra"
 
 [tool.coverage.run]
 source = ["wordsearch"]
+relative_files = true
 
 [tool.coverage.report]
 show_missing = true

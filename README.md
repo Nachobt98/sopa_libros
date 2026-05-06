@@ -626,6 +626,13 @@ Ejecutar modo temático:
 python main_thematic.py
 ```
 
+Ejecutar checks locales:
+
+```bash
+python -m ruff check .
+python -m pytest --cov=wordsearch --cov-report=term-missing --cov-report=xml:coverage.xml
+```
+
 Limpiar outputs generados:
 
 ### Windows PowerShell
