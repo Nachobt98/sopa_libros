@@ -12,18 +12,20 @@ from typing import Iterable, Optional, Sequence, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 
-from wordsearch.constants_and_layout import (
+from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_PATH_BOLD,
     FONT_TITLE,
+    title_font_size as TITLE_FONT_SIZE,
+    wordlist_font_size as WORDLIST_FONT_SIZE,
+)
+from wordsearch.config.layout import (
     PAGE_H_PX,
     PAGE_W_PX,
     SAFE_BOTTOM,
     SAFE_LEFT,
     SAFE_RIGHT,
     TOP_PX,
-    title_font_size as TITLE_FONT_SIZE,
-    wordlist_font_size as WORDLIST_FONT_SIZE,
 )
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import (

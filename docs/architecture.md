@@ -210,10 +210,12 @@ The old root-level rendering wrappers have been removed. Rendering code now live
 
 ### Configuration
 
-Current module:
+Current modules:
 
 ```text
-wordsearch/constants_and_layout.py
+wordsearch/config/layout.py
+wordsearch/config/paths.py
+wordsearch/config/fonts.py
 ```
 
 Responsibility:
@@ -226,24 +228,24 @@ Responsibility:
 - Output directory.
 ```
 
-Future target:
+Compatibility wrapper:
 
 ```text
-wordsearch/config/layout.py
-wordsearch/config/paths.py
-wordsearch/config/fonts.py
+wordsearch/constants_and_layout.py
 ```
 
-Eventually this should move from global constants to explicit layout/font/theme config objects.
+The root-level constants module remains as a backward-compatible import wrapper.
+The next step is to move from module constants to explicit layout/font/theme
+config objects where that improves testing or format customization.
 
 ## Current pain points
 
 ```text
-1. Rendering submodules can still be split further: solution-page concerns and layout configuration.
+1. Rendering submodules can still be split further: solution-page concerns and reusable layout primitives.
 2. Coverage is still low outside parser, normalization, grid generation and page planning.
 3. Ruff is enabled only for basic correctness checks so far.
 4. Simple and thematic generation do not share a unified pipeline.
-5. Layout/font/theme config still lives in global constants.
+5. Layout/font/theme config still uses module constants instead of explicit config objects.
 ```
 
 ## Refactor direction

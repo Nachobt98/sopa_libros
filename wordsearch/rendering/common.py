@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 
-from wordsearch.constants_and_layout import PAGE_H_PX, PAGE_W_PX
+from wordsearch.config.layout import PAGE_H_PX, PAGE_W_PX
 
 
 def load_font(path: str, size: int) -> ImageFont.FreeTypeFont:

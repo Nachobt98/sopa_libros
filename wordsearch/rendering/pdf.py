@@ -8,7 +8,7 @@ import os
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 
-from wordsearch.constants_and_layout import TRIM_H_IN, TRIM_W_IN
+from wordsearch.config.layout import TRIM_H_IN, TRIM_W_IN
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 
 
