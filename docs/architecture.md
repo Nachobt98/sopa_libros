@@ -184,9 +184,11 @@ wordsearch/rendering/backgrounds.py
 wordsearch/rendering/title_page.py
 wordsearch/rendering/front_matter.py
 wordsearch/rendering/block_cover.py
+wordsearch/rendering/grid.py
 wordsearch/rendering/highlights.py
 wordsearch/rendering/word_list.py
 wordsearch/rendering/puzzle_page.py
+wordsearch/rendering/solution_page.py
 wordsearch/rendering/pdf.py
 ```
 
@@ -197,12 +199,6 @@ Responsibility:
 - Render title page, table of contents and instructions.
 - Render block covers.
 - Export final PDF.
-```
-
-Future target:
-
-```text
-wordsearch/rendering/solution_page.py
 ```
 
 The old root-level rendering wrappers have been removed. Rendering code now lives under `wordsearch/rendering/`.
@@ -249,7 +245,7 @@ The refactor should be incremental. Avoid large PRs that move files, change beha
 Recommended order:
 
 ```text
-1. Split remaining rendering concerns: solution-page concerns and reusable layout primitives.
+1. Split remaining rendering concerns into reusable layout primitives.
 2. Move difficulty settings and grid-size prompts into responsibility-specific packages.
 3. Introduce explicit layout/font/theme config objects when customization requires it.
 4. Unify the legacy/simple generator with the thematic pipeline structure.
