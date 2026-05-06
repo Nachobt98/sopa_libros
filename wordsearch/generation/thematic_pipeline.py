@@ -17,6 +17,7 @@ from wordsearch.generation.book_assembly import render_thematic_book_images
 from wordsearch.generation.grid_batch import generate_thematic_grids
 from wordsearch.parsing.thematic import PuzzleParseError, parse_puzzle_file
 from wordsearch.rendering.pdf import generate_pdf
+from wordsearch.validation.assets import validate_generation_assets
 from wordsearch.validation.thematic import validate_thematic_specs
 from wordsearch.utils.slug import slugify
 
@@ -62,7 +63,21 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
 
     print(f"\nSe han cargado {len(specs)} puzzles del fichero.")
 
-    validation_report = validate_thematic_specs(specs, options.grid_size)
+    output_dir = os.path.join(BASE_OUTPUT_DIR, slugify(options.book_title))
+    asset_report = validate_generation_assets(
+        output_dir=output_dir,
+        optional_backgrounds=(spec.block_background for spec in specs),
+    )
+    asset_report.print_summary()
+    if asset_report.has_errors:
+        print("\nCorrige los errores de assets anteriores y vuelve a ejecutar el generador.")
+        return None
+
+    validation_report = validate_thematic_specs(
+        specs,
+        options.grid_size,
+        check_background_files=False,
+    )
     validation_report.print_summary()
     if validation_report.has_errors:
         print("\nCorrige los errores anteriores y vuelve a ejecutar el generador.")
@@ -76,9 +91,6 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
 
     generated_puzzles = grid_batch.generated_puzzles
     print(f"OK: {len(generated_puzzles)} grids generados correctamente.")
-
-    output_dir = os.path.join(BASE_OUTPUT_DIR, slugify(options.book_title))
-    os.makedirs(output_dir, exist_ok=True)
 
     page_plan = build_page_plan(generated_puzzles)
     rendered_images = render_thematic_book_images(

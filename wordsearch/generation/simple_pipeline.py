@@ -13,6 +13,7 @@ from wordsearch.rendering.pdf import generate_pdf
 from wordsearch.rendering.puzzle_page import render_page
 from wordsearch.rendering.solution_page import render_solution_page
 from wordsearch.utils.slug import slugify
+from wordsearch.validation.assets import validate_generation_assets
 from wordsearch.validation.simple_wordlists import validate_wordlists_for_grid
 
 DEFAULT_MAX_GRID_ATTEMPTS = 10
@@ -49,8 +50,13 @@ def generate_simple_book(options: SimpleGenerationOptions) -> str | None:
     """
     slug = slugify(options.book_title)
     output_dir = os.path.join(BASE_OUTPUT_DIR, slug)
-    os.makedirs(output_dir, exist_ok=True)
     print(f"\nLos archivos se guardarán en: {output_dir}")
+
+    asset_report = validate_generation_assets(output_dir=output_dir)
+    asset_report.print_summary()
+    if asset_report.has_errors:
+        print("\nCorrige los errores de assets anteriores y vuelve a ejecutar el generador.")
+        return None
 
     problems = validate_wordlists_for_grid(
         options.wordlists,

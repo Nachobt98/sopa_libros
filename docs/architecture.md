@@ -86,6 +86,7 @@ Responsibility:
 Current modules:
 
 ```text
+wordsearch/validation/assets.py
 wordsearch/validation/simple_wordlists.py
 wordsearch/validation/thematic.py
 ```
@@ -93,6 +94,7 @@ wordsearch/validation/thematic.py
 Responsibility:
 
 ```text
+- Validate required fonts, optional backgrounds and output writability.
 - Validate simple word lists before simple generation.
 - Validate parsed puzzle specs before rendering.
 - Detect blocking errors such as words that do not fit the grid.
