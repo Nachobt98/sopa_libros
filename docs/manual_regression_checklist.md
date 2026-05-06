@@ -9,7 +9,7 @@ The goal is not to prove that every pixel is identical. The goal is to catch bro
 From the repository root:
 
 ```powershell
-py main_thematic.py --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14
+sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14
 ```
 
 Expected output folder:

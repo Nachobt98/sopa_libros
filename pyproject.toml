@@ -13,6 +13,10 @@ dependencies = [
     "reportlab>=4.0.0",
 ]
 
+[project.scripts]
+sopa-libros = "wordsearch.cli.simple:main"
+sopa-libros-thematic = "wordsearch.cli.thematic:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",

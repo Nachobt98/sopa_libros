@@ -69,7 +69,7 @@ After changes that affect generation, rendering, page planning or output paths,
 run the reference command from the manual regression checklist:
 
 ```powershell
-py main_thematic.py --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14
+sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14
 ```
 
 Then follow `docs/manual_regression_checklist.md`.

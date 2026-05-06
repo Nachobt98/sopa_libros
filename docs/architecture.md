@@ -28,20 +28,22 @@ The important design rule is that validation and grid generation happen before r
 
 ## Main entry points
 
-### `main_thematic.py`
+### `sopa-libros-thematic`
 
-Current thematic generator entry point. It supports both interactive execution and CLI arguments.
+Current thematic generator command. It supports both interactive execution and CLI arguments.
 
 Example:
 
 ```powershell
-py main_thematic.py --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14
+sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14
 ```
 
-### `main.py`
+### `sopa-libros`
 
-Simple generator entry point. It resolves interactive options and delegates
+Simple generator command. It resolves interactive options and delegates
 generation to `wordsearch/generation/simple_pipeline.py`.
+
+`main.py` and `main_thematic.py` are compatibility wrappers for direct script execution.
 
 ## Core modules
 
@@ -266,7 +268,7 @@ Every refactor PR should preserve the same public generation command unless the 
 Reference command:
 
 ```powershell
-py main_thematic.py --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14
+sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14
 ```
 
 After each refactor, run the reference command and compare the generated PDF structure against the manual regression checklist.
