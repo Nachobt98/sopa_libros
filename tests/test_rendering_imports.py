@@ -8,6 +8,7 @@ def test_new_rendering_modules_are_importable():
     from wordsearch.rendering.highlights import build_solution_highlight_layer
     from wordsearch.rendering.pdf import generate_pdf
     from wordsearch.rendering.puzzle_page import render_page
+    from wordsearch.rendering.solution_page import render_solution_page
     from wordsearch.rendering.title_page import render_title_page
     from wordsearch.rendering.word_list import draw_word_list
 
@@ -18,5 +19,6 @@ def test_new_rendering_modules_are_importable():
     assert callable(build_solution_highlight_layer)
     assert callable(generate_pdf)
     assert callable(render_page)
+    assert callable(render_solution_page)
     assert callable(render_title_page)
     assert callable(draw_word_list)

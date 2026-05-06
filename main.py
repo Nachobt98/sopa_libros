@@ -11,6 +11,7 @@ from wordsearch.generation.grid import place_words_on_grid
 from wordsearch.utils.slug import slugify
 from wordsearch.validation.simple_wordlists import validate_wordlists_for_grid
 from wordsearch.rendering.puzzle_page import render_page
+from wordsearch.rendering.solution_page import render_solution_page
 from wordsearch.rendering.pdf import generate_pdf
 
 # Puedes expandir este main para pedir dificultad, etc.
@@ -123,8 +124,8 @@ def main():
             filename=os.path.join(output_dir, f"puzzle_{i}.png"),
             placed_words=None
         )
-        solution_img = render_page(
-            grid, wl, i, is_solution=True,
+        solution_img = render_solution_page(
+            grid, wl, i,
             filename=os.path.join(output_dir, f"puzzle_{i}_sol.png"),
             placed_words=placed
         )

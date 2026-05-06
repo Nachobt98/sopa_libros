@@ -11,6 +11,7 @@ from wordsearch.domain.page_plan import PagePlan
 from wordsearch.rendering.block_cover import render_block_cover
 from wordsearch.rendering.front_matter import render_instructions_page, render_table_of_contents
 from wordsearch.rendering.puzzle_page import render_page
+from wordsearch.rendering.solution_page import render_solution_page
 from wordsearch.rendering.title_page import render_title_page
 from wordsearch.utils.slug import slugify
 
@@ -120,11 +121,10 @@ def render_thematic_book_images(
         )
 
         rendered.solution_imgs.append(
-            render_page(
+            render_solution_page(
                 generated.grid,
                 spec.words,
                 spec.index + 1,
-                is_solution=True,
                 filename=solution_filename,
                 placed_words=generated.placed_words,
                 puzzle_title=spec.title,
