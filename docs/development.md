@@ -32,7 +32,7 @@ Run the same checks used by CI:
 
 ```powershell
 py -m ruff check .
-py -m pytest --cov=wordsearch --cov-report=term-missing --cov-report=xml:coverage.xml
+py -m pytest --cov=wordsearch --cov-report=term-missing --cov-report=xml
 ```
 
 If `py` is not available on Windows, use the Python executable from the active
@@ -40,7 +40,7 @@ virtual environment:
 
 ```powershell
 .\.venv\Scripts\python.exe -m ruff check .
-.\.venv\Scripts\python.exe -m pytest --cov=wordsearch --cov-report=term-missing --cov-report=xml:coverage.xml
+.\.venv\Scripts\python.exe -m pytest --cov=wordsearch --cov-report=term-missing --cov-report=xml
 ```
 
 ## SonarCloud
@@ -58,6 +58,10 @@ Organization: nachobt98
 
 If the SonarCloud organization key differs, update `sonar.organization` in
 `sonar-project.properties`.
+
+Disable SonarCloud Automatic Analysis for this project and use CI-based
+analysis. Automatic Analysis does not import the pytest coverage report from
+GitHub Actions.
 
 ## Reference generation command
 

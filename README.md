@@ -630,7 +630,7 @@ Ejecutar checks locales:
 
 ```bash
 python -m ruff check .
-python -m pytest --cov=wordsearch --cov-report=term-missing --cov-report=xml:coverage.xml
+python -m pytest --cov=wordsearch --cov-report=term-missing --cov-report=xml
 ```
 
 Limpiar outputs generados:

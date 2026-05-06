@@ -31,6 +31,9 @@ addopts = "-ra"
 source = ["wordsearch"]
 relative_files = true
 
+[tool.coverage.xml]
+output = "coverage.xml"
+
 [tool.coverage.report]
 show_missing = true
 skip_empty = true
