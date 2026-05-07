@@ -128,3 +128,7 @@ def main() -> None:
         return
 
     generate_thematic_book(options)
+
+
+if __name__ == "__main__":
+    main()
