@@ -232,13 +232,15 @@ Responsibility:
 - DPI.
 - Margins.
 - Font paths.
-- Output directory.
+- Output root, generated book folders, generated filenames and default wordlist paths.
 ```
 
 The root-level constants wrapper has been removed. Internal code imports
-directly from `wordsearch/config/`. The next step is to move from module
-constants to explicit layout/font/theme config objects where that improves
-testing or format customization.
+directly from `wordsearch/config/`. Output and wordlist paths are built through
+`wordsearch/config/paths.py` helpers so pipelines and renderers do not duplicate
+filesystem defaults. The next step is to move from module constants to explicit
+layout/font/theme config objects where that improves testing or format
+customization.
 
 ## Current pain points
 

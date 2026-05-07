@@ -17,6 +17,7 @@ from wordsearch.config.layout import (
     PAGE_H_PX,
     PAGE_W_PX,
 )
+from wordsearch.config.paths import build_default_output_file
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import load_font, save_page, text_size, wrap_text
 
@@ -152,6 +153,6 @@ def render_block_cover(
         draw.text((sx, sy), subtitle, font=font_sub, fill=main_color)
 
     if filename is None:
-        filename = os.path.join("output_puzzles_kdp", f"block_{block_index}.png")
+        filename = build_default_output_file(f"block_{block_index}.png")
 
     return save_page(img, filename)

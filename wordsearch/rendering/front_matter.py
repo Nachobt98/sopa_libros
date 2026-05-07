@@ -20,6 +20,7 @@ from wordsearch.config.layout import (
     PAGE_H_PX,
     PAGE_W_PX,
 )
+from wordsearch.config.paths import build_default_output_file, build_output_file
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import (
     draw_centered_text,
@@ -146,7 +147,7 @@ def render_table_of_contents(
 
         y += max(label_height, page_height) + row_gap
 
-    filename = os.path.join(output_dir, "01_table_of_contents.png")
+    filename = build_output_file(output_dir, "01_table_of_contents.png")
     return [save_page(img, filename)]
 
 
@@ -253,6 +254,6 @@ def render_instructions_page(
         y = max(y + number_h, text_y) + row_gap
 
     if filename is None:
-        filename = os.path.join("output_puzzles_kdp", "02_instructions.png")
+        filename = build_default_output_file("02_instructions.png")
 
     return save_page(img, filename)

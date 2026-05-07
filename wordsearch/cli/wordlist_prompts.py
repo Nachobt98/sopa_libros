@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 
+from wordsearch.config.paths import DEFAULT_WORDLISTS_DIR, build_wordlist_file, resolve_wordlist_input_path
 from wordsearch.io.wordlists import load_wordlists_from_txt
 
 
@@ -31,10 +32,10 @@ def prompt_wordlists(predefined_wordlists: list[list[str]]) -> tuple[list[list[s
         return [words], "manual"
 
     if choice == "3":
-        base_dir = "wordlists"
-        os.makedirs(base_dir, exist_ok=True)
+        base_dir = Path(DEFAULT_WORDLISTS_DIR)
+        base_dir.mkdir(exist_ok=True)
 
-        txt_files = [fname for fname in os.listdir(base_dir) if fname.lower().endswith(".txt")]
+        txt_files = sorted(path.name for path in base_dir.iterdir() if path.suffix.lower() == ".txt")
         if txt_files:
             print(f"\nArchivos .txt disponibles en '{base_dir}/':")
             for index, filename in enumerate(txt_files, 1):
@@ -50,9 +51,9 @@ def prompt_wordlists(predefined_wordlists: list[list[str]]) -> tuple[list[list[s
         if user_input.isdigit() and txt_files:
             index = int(user_input)
             if 1 <= index <= len(txt_files):
-                path = os.path.join(base_dir, txt_files[index - 1])
-        elif not os.path.isabs(path):
-            path = os.path.join(base_dir, path)
+                path = build_wordlist_file(txt_files[index - 1], base_dir)
+        else:
+            path = resolve_wordlist_input_path(path, base_dir)
 
         try:
             wordlists = load_wordlists_from_txt(path)

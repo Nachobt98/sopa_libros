@@ -8,9 +8,9 @@ pipeline itself lives in `wordsearch.generation.thematic_pipeline`.
 from __future__ import annotations
 
 import argparse
-import os
 
 from wordsearch.cli.grid_size_prompts import ask_grid_size
+from wordsearch.config.paths import DEFAULT_THEMATIC_WORDLIST
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.generation.difficulty import DifficultyLevel, difficulty_settings
 from wordsearch.generation.thematic_pipeline import generate_thematic_book
@@ -89,7 +89,7 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
             "[por defecto wordlists/book_thematic.txt]: "
         ).strip()
     if not puzzles_txt_path:
-        puzzles_txt_path = os.path.join("wordlists", "book_thematic.txt")
+        puzzles_txt_path = DEFAULT_THEMATIC_WORDLIST
 
     if args.difficulty:
         difficulty = _difficulty_from_cli(args.difficulty)

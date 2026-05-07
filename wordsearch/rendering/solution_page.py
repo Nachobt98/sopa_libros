@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from typing import Iterable, Optional, Sequence
 
 from PIL import ImageDraw
@@ -13,6 +12,7 @@ from wordsearch.config.fonts import (
     title_font_size as TITLE_FONT_SIZE,
     wordlist_font_size as WORDLIST_FONT_SIZE,
 )
+from wordsearch.config.paths import build_default_output_file
 from wordsearch.domain.grid import PlacedWord
 from wordsearch.rendering.common import load_font, save_page
 from wordsearch.rendering.grid import draw_letter_grid
@@ -116,6 +116,6 @@ def render_solution_page(
     )
 
     if filename is None:
-        filename = os.path.join("output_puzzles_kdp", f"puzzle_{idx}_sol.png")
+        filename = build_default_output_file(f"puzzle_{idx}_sol.png")
 
     return save_page(img, filename)
