@@ -20,6 +20,7 @@ from wordsearch.generation.reporting import build_thematic_generation_report, wr
 from wordsearch.parsing.thematic import PuzzleParseError, parse_puzzle_file
 from wordsearch.rendering.pdf import generate_pdf
 from wordsearch.validation.assets import validate_generation_assets
+from wordsearch.validation.kdp import build_kdp_preflight_report, write_kdp_preflight_report
 from wordsearch.validation.thematic import validate_thematic_specs
 from wordsearch.utils.slug import slugify
 
@@ -159,6 +160,15 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         print(f"Ruta bloqueada: {pdf_path}")
         return None
 
+    preflight_report = build_kdp_preflight_report(
+        pdf_path=pdf_final,
+        output_dir=output_dir,
+        content_image_paths=rendered_images.content_imgs,
+        solution_image_paths=rendered_images.solution_imgs,
+    )
+    preflight_report.print_summary()
+    preflight_report_path = write_kdp_preflight_report(preflight_report, output_dir=output_dir)
+
     report = build_thematic_generation_report(
         options=options,
         output_dir=output_dir,
@@ -171,4 +181,5 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
 
     print("\nPDF generado:", pdf_final)
     print("Reporte generado:", report_path)
+    print("Preflight generado:", preflight_report_path)
     return pdf_final
