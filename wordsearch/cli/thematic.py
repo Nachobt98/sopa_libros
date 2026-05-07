@@ -48,6 +48,11 @@ def _parse_args() -> argparse.Namespace:
         type=int,
         help="Optional random seed for reproducible grids.",
     )
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Parse and validate the thematic input/assets without generating grids, images or PDF.",
+    )
     return parser.parse_args()
 
 
@@ -115,6 +120,7 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
         difficulty=difficulty,
         grid_size=grid_size,
         seed=args.seed,
+        validate_only=args.validate_only,
     )
 
 
