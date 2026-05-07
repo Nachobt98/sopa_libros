@@ -18,6 +18,7 @@ class ThematicGenerationOptions:
     grid_size: int
     seed: int | None = None
     validate_only: bool = False
+    clean_output: bool = False
 
 
 @dataclass

@@ -8,6 +8,9 @@ dedicated generation modules.
 
 from __future__ import annotations
 
+import shutil
+from pathlib import Path
+
 from wordsearch.config.paths import BASE_OUTPUT_DIR, build_book_output_dir, build_output_file
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.page_plan import build_page_plan
@@ -30,6 +33,8 @@ def print_run_summary(options: ThematicGenerationOptions) -> None:
         print(f"Seed: {options.seed}")
     if options.validate_only:
         print("Modo: validate-only")
+    if options.clean_output:
+        print("Modo: clean-output")
 
 
 def _print_grid_failures(failures: list[str]) -> None:
@@ -38,6 +43,26 @@ def _print_grid_failures(failures: list[str]) -> None:
     for failure in failures:
         print(f"- {failure}")
     print("\nPrueba a aumentar el grid, subir la dificultad o reducir palabras en esos puzzles.")
+
+
+def _clean_output_dir(output_dir: str) -> bool:
+    """Remove a generated book output directory before a fresh run."""
+    output_path = Path(output_dir)
+    if not output_path.exists():
+        print(f"\nClean output: no existe la carpeta de salida, no hay nada que limpiar: {output_path}")
+        return True
+    if not output_path.is_dir():
+        print(f"\nERROR: la ruta de salida existe pero no es un directorio: {output_path}")
+        return False
+
+    try:
+        shutil.rmtree(output_path)
+    except OSError as exc:
+        print(f"\nERROR: no se pudo limpiar la carpeta de salida ({exc}): {output_path}")
+        return False
+
+    print(f"\nClean output: carpeta de salida eliminada: {output_path}")
+    return True
 
 
 def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
@@ -67,6 +92,9 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
 
     book_slug = slugify(options.book_title)
     output_dir = build_book_output_dir(book_slug, BASE_OUTPUT_DIR)
+    if options.clean_output and not _clean_output_dir(output_dir):
+        return None
+
     asset_report = validate_generation_assets(
         output_dir=output_dir,
         optional_backgrounds=(spec.block_background for spec in specs),

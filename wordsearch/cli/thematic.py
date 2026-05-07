@@ -53,6 +53,11 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Parse and validate the thematic input/assets without generating grids, images or PDF.",
     )
+    parser.add_argument(
+        "--clean-output",
+        action="store_true",
+        help="Remove the generated output folder for this book before creating new files.",
+    )
     return parser.parse_args()
 
 
@@ -86,6 +91,9 @@ def _ask_difficulty() -> DifficultyLevel:
 
 
 def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
+    if args.validate_only and args.clean_output:
+        raise ValueError("--clean-output no se puede combinar con --validate-only.")
+
     book_title = (args.title or "").strip()
     if not book_title:
         book_title = input("Título del libro (p.ej. 'Black Culture Word Search Vol. 1'): ").strip()
@@ -121,6 +129,7 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
         grid_size=grid_size,
         seed=args.seed,
         validate_only=args.validate_only,
+        clean_output=args.clean_output,
     )
 
 

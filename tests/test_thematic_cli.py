@@ -1,22 +1,56 @@
-import argparse
 
+import builtins
 import pytest
-
+import argparse
+import sys
 from wordsearch.cli import thematic
 from wordsearch.generation.difficulty import DifficultyLevel
 
+def _mock_inputs(monkeypatch, values):
+    answers = iter(values)
+    monkeypatch.setattr(builtins, "input", lambda _prompt="": next(answers))
+
+def test_ask_difficulty_default(monkeypatch):
+    _mock_inputs(monkeypatch, [""])
+    assert thematic._ask_difficulty() is DifficultyLevel.MEDIUM
+
+def test_ask_difficulty_easy(monkeypatch):
+    _mock_inputs(monkeypatch, ["1"])
+    assert thematic._ask_difficulty() is DifficultyLevel.EASY
+
+def test_ask_difficulty_medium(monkeypatch):
+    _mock_inputs(monkeypatch, ["2"])
+    assert thematic._ask_difficulty() is DifficultyLevel.MEDIUM
+
+def test_ask_difficulty_hard(monkeypatch):
+    _mock_inputs(monkeypatch, ["3"])
+    assert thematic._ask_difficulty() is DifficultyLevel.HARD
+
+def test_ask_difficulty_invalid_then_valid(monkeypatch, capsys):
+    _mock_inputs(monkeypatch, ["x", "2"])
+    result = thematic._ask_difficulty()
+    assert result is DifficultyLevel.MEDIUM
+    captured = capsys.readouterr()
+
+    assert "Opción no válida" in captured.out
+
+
+def make_args(**overrides):
+    values = {
+        "title": "Seeded Book",
+        "input_path": "wordlists/book_block.txt",
+        "difficulty": "medium",
+        "grid_size": 14,
+        "seed": 1234,
+        "validate_only": False,
+        "clean_output": False,
+    }
+    values.update(overrides)
+    return argparse.Namespace(**values)
+
 
 def test_resolve_options_accepts_cli_seed():
-    args = argparse.Namespace(
-        title="Seeded Book",
-        input_path="wordlists/book_block.txt",
-        difficulty="medium",
-        grid_size=14,
-        seed=1234,
-        validate_only=False,
-    )
-
-    options = thematic._resolve_options(args)
+    options = thematic._resolve_options(make_args())
 
     assert options.book_title == "Seeded Book"
     assert options.puzzles_txt_path == "wordlists/book_block.txt"
@@ -24,47 +58,62 @@ def test_resolve_options_accepts_cli_seed():
     assert options.grid_size == 14
     assert options.seed == 1234
     assert options.validate_only is False
+    assert options.clean_output is False
 
 
 def test_resolve_options_accepts_validate_only():
-    args = argparse.Namespace(
-        title="Validation Book",
-        input_path="wordlists/book_block.txt",
-        difficulty="medium",
-        grid_size=14,
-        seed=None,
-        validate_only=True,
-    )
-
-    options = thematic._resolve_options(args)
+    options = thematic._resolve_options(make_args(title="Validation Book", seed=None, validate_only=True))
 
     assert options.validate_only is True
 
 
-def test_resolve_options_defaults_seed_to_none():
-    args = argparse.Namespace(
-        title="Unseeded Book",
-        input_path="wordlists/book_block.txt",
-        difficulty="easy",
-        grid_size=10,
-        seed=None,
-        validate_only=False,
+def test_resolve_options_accepts_clean_output():
+    options = thematic._resolve_options(make_args(clean_output=True))
+
+    assert options.clean_output is True
+
+
+def test_resolve_options_rejects_validate_only_with_clean_output():
+    with pytest.raises(ValueError, match="--clean-output"):
+        thematic._resolve_options(make_args(validate_only=True, clean_output=True))
+
+
+def test_parse_args_accepts_clean_output(monkeypatch):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "sopa-libros-thematic",
+            "--title",
+            "Clean Book",
+            "--input",
+            "wordlists/book_block.txt",
+            "--difficulty",
+            "medium",
+            "--grid-size",
+            "14",
+            "--clean-output",
+        ],
     )
 
-    options = thematic._resolve_options(args)
+    args = thematic._parse_args()
+
+    assert args.clean_output is True
+
+
+def test_resolve_options_defaults_seed_to_none():
+    options = thematic._resolve_options(
+        make_args(
+            title="Unseeded Book",
+            difficulty="easy",
+            grid_size=10,
+            seed=None,
+        )
+    )
 
     assert options.seed is None
 
 
 def test_resolve_options_rejects_non_positive_grid_size():
-    args = argparse.Namespace(
-        title="Bad Grid",
-        input_path="wordlists/book_block.txt",
-        difficulty="medium",
-        grid_size=0,
-        seed=1234,
-        validate_only=False,
-    )
-
     with pytest.raises(ValueError, match="--grid-size"):
-        thematic._resolve_options(args)
+        thematic._resolve_options(make_args(title="Bad Grid", grid_size=0))

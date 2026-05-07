@@ -35,11 +35,28 @@ def test_prompt_wordlists_txt(monkeypatch, tmp_path):
     file_path.write_text("apple\nbanana\n\ncarrot\ndate\n", encoding="utf-8")
     monkeypatch.setattr(os, "makedirs", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(os, "listdir", lambda _dir: ["mywords.txt"])
-    _mock_inputs(monkeypatch, ["3", "1"])
-    monkeypatch.setattr(wordlist_prompts, "load_wordlists_from_txt", lambda path: [["apple", "banana"], ["carrot", "date"]] if "mywords.txt" in path else [])
+    # El usuario elige la opción 3 y luego el nombre del archivo
+    _mock_inputs(monkeypatch, ["3", "mywords.txt"])
+    def fake_loader(path):
+        if os.path.basename(path) == "mywords.txt":
+            return [["apple", "banana"], ["carrot", "date"]]
+        return []
+    monkeypatch.setattr(wordlist_prompts, "load_wordlists_from_txt", fake_loader)
     wordlists, source = wordlist_prompts.prompt_wordlists(predefined)
     assert wordlists == [["apple", "banana"], ["carrot", "date"]]
     assert source == "txt"
+
+def test_prompt_wordlists_txt_with_empty_wordlists_folder(monkeypatch, tmp_path):
+    predefined = [["cat", "dog"]]
+    base_dir = tmp_path / "wordlists"
+    monkeypatch.setattr(wordlist_prompts, "DEFAULT_WORDLISTS_DIR", str(base_dir))
+    _mock_inputs(monkeypatch, ["3", "missing.txt"])
+    monkeypatch.setattr(wordlist_prompts, "load_wordlists_from_txt", lambda path: [])
+
+    wordlists, source = wordlist_prompts.prompt_wordlists(predefined)
+
+    assert wordlists == predefined
+    assert source == "predefined"
 
 def test_prompt_wordlists_txt_invalid(monkeypatch, tmp_path):
     predefined = [["cat", "dog"]]
