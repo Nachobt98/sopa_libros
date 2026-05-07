@@ -1,4 +1,37 @@
+
+import builtins
+import pytest
 import argparse
+from wordsearch.cli import thematic
+from wordsearch.generation.difficulty import DifficultyLevel
+
+def _mock_inputs(monkeypatch, values):
+    answers = iter(values)
+    monkeypatch.setattr(builtins, "input", lambda _prompt="": next(answers))
+
+def test_ask_difficulty_default(monkeypatch):
+    _mock_inputs(monkeypatch, [""])
+    assert thematic._ask_difficulty() is DifficultyLevel.MEDIUM
+
+def test_ask_difficulty_easy(monkeypatch):
+    _mock_inputs(monkeypatch, ["1"])
+    assert thematic._ask_difficulty() is DifficultyLevel.EASY
+
+def test_ask_difficulty_medium(monkeypatch):
+    _mock_inputs(monkeypatch, ["2"])
+    assert thematic._ask_difficulty() is DifficultyLevel.MEDIUM
+
+def test_ask_difficulty_hard(monkeypatch):
+    _mock_inputs(monkeypatch, ["3"])
+    assert thematic._ask_difficulty() is DifficultyLevel.HARD
+
+def test_ask_difficulty_invalid_then_valid(monkeypatch, capsys):
+    _mock_inputs(monkeypatch, ["x", "2"])
+    result = thematic._ask_difficulty()
+    assert result is DifficultyLevel.MEDIUM
+    captured = capsys.readouterr()
+
+    assert "Opción no válida" in captured.out
 
 import pytest
 
