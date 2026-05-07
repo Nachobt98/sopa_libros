@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Tuple
 
+from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
 from wordsearch.config.paths import build_output_file
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.page_plan import PagePlan
@@ -44,6 +45,7 @@ def render_thematic_book_images(
     generated_puzzles: List[GeneratedPuzzle],
     page_plan: PagePlan,
     output_dir: str,
+    theme: ThemeConfig = DEFAULT_THEME,
 ) -> RenderedBookImages:
     """Render all PNG page assets for the thematic book."""
     rendered = RenderedBookImages()
@@ -115,6 +117,7 @@ def render_thematic_book_images(
                 fun_fact=spec.fact,
                 solution_page_number=solution_page_number,
                 background_path=bg_path,
+                theme=theme,
             )
         )
 
@@ -127,6 +130,7 @@ def render_thematic_book_images(
                 placed_words=generated.placed_words,
                 puzzle_title=spec.title,
                 background_path=bg_path,
+                theme=theme,
             )
         )
 
