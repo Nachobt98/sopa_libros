@@ -407,6 +407,7 @@ Dentro pueden aparecer:
 - PNGs de índice/instrucciones/bloques.
 - PDF final.
 - `generation_report.json` con metadatos de una generación temática correcta.
+- `preflight_report.json` con comprobaciones básicas del output para KDP.
 
 La carpeta de salida está ignorada por Git para evitar subir archivos pesados generados automáticamente.
 
@@ -442,6 +443,12 @@ Parámetros importantes:
 - `SAFE_RIGHT`
 - `SAFE_TOP`
 - `SAFE_BOTTOM`
+
+El preflight básico de KDP está documentado en:
+
+```text
+docs/kdp_preflight.md
+```
 
 ---
 
@@ -641,10 +648,11 @@ Prueba:
 2. Ejecutar `sopa-libros-thematic --validate-only`.
 3. Generar una versión de prueba con pocos puzzles.
 4. Revisar visualmente PNGs y PDF.
-5. Ajustar palabras, facts, fondos o dificultad.
-6. Generar versión completa.
-7. Revisar márgenes y legibilidad.
-8. Subir a KDP solo cuando el PDF esté validado.
+5. Revisar `generation_report.json` y `preflight_report.json`.
+6. Ajustar palabras, facts, fondos o dificultad.
+7. Generar versión completa.
+8. Revisar márgenes y legibilidad.
+9. Subir a KDP solo cuando el PDF esté validado.
 
 ---
 
