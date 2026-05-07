@@ -110,3 +110,63 @@ DEFAULT_THEME = ThemeConfig(
     panel_radius_px=DEFAULT_LAYOUT.panel_radius_px,
     panel_border_width_px=DEFAULT_LAYOUT.panel_border_width_px,
 )
+
+PREMIUM_NEUTRAL_THEME = ThemeConfig(
+    name="premium-neutral",
+    background_opacity=0.55,
+    page_background_fill=(250, 247, 241, 255),
+    panel_fill=(255, 252, 246, 210),
+    panel_border=(84, 70, 55, 80),
+    title_color=(42, 35, 28, 255),
+    body_color=(42, 35, 28, 255),
+    panel_radius_px=DEFAULT_LAYOUT.panel_radius_px,
+    panel_border_width_px=DEFAULT_LAYOUT.panel_border_width_px,
+)
+
+BOLD_MODERN_THEME = ThemeConfig(
+    name="bold-modern",
+    background_opacity=0.45,
+    page_background_fill=(248, 250, 252, 255),
+    panel_fill=(255, 255, 255, 220),
+    panel_border=(15, 23, 42, 110),
+    title_color=(15, 23, 42, 255),
+    body_color=(15, 23, 42, 255),
+    panel_radius_px=28,
+    panel_border_width_px=4,
+)
+
+KIDS_THEME = ThemeConfig(
+    name="kids",
+    background_opacity=0.5,
+    page_background_fill=(255, 253, 239, 255),
+    panel_fill=(255, 255, 255, 225),
+    panel_border=(80, 130, 180, 120),
+    title_color=(32, 80, 130, 255),
+    body_color=(25, 40, 60, 255),
+    panel_radius_px=46,
+    panel_border_width_px=4,
+)
+
+THEME_PRESETS: dict[str, ThemeConfig] = {
+    DEFAULT_THEME.name: DEFAULT_THEME,
+    PREMIUM_NEUTRAL_THEME.name: PREMIUM_NEUTRAL_THEME,
+    BOLD_MODERN_THEME.name: BOLD_MODERN_THEME,
+    KIDS_THEME.name: KIDS_THEME,
+}
+
+DEFAULT_THEME_NAME = DEFAULT_THEME.name
+
+
+def theme_names() -> tuple[str, ...]:
+    """Return available theme preset names sorted for CLI/documentation use."""
+    return tuple(sorted(THEME_PRESETS))
+
+
+def get_theme(name: str | None) -> ThemeConfig:
+    """Return a theme preset by name."""
+    normalized = (name or DEFAULT_THEME_NAME).strip().lower()
+    try:
+        return THEME_PRESETS[normalized]
+    except KeyError as exc:
+        supported = ", ".join(theme_names())
+        raise ValueError(f"Tema no soportado: {name}. Temas disponibles: {supported}") from exc
