@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 
+from wordsearch.config.design import DEFAULT_THEME_NAME
 from wordsearch.generation.difficulty import DifficultyLevel
 
 
@@ -19,6 +20,7 @@ class ThematicGenerationOptions:
     seed: int | None = None
     validate_only: bool = False
     clean_output: bool = False
+    theme_name: str = DEFAULT_THEME_NAME
 
 
 @dataclass
