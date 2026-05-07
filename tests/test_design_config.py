@@ -1,4 +1,13 @@
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, DEFAULT_TYPOGRAPHY
+import pytest
+
+from wordsearch.config.design import (
+    DEFAULT_LAYOUT,
+    DEFAULT_THEME,
+    DEFAULT_TYPOGRAPHY,
+    THEME_PRESETS,
+    get_theme,
+    theme_names,
+)
 from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD, FONT_TITLE
 from wordsearch.config.layout import (
     BOTTOM_PX,
@@ -43,3 +52,17 @@ def test_default_theme_preserves_current_page_frame_tokens():
     assert DEFAULT_THEME.panel_border == (0, 0, 0, 60)
     assert DEFAULT_THEME.title_color == (0, 0, 0, 255)
     assert DEFAULT_THEME.body_color == (0, 0, 0, 255)
+
+
+def test_theme_presets_are_registered_by_name():
+    assert set(theme_names()) == set(THEME_PRESETS)
+    assert get_theme("current-default") is DEFAULT_THEME
+    assert get_theme(None) is DEFAULT_THEME
+    assert get_theme("premium-neutral").name == "premium-neutral"
+    assert get_theme("bold-modern").name == "bold-modern"
+    assert get_theme("kids").name == "kids"
+
+
+def test_get_theme_rejects_unknown_theme():
+    with pytest.raises(ValueError, match="Tema no soportado"):
+        get_theme("unknown")
