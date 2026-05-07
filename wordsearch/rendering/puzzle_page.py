@@ -6,6 +6,7 @@ from typing import Iterable, Optional, Sequence
 
 from PIL import ImageDraw
 
+from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_PATH_BOLD,
@@ -39,12 +40,13 @@ def render_page(
     puzzle_title: Optional[str] = None,
     fun_fact: Optional[str] = None,
     solution_page_number: Optional[int] = None,
+    theme: ThemeConfig = DEFAULT_THEME,
 ) -> str:
     """Renderiza una página de puzzle."""
     scale = 3
-    img = create_page_canvas(background_path, scale)
+    img = create_page_canvas(background_path, scale, theme=theme)
     draw = ImageDraw.Draw(img)
-    frame = draw_page_frame(draw=draw, scale=scale)
+    frame = draw_page_frame(draw=draw, scale=scale, theme=theme)
 
     page_w_hi = frame.page_w_hi
     page_h_hi = frame.page_h_hi
@@ -58,7 +60,7 @@ def render_page(
     # Fuentes
     font_title = load_font(FONT_TITLE, TITLE_FONT_SIZE * scale)
 
-    text_color = (0, 0, 0, 255)
+    text_color = theme.body_color
 
     # FUN FACT
     fact_bg = (245, 245, 245, 245)
@@ -91,6 +93,7 @@ def render_page(
         area_left=content_left_hi,
         area_right=content_right_hi,
         line_spacing=1.05,
+        theme=theme,
     )
 
     # Más separación título → fact
