@@ -1,7 +1,4 @@
 import os
-import tempfile
-import shutil
-import pytest
 from PIL import Image
 from wordsearch.rendering import front_matter
 

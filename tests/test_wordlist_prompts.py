@@ -1,8 +1,5 @@
 import builtins
 import os
-import tempfile
-import types
-import pytest
 from wordsearch.cli import wordlist_prompts
 
 def _mock_inputs(monkeypatch, values):
