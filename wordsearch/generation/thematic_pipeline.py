@@ -16,6 +16,7 @@ from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.page_plan import build_page_plan
 from wordsearch.generation.book_assembly import render_thematic_book_images
 from wordsearch.generation.grid_batch import generate_thematic_grids
+from wordsearch.generation.reporting import build_thematic_generation_report, write_generation_report
 from wordsearch.parsing.thematic import PuzzleParseError, parse_puzzle_file
 from wordsearch.rendering.pdf import generate_pdf
 from wordsearch.validation.assets import validate_generation_assets
@@ -158,5 +159,16 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         print(f"Ruta bloqueada: {pdf_path}")
         return None
 
+    report = build_thematic_generation_report(
+        options=options,
+        output_dir=output_dir,
+        pdf_path=pdf_final,
+        page_plan=page_plan,
+        rendered_images=rendered_images,
+        puzzle_count=len(generated_puzzles),
+    )
+    report_path = write_generation_report(report, output_dir=output_dir)
+
     print("\nPDF generado:", pdf_final)
+    print("Reporte generado:", report_path)
     return pdf_final

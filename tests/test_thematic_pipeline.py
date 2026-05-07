@@ -167,6 +167,8 @@ def test_generate_thematic_book_cleans_existing_output_before_validation(monkeyp
         lambda **kwargs: RenderedBookImages(content_imgs=["content.png"], solution_imgs=["solution.png"]),
     )
     monkeypatch.setattr(thematic_pipeline, "generate_pdf", lambda *args, **kwargs: kwargs["outname"])
+    monkeypatch.setattr(thematic_pipeline, "build_thematic_generation_report", lambda **kwargs: "report")
+    monkeypatch.setattr(thematic_pipeline, "write_generation_report", lambda *args, **kwargs: "report.json")
 
     assert thematic_pipeline.generate_thematic_book(options) is not None
     assert calls == {
@@ -318,7 +320,7 @@ def test_generate_thematic_book_returns_none_when_pdf_is_locked(monkeypatch, tmp
     assert thematic_pipeline.generate_thematic_book(make_options()) is None
 
 
-def test_generate_thematic_book_generates_pdf_on_happy_path(monkeypatch, tmp_path):
+def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypatch, tmp_path):
     options = make_options()
     specs = [make_spec()]
     specs[0].block_background = "assets/block.png"
@@ -359,9 +361,23 @@ def test_generate_thematic_book_generates_pdf_on_happy_path(monkeypatch, tmp_pat
         calls["pdf"] = (content_imgs, solution_imgs, outname)
         return outname
 
+    def fake_build_thematic_generation_report(**kwargs):
+        calls["report_kwargs"] = kwargs
+        return "report"
+
+    def fake_write_generation_report(report, *, output_dir):
+        calls["report_write"] = (report, output_dir)
+        return f"{output_dir}/generation_report.json"
+
     monkeypatch.setattr(thematic_pipeline, "build_page_plan", fake_build_page_plan)
     monkeypatch.setattr(thematic_pipeline, "render_thematic_book_images", fake_render_thematic_book_images)
     monkeypatch.setattr(thematic_pipeline, "generate_pdf", fake_generate_pdf)
+    monkeypatch.setattr(
+        thematic_pipeline,
+        "build_thematic_generation_report",
+        fake_build_thematic_generation_report,
+    )
+    monkeypatch.setattr(thematic_pipeline, "write_generation_report", fake_write_generation_report)
 
     pdf_path = thematic_pipeline.generate_thematic_book(options)
 
@@ -381,6 +397,15 @@ def test_generate_thematic_book_generates_pdf_on_happy_path(monkeypatch, tmp_pat
         "output_dir": str(expected_output_dir),
     }
     assert calls["pdf"] == (["content.png"], ["solution.png"], expected_pdf_path)
+    assert calls["report_kwargs"] == {
+        "options": options,
+        "output_dir": str(expected_output_dir),
+        "pdf_path": expected_pdf_path,
+        "page_plan": "page-plan",
+        "rendered_images": rendered_images,
+        "puzzle_count": len(generated_puzzles),
+    }
+    assert calls["report_write"] == ("report", str(expected_output_dir))
 
 
 def test_generate_thematic_book_passes_seed_to_grid_generation(monkeypatch, tmp_path):
@@ -414,6 +439,8 @@ def test_generate_thematic_book_passes_seed_to_grid_generation(monkeypatch, tmp_
         lambda **kwargs: rendered_images,
     )
     monkeypatch.setattr(thematic_pipeline, "generate_pdf", lambda *args, **kwargs: kwargs["outname"])
+    monkeypatch.setattr(thematic_pipeline, "build_thematic_generation_report", lambda **kwargs: "report")
+    monkeypatch.setattr(thematic_pipeline, "write_generation_report", lambda *args, **kwargs: "report.json")
 
     assert thematic_pipeline.generate_thematic_book(options) is not None
     assert calls["seed"] == 1234
