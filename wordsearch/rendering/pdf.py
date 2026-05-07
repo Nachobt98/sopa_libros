@@ -3,22 +3,20 @@ Generación del PDF final a partir de las imágenes de puzzles y soluciones.
 Incluye: portada, paginación, separación de secciones, etc.
 """
 
-import os
+from pathlib import Path
 
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 
 from wordsearch.config.layout import TRIM_H_IN, TRIM_W_IN
+from wordsearch.config.paths import resolve_pdf_output_path
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 
 
 def generate_pdf(puzzle_imgs, solution_imgs, outname="wordsearch_book_kdp.pdf", background_path=None):
     # Se asume que las imágenes ya están generadas y listas
     # El output_dir debe estar incluido en outname si se quiere ruta completa
-    if os.path.dirname(outname):
-        pdf_path = outname
-    else:
-        pdf_path = os.path.join("output_puzzles_kdp", outname)
+    pdf_path = resolve_pdf_output_path(outname)
     c = canvas.Canvas(pdf_path, pagesize=(TRIM_W_IN * inch, TRIM_H_IN * inch))
 
     page_num = 1  # contador de página
@@ -48,7 +46,7 @@ def generate_pdf(puzzle_imgs, solution_imgs, outname="wordsearch_book_kdp.pdf", 
     # PORTADA DE SOLUCIONES (con fondo)
     # ---------------------------
     bg_path = background_path or BACKGROUND_PATH
-    if bg_path and os.path.exists(bg_path):
+    if bg_path and Path(bg_path).exists():
         c.drawImage(
             bg_path,
             0,

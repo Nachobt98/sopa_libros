@@ -8,9 +8,7 @@ dedicated generation modules.
 
 from __future__ import annotations
 
-import os
-
-from wordsearch.config.paths import BASE_OUTPUT_DIR
+from wordsearch.config.paths import BASE_OUTPUT_DIR, build_book_output_dir, build_output_file
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.page_plan import build_page_plan
 from wordsearch.generation.book_assembly import render_thematic_book_images
@@ -63,7 +61,8 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
 
     print(f"\nSe han cargado {len(specs)} puzzles del fichero.")
 
-    output_dir = os.path.join(BASE_OUTPUT_DIR, slugify(options.book_title))
+    book_slug = slugify(options.book_title)
+    output_dir = build_book_output_dir(book_slug, BASE_OUTPUT_DIR)
     asset_report = validate_generation_assets(
         output_dir=output_dir,
         optional_backgrounds=(spec.block_background for spec in specs),
@@ -104,8 +103,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         print("No se han generado imagenes suficientes como para crear el PDF.")
         return None
 
-    pdf_name = f"{slugify(options.book_title)}.pdf"
-    pdf_path = os.path.join(output_dir, pdf_name)
+    pdf_path = build_output_file(output_dir, f"{book_slug}.pdf")
 
     try:
         pdf_final = generate_pdf(

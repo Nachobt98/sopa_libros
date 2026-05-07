@@ -22,6 +22,7 @@ from wordsearch.config.layout import (
     PAGE_H_PX,
     PAGE_W_PX,
 )
+from wordsearch.config.paths import build_default_output_file
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import (
     draw_centered_lines,
@@ -165,6 +166,6 @@ def render_title_page(
     )
 
     if filename is None:
-        filename = os.path.join("output_puzzles_kdp", "00_title_page.png")
+        filename = build_default_output_file("00_title_page.png")
 
     return save_page(img, filename)

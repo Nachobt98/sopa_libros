@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass, field
 from typing import List, Tuple
 
+from wordsearch.config.paths import build_output_file
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.page_plan import PagePlan
 from wordsearch.rendering.block_cover import render_block_cover
@@ -48,7 +48,7 @@ def render_thematic_book_images(
     """Render all PNG page assets for the thematic book."""
     rendered = RenderedBookImages()
 
-    title_page_filename = os.path.join(output_dir, "00_title_page.png")
+    title_page_filename = build_output_file(output_dir, "00_title_page.png")
     rendered.content_imgs.append(
         render_title_page(
             book_title,
@@ -65,7 +65,7 @@ def render_thematic_book_images(
         )
     )
 
-    instr_filename = os.path.join(output_dir, "02_instructions.png")
+    instr_filename = build_output_file(output_dir, "02_instructions.png")
     rendered.content_imgs.append(
         render_instructions_page(
             book_title,
@@ -88,7 +88,7 @@ def render_thematic_book_images(
         if block_name and block_name != current_block_name:
             current_block_name = block_name
             block_index += 1
-            block_cover_filename = os.path.join(
+            block_cover_filename = build_output_file(
                 output_dir,
                 f"block_{block_index:02d}_{slugify(block_name)}.png",
             )
@@ -102,8 +102,8 @@ def render_thematic_book_images(
             )
 
         solution_page_number = page_plan.first_solution_page + spec.index
-        puzzle_filename = os.path.join(output_dir, f"puzzle_{spec.index + 1}.png")
-        solution_filename = os.path.join(output_dir, f"puzzle_{spec.index + 1}_sol.png")
+        puzzle_filename = build_output_file(output_dir, f"puzzle_{spec.index + 1}.png")
+        solution_filename = build_output_file(output_dir, f"puzzle_{spec.index + 1}_sol.png")
 
         rendered.content_imgs.append(
             render_page(

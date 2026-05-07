@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import os
 from secrets import SystemRandom
 
-from wordsearch.config.paths import BASE_OUTPUT_DIR
+from wordsearch.config.paths import BASE_OUTPUT_DIR, build_book_output_dir, build_output_file
 from wordsearch.domain.book import SimpleGenerationOptions
 from wordsearch.domain.grid import GridGenerationFailure
 from wordsearch.generation.grid import generate_word_search_grid
@@ -49,7 +48,7 @@ def generate_simple_book(options: SimpleGenerationOptions) -> str | None:
     grid generation or PDF writing fails.
     """
     slug = slugify(options.book_title)
-    output_dir = os.path.join(BASE_OUTPUT_DIR, slug)
+    output_dir = build_book_output_dir(slug, BASE_OUTPUT_DIR)
     print(f"\nLos archivos se guardarán en: {output_dir}")
 
     asset_report = validate_generation_assets(output_dir=output_dir)
@@ -93,19 +92,19 @@ def generate_simple_book(options: SimpleGenerationOptions) -> str | None:
             grid_result.grid,
             words,
             puzzle_number,
-            filename=os.path.join(output_dir, f"puzzle_{puzzle_number}.png"),
+            filename=build_output_file(output_dir, f"puzzle_{puzzle_number}.png"),
         )
         solution_img = render_solution_page(
             grid_result.grid,
             words,
             puzzle_number,
-            filename=os.path.join(output_dir, f"puzzle_{puzzle_number}_sol.png"),
+            filename=build_output_file(output_dir, f"puzzle_{puzzle_number}_sol.png"),
             placed_words=grid_result.placed_words,
         )
         puzzles.append(puzzle_img)
         solutions.append(solution_img)
 
-    pdf_path = os.path.join(output_dir, f"{slug}.pdf")
+    pdf_path = build_output_file(output_dir, f"{slug}.pdf")
     try:
         pdf_final = generate_pdf(puzzles, solutions, outname=pdf_path)
     except PermissionError:
