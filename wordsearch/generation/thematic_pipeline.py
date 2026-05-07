@@ -28,6 +28,8 @@ def print_run_summary(options: ThematicGenerationOptions) -> None:
     print(f"Grid: {options.grid_size}x{options.grid_size}")
     if options.seed is not None:
         print(f"Seed: {options.seed}")
+    if options.validate_only:
+        print("Modo: validate-only")
 
 
 def _print_grid_failures(failures: list[str]) -> None:
@@ -82,6 +84,10 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     validation_report.print_summary()
     if validation_report.has_errors:
         print("\nCorrige los errores anteriores y vuelve a ejecutar el generador.")
+        return None
+
+    if options.validate_only:
+        print("\nOK: validacion completada. No se generaron grids, imagenes ni PDF.")
         return None
 
     print("\n=== Generando grids ===")
