@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PIL import Image, ImageChops
+from PIL import Image
 
 from wordsearch.config.layout import PAGE_H_PX, PAGE_W_PX
 from wordsearch.domain.grid import PlacedWord
@@ -16,9 +16,9 @@ def assert_valid_non_blank_png(path: Path) -> None:
     with Image.open(path) as image:
         assert image.format == "PNG"
         assert image.size == (PAGE_W_PX, PAGE_H_PX)
-        rgba = image.convert("RGBA")
-        blank = Image.new("RGBA", rgba.size, rgba.getpixel((0, 0)))
-        assert ImageChops.difference(rgba, blank).getbbox() is not None
+        rgb = image.convert("RGB")
+        extrema = rgb.getextrema()
+        assert any(channel_min != channel_max for channel_min, channel_max in extrema)
 
 
 def sample_grid() -> list[list[str]]:
