@@ -44,6 +44,11 @@ def test_resolve_options_accepts_clean_output():
     assert options.clean_output is True
 
 
+def test_resolve_options_rejects_validate_only_with_clean_output():
+    with pytest.raises(ValueError, match="--clean-output"):
+        thematic._resolve_options(make_args(validate_only=True, clean_output=True))
+
+
 def test_resolve_options_defaults_seed_to_none():
     options = thematic._resolve_options(
         make_args(
