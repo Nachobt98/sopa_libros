@@ -110,6 +110,7 @@ sopa_libros/
 │  ├─ book_block.txt               # Ejemplo temático con bloques
 │  ├─ libro1.txt                   # Libro temático extenso
 │  ├─ libro2.txt                   # Variante/versión parcial de libro temático
+│  ├─ fixtures/                    # Entradas pequeñas para pruebas visuales/manuales
 │  └─ tiburones_10_sopas.txt       # Ejemplo simple en español
 └─ fonts/
    ├─ montserrat/
@@ -267,6 +268,20 @@ sopa-libros-thematic --title "Black History Word Search Collection" --input word
 
 Si todo está correcto, el comando termina después de los informes de validación.
 
+### Baseline visual reproducible
+
+Para revisar cambios visuales con una entrada pequeña y estable, usa el fixture documentado en:
+
+```text
+docs/visual_baseline.md
+```
+
+Comando recomendado:
+
+```bash
+sopa-libros-thematic --title "Visual Baseline" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output
+```
+
 ### Ejecución recomendada
 
 ```bash
@@ -391,6 +406,7 @@ Dentro pueden aparecer:
 - PNGs de soluciones.
 - PNGs de índice/instrucciones/bloques.
 - PDF final.
+- `generation_report.json` con metadatos de una generación temática correcta.
 
 La carpeta de salida está ignorada por Git para evitar subir archivos pesados generados automáticamente.
 
@@ -507,6 +523,12 @@ Cuando pregunte por archivo:
 
 ```text
 wordlists/book_block.txt
+```
+
+### Generar baseline visual
+
+```bash
+sopa-libros-thematic --title "Visual Baseline" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output
 ```
 
 ### Generar libro temático grande
@@ -659,6 +681,12 @@ Validar modo temático sin generar archivos finales:
 
 ```bash
 sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14 --validate-only
+```
+
+Generar la baseline visual reproducible:
+
+```bash
+sopa-libros-thematic --title "Visual Baseline" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output
 ```
 
 Ejecutar checks locales:
