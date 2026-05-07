@@ -7,14 +7,7 @@ from dataclasses import dataclass
 
 from PIL import Image, ImageDraw, ImageFont
 
-from wordsearch.config.layout import (
-    PAGE_H_PX,
-    PAGE_W_PX,
-    SAFE_BOTTOM,
-    SAFE_LEFT,
-    SAFE_RIGHT,
-    TOP_PX,
-)
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import rounded_rectangle, text_size, wrap_text
 
@@ -36,8 +29,8 @@ class PageFrame:
 
 def create_page_canvas(background_path: str | None, scale: int) -> Image.Image:
     """Create a high-resolution page canvas with optional translucent background."""
-    page_w_hi = PAGE_W_PX * scale
-    page_h_hi = PAGE_H_PX * scale
+    page_w_hi = DEFAULT_LAYOUT.page_width_px * scale
+    page_h_hi = DEFAULT_LAYOUT.page_height_px * scale
     bg_path = background_path or BACKGROUND_PATH
 
     if bg_path and os.path.exists(bg_path):
@@ -46,12 +39,12 @@ def create_page_canvas(background_path: str | None, scale: int) -> Image.Image:
 
         if bg.mode == "RGBA":
             red, green, blue, alpha = bg.split()
-            alpha = alpha.point(lambda value: int(value * 0.7))
+            alpha = alpha.point(lambda value: int(value * DEFAULT_THEME.background_opacity))
             bg = Image.merge("RGBA", (red, green, blue, alpha))
 
         return bg
 
-    return Image.new("RGBA", (page_w_hi, page_h_hi), (255, 255, 255, 255))
+    return Image.new("RGBA", (page_w_hi, page_h_hi), DEFAULT_THEME.page_background_fill)
 
 
 def draw_page_frame(
@@ -61,16 +54,16 @@ def draw_page_frame(
     title_area_hi: int | None = None,
 ) -> PageFrame:
     """Draw the shared white content panel and return its layout bounds."""
-    page_w_hi = PAGE_W_PX * scale
-    page_h_hi = PAGE_H_PX * scale
-    safe_left_hi = SAFE_LEFT * scale
-    safe_right_hi = SAFE_RIGHT * scale
-    safe_bottom_hi = SAFE_BOTTOM * scale
-    top_px_hi = TOP_PX * scale
+    page_w_hi = DEFAULT_LAYOUT.page_width_px * scale
+    page_h_hi = DEFAULT_LAYOUT.page_height_px * scale
+    safe_left_hi = DEFAULT_LAYOUT.safe_left_px * scale
+    safe_right_hi = DEFAULT_LAYOUT.safe_right_px * scale
+    safe_bottom_hi = DEFAULT_LAYOUT.safe_bottom_px * scale
+    top_px_hi = DEFAULT_LAYOUT.top_px * scale
 
-    panel_pad_x = int(30 * scale)
-    panel_pad_top = int(40 * scale)
-    panel_pad_bottom = int(40 * scale)
+    panel_pad_x = int(DEFAULT_LAYOUT.panel_pad_x_px * scale)
+    panel_pad_top = int(DEFAULT_LAYOUT.panel_pad_top_px * scale)
+    panel_pad_bottom = int(DEFAULT_LAYOUT.panel_pad_bottom_px * scale)
 
     panel_left = max(0, safe_left_hi - panel_pad_x)
     panel_top = max(0, top_px_hi - panel_pad_top)
@@ -80,14 +73,18 @@ def draw_page_frame(
     rounded_rectangle(
         draw,
         (panel_left, panel_top, panel_right, panel_bottom),
-        radius=int(35 * scale),
-        fill=(255, 255, 255, 150),
-        outline=(0, 0, 0, 60),
-        width=max(1, int(3 * scale)),
+        radius=int(DEFAULT_THEME.panel_radius_px * scale),
+        fill=DEFAULT_THEME.panel_fill,
+        outline=DEFAULT_THEME.panel_border,
+        width=max(1, int(DEFAULT_THEME.panel_border_width_px * scale)),
     )
 
-    content_margin_x = int(40 * scale)
-    title_area_hi = title_area_hi if title_area_hi is not None else int(600 * scale)
+    content_margin_x = int(DEFAULT_LAYOUT.content_margin_x_px * scale)
+    title_area_hi = (
+        title_area_hi
+        if title_area_hi is not None
+        else int(DEFAULT_LAYOUT.default_title_area_px * scale)
+    )
 
     return PageFrame(
         scale=scale,
@@ -121,6 +118,6 @@ def draw_wrapped_centered_title(
     for line in lines:
         width, height = text_size(draw, line, font)
         x = area_left + max(0, (container_width - width) // 2)
-        draw.text((x, y), line, font=font, fill=(0, 0, 0, 255))
+        draw.text((x, y), line, font=font, fill=DEFAULT_THEME.title_color)
         y += int(height * line_spacing)
     return y
