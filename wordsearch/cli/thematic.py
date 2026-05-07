@@ -91,6 +91,9 @@ def _ask_difficulty() -> DifficultyLevel:
 
 
 def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
+    if args.validate_only and args.clean_output:
+        raise ValueError("--clean-output no se puede combinar con --validate-only.")
+
     book_title = (args.title or "").strip()
     if not book_title:
         book_title = input("Título del libro (p.ej. 'Black Culture Word Search Vol. 1'): ").strip()
