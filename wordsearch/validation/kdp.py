@@ -131,6 +131,7 @@ def build_kdp_preflight_report(
 
 def write_kdp_preflight_report(report: KdpPreflightReport, *, output_dir: str) -> str:
     """Write a KDP preflight report JSON and return its path."""
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
     report_path = build_output_file(output_dir, PREFLIGHT_REPORT_FILENAME)
     Path(report_path).write_text(
         json.dumps(report.to_dict(), ensure_ascii=False, indent=2, sort_keys=True),
