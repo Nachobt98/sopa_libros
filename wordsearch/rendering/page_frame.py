@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from PIL import Image, ImageDraw, ImageFont
 
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, ThemeConfig
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import rounded_rectangle, text_size, wrap_text
 
@@ -27,7 +27,12 @@ class PageFrame:
     grid_top_base: int
 
 
-def create_page_canvas(background_path: str | None, scale: int) -> Image.Image:
+def create_page_canvas(
+    background_path: str | None,
+    scale: int,
+    *,
+    theme: ThemeConfig = DEFAULT_THEME,
+) -> Image.Image:
     """Create a high-resolution page canvas with optional translucent background."""
     page_w_hi = DEFAULT_LAYOUT.page_width_px * scale
     page_h_hi = DEFAULT_LAYOUT.page_height_px * scale
@@ -39,12 +44,12 @@ def create_page_canvas(background_path: str | None, scale: int) -> Image.Image:
 
         if bg.mode == "RGBA":
             red, green, blue, alpha = bg.split()
-            alpha = alpha.point(lambda value: int(value * DEFAULT_THEME.background_opacity))
+            alpha = alpha.point(lambda value: int(value * theme.background_opacity))
             bg = Image.merge("RGBA", (red, green, blue, alpha))
 
         return bg
 
-    return Image.new("RGBA", (page_w_hi, page_h_hi), DEFAULT_THEME.page_background_fill)
+    return Image.new("RGBA", (page_w_hi, page_h_hi), theme.page_background_fill)
 
 
 def draw_page_frame(
@@ -52,6 +57,7 @@ def draw_page_frame(
     draw: ImageDraw.ImageDraw,
     scale: int,
     title_area_hi: int | None = None,
+    theme: ThemeConfig = DEFAULT_THEME,
 ) -> PageFrame:
     """Draw the shared white content panel and return its layout bounds."""
     page_w_hi = DEFAULT_LAYOUT.page_width_px * scale
@@ -73,10 +79,10 @@ def draw_page_frame(
     rounded_rectangle(
         draw,
         (panel_left, panel_top, panel_right, panel_bottom),
-        radius=int(DEFAULT_THEME.panel_radius_px * scale),
-        fill=DEFAULT_THEME.panel_fill,
-        outline=DEFAULT_THEME.panel_border,
-        width=max(1, int(DEFAULT_THEME.panel_border_width_px * scale)),
+        radius=int(theme.panel_radius_px * scale),
+        fill=theme.panel_fill,
+        outline=theme.panel_border,
+        width=max(1, int(theme.panel_border_width_px * scale)),
     )
 
     content_margin_x = int(DEFAULT_LAYOUT.content_margin_x_px * scale)
@@ -110,6 +116,8 @@ def draw_wrapped_centered_title(
     area_left: int,
     area_right: int,
     line_spacing: float = 1.05,
+    *,
+    theme: ThemeConfig = DEFAULT_THEME,
 ) -> int:
     """Draw a centered wrapped title and return the y coordinate after it."""
     lines = wrap_text(draw, text, font, max_width)
@@ -118,6 +126,6 @@ def draw_wrapped_centered_title(
     for line in lines:
         width, height = text_size(draw, line, font)
         x = area_left + max(0, (container_width - width) // 2)
-        draw.text((x, y), line, font=font, fill=DEFAULT_THEME.title_color)
+        draw.text((x, y), line, font=font, fill=theme.title_color)
         y += int(height * line_spacing)
     return y
