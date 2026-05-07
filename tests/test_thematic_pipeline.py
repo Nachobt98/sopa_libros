@@ -128,7 +128,7 @@ def test_generate_thematic_book_stops_on_grid_failures(monkeypatch):
     monkeypatch.setattr(
         thematic_pipeline,
         "generate_thematic_grids",
-        lambda specs, difficulty, grid_size: grid_batch,
+        lambda specs, difficulty, grid_size, *, seed=None: grid_batch,
     )
 
     called = {"render": False}
@@ -158,7 +158,7 @@ def test_generate_thematic_book_returns_none_when_rendering_is_incomplete(monkey
     monkeypatch.setattr(
         thematic_pipeline,
         "generate_thematic_grids",
-        lambda specs, difficulty, grid_size: grid_batch,
+        lambda specs, difficulty, grid_size, *, seed=None: grid_batch,
     )
     monkeypatch.setattr(
         thematic_pipeline,
@@ -184,7 +184,7 @@ def test_generate_thematic_book_returns_none_when_pdf_is_locked(monkeypatch, tmp
     monkeypatch.setattr(
         thematic_pipeline,
         "generate_thematic_grids",
-        lambda specs, difficulty, grid_size: grid_batch,
+        lambda specs, difficulty, grid_size, *, seed=None: grid_batch,
     )
     monkeypatch.setattr(
         thematic_pipeline,
@@ -212,6 +212,7 @@ def test_generate_thematic_book_generates_pdf_on_happy_path(monkeypatch, tmp_pat
 
     monkeypatch.setattr(thematic_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
     monkeypatch.setattr(thematic_pipeline, "parse_puzzle_file", lambda path: specs)
+
     def fake_validate_generation_assets(**kwargs):
         calls["asset_validation"] = kwargs
         return AssetValidationReport()
@@ -220,13 +221,13 @@ def test_generate_thematic_book_generates_pdf_on_happy_path(monkeypatch, tmp_pat
         calls["content_validation"] = (args, kwargs)
         return report
 
+    def fake_generate_thematic_grids(specs, difficulty, grid_size, *, seed=None):
+        calls["grid_generation"] = (specs, difficulty, grid_size, seed)
+        return grid_batch
+
     monkeypatch.setattr(thematic_pipeline, "validate_generation_assets", fake_validate_generation_assets)
     monkeypatch.setattr(thematic_pipeline, "validate_thematic_specs", fake_validate_thematic_specs)
-    monkeypatch.setattr(
-        thematic_pipeline,
-        "generate_thematic_grids",
-        lambda specs, difficulty, grid_size: grid_batch,
-    )
+    monkeypatch.setattr(thematic_pipeline, "generate_thematic_grids", fake_generate_thematic_grids)
 
     def fake_build_page_plan(received_generated_puzzles):
         calls["page_plan_generated"] = received_generated_puzzles
@@ -253,6 +254,7 @@ def test_generate_thematic_book_generates_pdf_on_happy_path(monkeypatch, tmp_pat
     assert list(calls["asset_validation"]["optional_backgrounds"]) == ["assets/block.png"]
     assert calls["content_validation"][0] == (specs, options.grid_size)
     assert calls["content_validation"][1] == {"check_background_files": False}
+    assert calls["grid_generation"] == (specs, options.difficulty, options.grid_size, None)
     assert calls["page_plan_generated"] == generated_puzzles
     assert calls["render_kwargs"] == {
         "book_title": options.book_title,
@@ -261,3 +263,39 @@ def test_generate_thematic_book_generates_pdf_on_happy_path(monkeypatch, tmp_pat
         "output_dir": str(expected_output_dir),
     }
     assert calls["pdf"] == (["content.png"], ["solution.png"], expected_pdf_path)
+
+
+def test_generate_thematic_book_passes_seed_to_grid_generation(monkeypatch, tmp_path):
+    options = make_options()
+    options.seed = 1234
+    specs = [make_spec()]
+    generated_puzzles = [make_generated()]
+    report = StubValidationReport(has_errors=False)
+    grid_batch = GridBatchResult(generated_puzzles=generated_puzzles)
+    rendered_images = RenderedBookImages(content_imgs=["content.png"], solution_imgs=["solution.png"])
+    calls = {}
+
+    monkeypatch.setattr(thematic_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setattr(thematic_pipeline, "parse_puzzle_file", lambda path: specs)
+    monkeypatch.setattr(
+        thematic_pipeline,
+        "validate_generation_assets",
+        lambda **kwargs: AssetValidationReport(),
+    )
+    monkeypatch.setattr(thematic_pipeline, "validate_thematic_specs", lambda *args, **kwargs: report)
+
+    def fake_generate_thematic_grids(specs, difficulty, grid_size, *, seed=None):
+        calls["seed"] = seed
+        return grid_batch
+
+    monkeypatch.setattr(thematic_pipeline, "generate_thematic_grids", fake_generate_thematic_grids)
+    monkeypatch.setattr(thematic_pipeline, "build_page_plan", lambda generated: "page-plan")
+    monkeypatch.setattr(
+        thematic_pipeline,
+        "render_thematic_book_images",
+        lambda **kwargs: rendered_images,
+    )
+    monkeypatch.setattr(thematic_pipeline, "generate_pdf", lambda *args, **kwargs: kwargs["outname"])
+
+    assert thematic_pipeline.generate_thematic_book(options) is not None
+    assert calls["seed"] == 1234
