@@ -114,6 +114,43 @@ def test_generate_thematic_book_stops_on_asset_errors(monkeypatch):
     assert called["content_validation"] is False
 
 
+def test_generate_thematic_book_validate_only_stops_after_successful_validation(monkeypatch, tmp_path):
+    options = make_options()
+    options.validate_only = True
+    specs = [make_spec()]
+    report = StubValidationReport(has_errors=False)
+    calls = {"grid": False, "render": False, "pdf": False}
+
+    monkeypatch.setattr(thematic_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setattr(thematic_pipeline, "parse_puzzle_file", lambda path: specs)
+    monkeypatch.setattr(
+        thematic_pipeline,
+        "validate_generation_assets",
+        lambda **kwargs: AssetValidationReport(),
+    )
+    monkeypatch.setattr(thematic_pipeline, "validate_thematic_specs", lambda *args, **kwargs: report)
+
+    def fake_generate_thematic_grids(*args, **kwargs):
+        calls["grid"] = True
+        raise AssertionError("grid generation should not run in validate-only mode")
+
+    def fake_render_thematic_book_images(*args, **kwargs):
+        calls["render"] = True
+        raise AssertionError("rendering should not run in validate-only mode")
+
+    def fake_generate_pdf(*args, **kwargs):
+        calls["pdf"] = True
+        raise AssertionError("PDF generation should not run in validate-only mode")
+
+    monkeypatch.setattr(thematic_pipeline, "generate_thematic_grids", fake_generate_thematic_grids)
+    monkeypatch.setattr(thematic_pipeline, "render_thematic_book_images", fake_render_thematic_book_images)
+    monkeypatch.setattr(thematic_pipeline, "generate_pdf", fake_generate_pdf)
+
+    assert thematic_pipeline.generate_thematic_book(options) is None
+    assert calls == {"grid": False, "render": False, "pdf": False}
+    assert report.summary_printed
+
+
 def test_generate_thematic_book_stops_on_grid_failures(monkeypatch):
     report = StubValidationReport(has_errors=False)
     grid_batch = GridBatchResult(failures=["Puzzle 1 failed"])
