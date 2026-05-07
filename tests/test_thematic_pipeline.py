@@ -114,6 +114,69 @@ def test_generate_thematic_book_stops_on_asset_errors(monkeypatch):
     assert called["content_validation"] is False
 
 
+def test_generate_thematic_book_cleans_existing_output_before_validation(monkeypatch, tmp_path):
+    options = make_options()
+    options.clean_output = True
+    specs = [make_spec()]
+    report = StubValidationReport(has_errors=False)
+    output_dir = tmp_path / "thematic_test_book"
+    stale_file = output_dir / "stale.png"
+    output_dir.mkdir()
+    stale_file.write_text("old output", encoding="utf-8")
+    calls = {}
+
+    monkeypatch.setattr(thematic_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setattr(thematic_pipeline, "parse_puzzle_file", lambda path: specs)
+
+    def fake_validate_generation_assets(**kwargs):
+        calls["output_exists_during_asset_validation"] = output_dir.exists()
+        calls["stale_file_exists_during_asset_validation"] = stale_file.exists()
+        return AssetValidationReport()
+
+    monkeypatch.setattr(thematic_pipeline, "validate_generation_assets", fake_validate_generation_assets)
+    monkeypatch.setattr(thematic_pipeline, "validate_thematic_specs", lambda *args, **kwargs: report)
+    monkeypatch.setattr(
+        thematic_pipeline,
+        "generate_thematic_grids",
+        lambda specs, difficulty, grid_size, *, seed=None: GridBatchResult(
+            generated_puzzles=[make_generated()]
+        ),
+    )
+    monkeypatch.setattr(thematic_pipeline, "build_page_plan", lambda generated: "page-plan")
+    monkeypatch.setattr(
+        thematic_pipeline,
+        "render_thematic_book_images",
+        lambda **kwargs: RenderedBookImages(content_imgs=["content.png"], solution_imgs=["solution.png"]),
+    )
+    monkeypatch.setattr(thematic_pipeline, "generate_pdf", lambda *args, **kwargs: kwargs["outname"])
+
+    assert thematic_pipeline.generate_thematic_book(options) is not None
+    assert calls == {
+        "output_exists_during_asset_validation": False,
+        "stale_file_exists_during_asset_validation": False,
+    }
+
+
+def test_generate_thematic_book_stops_when_clean_output_path_is_not_directory(monkeypatch, tmp_path):
+    options = make_options()
+    options.clean_output = True
+    output_path = tmp_path / "thematic_test_book"
+    output_path.write_text("not a directory", encoding="utf-8")
+    called = {"asset_validation": False}
+
+    monkeypatch.setattr(thematic_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setattr(thematic_pipeline, "parse_puzzle_file", lambda path: [make_spec()])
+
+    def fake_validate_generation_assets(**kwargs):
+        called["asset_validation"] = True
+        raise AssertionError("asset validation should not run after clean-output failure")
+
+    monkeypatch.setattr(thematic_pipeline, "validate_generation_assets", fake_validate_generation_assets)
+
+    assert thematic_pipeline.generate_thematic_book(options) is None
+    assert called["asset_validation"] is False
+
+
 def test_generate_thematic_book_validate_only_stops_after_successful_validation(monkeypatch, tmp_path):
     options = make_options()
     options.validate_only = True
