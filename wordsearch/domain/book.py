@@ -16,6 +16,7 @@ class ThematicGenerationOptions:
     puzzles_txt_path: str
     difficulty: DifficultyLevel
     grid_size: int
+    seed: int | None = None
 
 
 @dataclass

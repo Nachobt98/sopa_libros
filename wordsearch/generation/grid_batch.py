@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass, field
 from typing import List, Sequence
 
@@ -29,6 +30,8 @@ def generate_thematic_grids(
     specs: Sequence[PuzzleSpec],
     difficulty: DifficultyLevel,
     grid_size: int,
+    *,
+    seed: int | None = None,
 ) -> GridBatchResult:
     """
     Generate every puzzle grid before rendering anything.
@@ -38,6 +41,7 @@ def generate_thematic_grids(
     references.
     """
     result = GridBatchResult()
+    rng = random.Random(seed) if seed is not None else None
 
     for spec in specs:
         words_for_grid = normalize_words_for_grid(spec.words)
@@ -45,6 +49,7 @@ def generate_thematic_grids(
             words_for_grid,
             difficulty=difficulty,
             grid_size=grid_size,
+            rng=rng,
         )
 
         if isinstance(grid_result, GridGenerationFailure):
