@@ -26,6 +26,8 @@ def print_run_summary(options: ThematicGenerationOptions) -> None:
     print(f"Archivo: {options.puzzles_txt_path}")
     print(f"Dificultad: {options.difficulty.name}")
     print(f"Grid: {options.grid_size}x{options.grid_size}")
+    if options.seed is not None:
+        print(f"Seed: {options.seed}")
 
 
 def _print_grid_failures(failures: list[str]) -> None:
@@ -83,7 +85,12 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         return None
 
     print("\n=== Generando grids ===")
-    grid_batch = generate_thematic_grids(specs, options.difficulty, options.grid_size)
+    grid_batch = generate_thematic_grids(
+        specs,
+        options.difficulty,
+        options.grid_size,
+        seed=options.seed,
+    )
     if grid_batch.has_failures:
         _print_grid_failures(grid_batch.failures)
         return None
