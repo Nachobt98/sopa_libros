@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 
 from wordsearch.cli.grid_size_prompts import ask_grid_size
+from wordsearch.config.design import DEFAULT_THEME_NAME, get_theme, theme_names
 from wordsearch.config.paths import DEFAULT_THEMATIC_WORDLIST
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.generation.difficulty import DifficultyLevel, difficulty_settings
@@ -47,6 +48,12 @@ def _parse_args() -> argparse.Namespace:
         "--seed",
         type=int,
         help="Optional random seed for reproducible grids.",
+    )
+    parser.add_argument(
+        "--theme",
+        choices=theme_names(),
+        default=DEFAULT_THEME_NAME,
+        help="Visual theme preset for shared page-frame styling.",
     )
     parser.add_argument(
         "--validate-only",
@@ -122,6 +129,8 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
     else:
         grid_size = ask_grid_size(settings)
 
+    theme = get_theme(args.theme)
+
     return ThematicGenerationOptions(
         book_title=book_title,
         puzzles_txt_path=puzzles_txt_path,
@@ -130,6 +139,7 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
         seed=args.seed,
         validate_only=args.validate_only,
         clean_output=args.clean_output,
+        theme_name=theme.name,
     )
 
 
