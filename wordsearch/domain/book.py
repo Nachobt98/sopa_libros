@@ -17,6 +17,7 @@ class ThematicGenerationOptions:
     difficulty: DifficultyLevel
     grid_size: int
     seed: int | None = None
+    validate_only: bool = False
 
 
 @dataclass
