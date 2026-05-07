@@ -43,6 +43,11 @@ def _parse_args() -> argparse.Namespace:
         type=int,
         help="Grid size. If omitted, the script asks interactively.",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="Optional random seed for reproducible grids.",
+    )
     return parser.parse_args()
 
 
@@ -109,6 +114,7 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
         puzzles_txt_path=puzzles_txt_path,
         difficulty=difficulty,
         grid_size=grid_size,
+        seed=args.seed,
     )
 
 
