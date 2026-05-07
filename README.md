@@ -257,6 +257,16 @@ El flujo temático puede generar:
 - portada de soluciones;
 - PDF final.
 
+### Validar sin generar
+
+Para revisar parsing, assets y contenido sin generar grids, PNGs ni PDF:
+
+```bash
+sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14 --validate-only
+```
+
+Si todo está correcto, el comando termina después de los informes de validación.
+
 ### Ejecución recomendada
 
 ```bash
@@ -606,7 +616,7 @@ Prueba:
 ## 16. Flujo recomendado de producción
 
 1. Crear o editar un archivo temático en `wordlists/`.
-2. Ejecutar `sopa-libros-thematic`.
+2. Ejecutar `sopa-libros-thematic --validate-only`.
 3. Generar una versión de prueba con pocos puzzles.
 4. Revisar visualmente PNGs y PDF.
 5. Ajustar palabras, facts, fondos o dificultad.
@@ -643,6 +653,12 @@ Ejecutar modo temático:
 
 ```bash
 sopa-libros-thematic
+```
+
+Validar modo temático sin generar archivos finales:
+
+```bash
+sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14 --validate-only
 ```
 
 Ejecutar checks locales:
