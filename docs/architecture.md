@@ -35,8 +35,10 @@ Current thematic generator command. It supports both interactive execution and C
 Example:
 
 ```powershell
-sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14
+sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14 --seed 1234
 ```
+
+`--seed` is optional. When provided, the thematic pipeline uses one book-level random stream so the same input, settings and code version can reproduce the same generated grids. This is intended for debugging, baseline PDFs and future visual regression checks.
 
 ### `sopa-libros`
 
@@ -125,7 +127,7 @@ Responsibility:
 - Orchestrate simple and thematic book generation after CLI options are resolved.
 ```
 
-The generated result uses explicit dataclasses in `wordsearch/domain/grid.py`.
+The generated result uses explicit dataclasses in `wordsearch/domain/grid.py`. The grid generator supports deterministic generation through an explicit seed or `random.Random` instance. The thematic batch generator uses a shared RNG instance when a book-level seed is provided, rather than resetting the seed for every puzzle.
 
 ### Difficulty and grid size
 
@@ -249,6 +251,7 @@ customization.
 2. Ruff is enabled only for basic correctness checks so far.
 3. Simple and thematic generation still have some duplicated orchestration concepts.
 4. Layout/font/theme config still uses module constants instead of explicit config objects.
+5. Reproducibility is now available for thematic grids, but still needs a visual baseline and generation report.
 ```
 
 ## Refactor direction
@@ -260,7 +263,8 @@ Recommended order:
 ```text
 1. Expand coverage around validation and low-level rendering helpers.
 2. Introduce explicit layout/font/theme config objects when customization requires it.
-3. Add advanced CLI options such as --seed, --validate-only and --clean-output.
+3. Add advanced CLI options such as --validate-only and --clean-output.
+4. Build a fixed seeded visual baseline for regression checks.
 ```
 
 ## Stability rule
@@ -270,7 +274,7 @@ Every refactor PR should preserve the same public generation command unless the 
 Reference command:
 
 ```powershell
-sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14
+sopa-libros-thematic --title "Black History Word Search Collection" --input wordlists/book_block.txt --difficulty medium --grid-size 14 --seed 1234
 ```
 
 After each refactor, run the reference command and compare the generated PDF structure against the manual regression checklist.
