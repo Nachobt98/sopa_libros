@@ -33,11 +33,6 @@ def test_ask_difficulty_invalid_then_valid(monkeypatch, capsys):
 
     assert "Opción no válida" in captured.out
 
-import pytest
-
-from wordsearch.cli import thematic
-from wordsearch.generation.difficulty import DifficultyLevel
-
 
 def make_args(**overrides):
     values = {
