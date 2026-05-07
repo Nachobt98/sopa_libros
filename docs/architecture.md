@@ -15,6 +15,8 @@ resolve CLI / interactive options
   ↓
 validate parsed puzzle specs
   ↓
+if --validate-only: stop before grids/render/PDF
+  ↓
 generate every grid in memory
   ↓
 build the real page plan
@@ -39,6 +41,8 @@ sopa-libros-thematic --title "Black History Word Search Collection" --input word
 ```
 
 `--seed` is optional. When provided, the thematic pipeline uses one book-level random stream so the same input, settings and code version can reproduce the same generated grids. This is intended for debugging, baseline PDFs and future visual regression checks.
+
+`--validate-only` is optional. When provided, the thematic pipeline parses the input, validates assets and validates thematic specs, then stops before grid generation, image rendering and PDF export.
 
 ### `sopa-libros`
 
@@ -263,7 +267,7 @@ Recommended order:
 ```text
 1. Expand coverage around validation and low-level rendering helpers.
 2. Introduce explicit layout/font/theme config objects when customization requires it.
-3. Add advanced CLI options such as --validate-only and --clean-output.
+3. Add advanced CLI options such as --clean-output.
 4. Build a fixed seeded visual baseline for regression checks.
 ```
 
