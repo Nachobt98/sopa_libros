@@ -1,0 +1,83 @@
+[Block]
+name: Baseline Layout Checks
+[/Block]
+
+[Puzzle]
+title: Short Title
+fact: A short fact checks the default puzzle spacing without stressing the layout.
+words:
+Layout
+Margin
+Grid
+Letters
+Puzzle
+Column
+Answer
+Page
+Panel
+Title
+Fact
+Print
+[/Puzzle]
+
+[Puzzle]
+title: A Deliberately Longer Puzzle Title For Wrapping Checks
+fact: This longer fun fact is included to verify that the page keeps a readable vertical rhythm when the text needs wrapping across multiple lines in the fact card.
+words:
+Typography
+Spacing
+Baseline
+Columns
+Renderer
+Wrapping
+Preview
+Fixture
+Section
+Canvas
+Output
+Design
+[/Puzzle]
+
+[Block]
+name: Solution And Word List Checks
+[/Block]
+
+[Puzzle]
+title: Phrases And Mixed Word Lengths
+fact: This puzzle includes visible phrases while keeping the normalized grid words short enough for a medium 14 by 14 baseline run.
+words:
+Harriet Tubman
+Civil Rights
+Jazz Music
+Book Club
+Front Matter
+Seed
+Report
+Preflight
+Theme
+Layout
+PDF
+KDP
+[/Puzzle]
+
+[Puzzle]
+title: Dense Word List Balance
+fact: A denser word list helps catch column balance, word spacing and solution highlight regressions before larger books are generated.
+words:
+Alpha
+Beta
+Gamma
+Delta
+Epsilon
+Zeta
+Eta
+Theta
+Iota
+Kappa
+Lambda
+Mu
+Nu
+Xi
+Omicron
+Pi
+[/Puzzle]
