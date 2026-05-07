@@ -2,6 +2,7 @@
 import builtins
 import pytest
 import argparse
+import sys
 from wordsearch.cli import thematic
 from wordsearch.generation.difficulty import DifficultyLevel
 
@@ -75,6 +76,29 @@ def test_resolve_options_accepts_clean_output():
 def test_resolve_options_rejects_validate_only_with_clean_output():
     with pytest.raises(ValueError, match="--clean-output"):
         thematic._resolve_options(make_args(validate_only=True, clean_output=True))
+
+
+def test_parse_args_accepts_clean_output(monkeypatch):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "sopa-libros-thematic",
+            "--title",
+            "Clean Book",
+            "--input",
+            "wordlists/book_block.txt",
+            "--difficulty",
+            "medium",
+            "--grid-size",
+            "14",
+            "--clean-output",
+        ],
+    )
+
+    args = thematic._parse_args()
+
+    assert args.clean_output is True
 
 
 def test_resolve_options_defaults_seed_to_none():

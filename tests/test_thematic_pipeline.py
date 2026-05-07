@@ -114,6 +114,24 @@ def test_generate_thematic_book_stops_on_asset_errors(monkeypatch):
     assert called["content_validation"] is False
 
 
+def test_clean_output_dir_succeeds_when_output_does_not_exist(tmp_path):
+    output_dir = tmp_path / "missing_book"
+
+    assert thematic_pipeline._clean_output_dir(str(output_dir)) is True
+
+
+def test_clean_output_dir_returns_false_when_removal_fails(monkeypatch, tmp_path):
+    output_dir = tmp_path / "book"
+    output_dir.mkdir()
+
+    def fail_remove(path):
+        raise OSError("locked")
+
+    monkeypatch.setattr(thematic_pipeline.shutil, "rmtree", fail_remove)
+
+    assert thematic_pipeline._clean_output_dir(str(output_dir)) is False
+
+
 def test_generate_thematic_book_cleans_existing_output_before_validation(monkeypatch, tmp_path):
     options = make_options()
     options.clean_output = True

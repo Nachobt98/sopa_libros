@@ -46,6 +46,18 @@ def test_prompt_wordlists_txt(monkeypatch, tmp_path):
     assert wordlists == [["apple", "banana"], ["carrot", "date"]]
     assert source == "txt"
 
+def test_prompt_wordlists_txt_with_empty_wordlists_folder(monkeypatch, tmp_path):
+    predefined = [["cat", "dog"]]
+    base_dir = tmp_path / "wordlists"
+    monkeypatch.setattr(wordlist_prompts, "DEFAULT_WORDLISTS_DIR", str(base_dir))
+    _mock_inputs(monkeypatch, ["3", "missing.txt"])
+    monkeypatch.setattr(wordlist_prompts, "load_wordlists_from_txt", lambda path: [])
+
+    wordlists, source = wordlist_prompts.prompt_wordlists(predefined)
+
+    assert wordlists == predefined
+    assert source == "predefined"
+
 def test_prompt_wordlists_txt_invalid(monkeypatch, tmp_path):
     predefined = [["cat", "dog"]]
     base_dir = tmp_path / "wordlists"
