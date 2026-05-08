@@ -4,6 +4,20 @@ The thematic generator runs an editorial render-quality pass after PNG pages are
 
 These checks are heuristic. They do not replace manually reviewing the generated PNGs/PDF, but they point to pages that are more likely to need visual inspection.
 
+## Adaptive layout pass
+
+Puzzle pages now use a small shared adaptive layout planner before the render-quality report is built. The same planner is used by the renderer and by the analyzer, so warnings describe the final adaptive page rather than a separate approximation.
+
+The planner is intentionally conservative:
+
+- short titles keep the default title size and spacing;
+- crowded puzzle titles may receive a small deterministic font reduction and a slightly tighter title-to-fact gap;
+- long fun facts try modest text-size/gap adjustments before truncation;
+- dense word lists may use an extra column and/or a small font reduction before being reported as dense;
+- grid cell size is not auto-fixed because changing grid size would alter the puzzle product itself.
+
+Adaptive layout does not try to hide all warnings. A warning after adaptation means the page still deserves manual review.
+
 ## Where warnings appear
 
 Warnings are printed in the console summary:
@@ -67,31 +81,31 @@ Recommended action: inspect the block cover and consider shortening the block na
 
 ### `PUZZLE_TITLE_DENSE`
 
-A puzzle title wraps to too many lines and may crowd the fun fact/card area.
+A puzzle title still wraps to too many lines after adaptive title sizing.
 
-Recommended action: inspect the puzzle page and shorten the title if it looks cramped.
+Recommended action: inspect the puzzle page and shorten the title if it still looks cramped.
 
 ### `FACT_TRUNCATED`
 
-The fun fact is expected to be truncated in the rendered card.
+The fun fact is still expected to be truncated after adaptive text sizing and spacing.
 
 Recommended action: shorten the fact or split the content across a different puzzle/topic.
 
 ### `FACT_CARD_TIGHT`
 
-The fun fact fits but uses nearly all available card text space.
+The fun fact fits after adaptive layout but uses nearly all available card text space.
 
 Recommended action: inspect the page; shortening the fact may improve readability.
 
 ### `WORD_LIST_COLUMN_OVERFLOW_RISK`
 
-At least one word/phrase is likely too wide for the computed word-list columns.
+At least one word/phrase remains too wide for the adaptive word-list columns.
 
 Recommended action: shorten the phrase, replace it with a tighter term, or increase layout space in a future preset.
 
 ### `WORD_LIST_DENSE`
 
-The word list fits but is dense.
+The word list fits after adaptive layout but remains dense.
 
 Recommended action: inspect the bottom word-list area and consider reducing word count.
 
