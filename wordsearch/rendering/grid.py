@@ -24,8 +24,6 @@ def draw_letter_grid(
     grid_top_hi: int,
     cell_size_hi: int,
     scale: int,
-    page_w_hi: int,
-    page_h_hi: int,
     highlight_fill: tuple[int, int, int, int],
     highlight_border: tuple[int, int, int, int],
     theme: ThemeConfig = DEFAULT_THEME,
@@ -35,6 +33,7 @@ def draw_letter_grid(
     cols = len(grid[0]) if rows > 0 else 0
     grid_w_hi = cell_size_hi * cols
     grid_h_hi = cell_size_hi * rows
+    page_w_hi, page_h_hi = img.size
 
     letter_font_size_hi = max(int(cell_size_hi * 0.70), int(18 * scale))
     font_letter = load_font(FONT_PATH, letter_font_size_hi)
