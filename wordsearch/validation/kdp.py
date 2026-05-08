@@ -15,7 +15,7 @@ from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD, FONT_TITLE
 from wordsearch.config.paths import build_output_file
 
 PREFLIGHT_REPORT_FILENAME = "preflight_report.json"
-PREFLIGHT_SCHEMA_VERSION = 3
+PREFLIGHT_SCHEMA_VERSION = 2
 PDF_POINTS_PER_INCH = 72
 PDF_SIZE_TOLERANCE_IN = 0.01
 PdfMetadata = Mapping[str, str | None]
@@ -35,17 +35,17 @@ class KdpPreflightIssue:
 @dataclass
 class KdpPreflightReport:
     schema_version: int
-    format_name: str
-    trim_width_in: float
-    trim_height_in: float
-    dpi: int
-    expected_page_width_px: int
-    expected_page_height_px: int
     expected_page_count: int
     content_image_count: int
     solution_image_count: int
     pdf_path: str
     output_dir: str
+    format_name: str = DEFAULT_LAYOUT.name
+    trim_width_in: float = DEFAULT_LAYOUT.trim_width_in
+    trim_height_in: float = DEFAULT_LAYOUT.trim_height_in
+    dpi: int = DEFAULT_LAYOUT.dpi
+    expected_page_width_px: int = DEFAULT_LAYOUT.page_width_px
+    expected_page_height_px: int = DEFAULT_LAYOUT.page_height_px
     expected_pdf_metadata: dict[str, str | None] = field(default_factory=dict)
     actual_pdf_metadata: dict[str, str | None] = field(default_factory=dict)
     actual_page_count: int | None = None
@@ -115,17 +115,17 @@ def build_kdp_preflight_report(
     solution_images = list(solution_image_paths)
     report = KdpPreflightReport(
         schema_version=PREFLIGHT_SCHEMA_VERSION,
+        expected_page_count=len(content_images) + 1 + len(solution_images),
+        content_image_count=len(content_images),
+        solution_image_count=len(solution_images),
+        pdf_path=pdf_path,
+        output_dir=output_dir,
         format_name=layout.name,
         trim_width_in=layout.trim_width_in,
         trim_height_in=layout.trim_height_in,
         dpi=layout.dpi,
         expected_page_width_px=layout.page_width_px,
         expected_page_height_px=layout.page_height_px,
-        expected_page_count=len(content_images) + 1 + len(solution_images),
-        content_image_count=len(content_images),
-        solution_image_count=len(solution_images),
-        pdf_path=pdf_path,
-        output_dir=output_dir,
         expected_pdf_metadata=dict(expected_pdf_metadata or {}),
     )
     _check_output_dir(output_dir, report)
