@@ -41,6 +41,17 @@ def print_run_summary(options: ThematicGenerationOptions) -> None:
         print("Modo: clean-output")
 
 
+def build_pdf_metadata(options: ThematicGenerationOptions) -> dict[str, str]:
+    """Build basic PDF metadata for a thematic book run."""
+    return {
+        "title": options.book_title,
+        "author": "",
+        "subject": f"Word search puzzle book generated with {options.difficulty.name} difficulty",
+        "keywords": f"word search, puzzle book, KDP, {options.difficulty.name.lower()}, {options.theme_name}",
+        "creator": "sopa-libros",
+    }
+
+
 def _print_grid_failures(failures: list[str]) -> None:
     print("\nERROR: uno o mas puzzles no se pudieron generar.")
     print("No se generara el PDF para evitar indice y soluciones con paginas incorrectas.\n")
