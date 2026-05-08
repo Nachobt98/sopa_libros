@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 
-from wordsearch.config.layout import PAGE_H_PX, PAGE_W_PX
+from wordsearch.config.layout import DPI, PAGE_H_PX, PAGE_W_PX
 
 
 def load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
@@ -117,9 +117,16 @@ def draw_centered_lines(
     return y
 
 
-def save_page(img: Image.Image, filename: str) -> str:
-    """Save a high-resolution RGBA/RGB page image at the configured KDP size."""
+def save_page(
+    img: Image.Image,
+    filename: str,
+    *,
+    output_width_px: int = PAGE_W_PX,
+    output_height_px: int = PAGE_H_PX,
+    dpi: int = DPI,
+) -> str:
+    """Save a high-resolution RGBA/RGB page image at the selected KDP size."""
     img_rgb = img.convert("RGB")
-    img_final = img_rgb.resize((PAGE_W_PX, PAGE_H_PX), resample=Image.LANCZOS)
-    img_final.save(filename, dpi=(300, 300))
+    img_final = img_rgb.resize((output_width_px, output_height_px), resample=Image.LANCZOS)
+    img_final.save(filename, dpi=(dpi, dpi))
     return filename
