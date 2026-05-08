@@ -9,7 +9,6 @@ from typing import Any, Iterable, Mapping
 
 from PIL import Image
 from pypdf import PdfReader
-from pypdf.errors import PdfReadError
 
 from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD, FONT_TITLE
 from wordsearch.config.layout import DPI, PAGE_H_PX, PAGE_W_PX, TRIM_H_IN, TRIM_W_IN
