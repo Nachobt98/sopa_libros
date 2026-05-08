@@ -20,6 +20,9 @@ def make_options() -> ThematicGenerationOptions:
         grid_size=14,
         seed=1234,
         clean_output=True,
+        preview=True,
+        limit=5,
+        output_dir="custom_output/report_test",
     )
 
 
@@ -52,6 +55,9 @@ def test_build_thematic_generation_report_contains_expected_metadata(tmp_path):
     assert report.grid_size == 14
     assert report.seed == 1234
     assert report.clean_output is True
+    assert report.preview is True
+    assert report.limit == 5
+    assert report.requested_output_dir == "custom_output/report_test"
     assert report.puzzle_count == 3
     assert report.block_count == 2
     assert report.content_image_count == 3
@@ -87,3 +93,6 @@ def test_write_generation_report_writes_json_file(tmp_path):
     assert payload["schema_version"] == REPORT_SCHEMA_VERSION
     assert payload["book_title"] == "Report Test Book"
     assert payload["pdf_path"] == str(tmp_path / "book.pdf")
+    assert payload["preview"] is True
+    assert payload["limit"] == 5
+    assert payload["requested_output_dir"] == "custom_output/report_test"
