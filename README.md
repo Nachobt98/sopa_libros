@@ -23,6 +23,7 @@ El proyecto usa principalmente:
 
 - `Pillow`: renderizado de páginas e imágenes.
 - `reportlab`: creación del PDF final.
+- `pypdf`: inspección interna del PDF durante el preflight KDP.
 
 Instala las dependencias con:
 
@@ -75,7 +76,7 @@ pip install -r requirements.txt
 Comprueba que Python puede importar las dependencias:
 
 ```bash
-python -c "from PIL import Image; import reportlab; print('OK')"
+python -c "from PIL import Image; import reportlab; import pypdf; print('OK')"
 ```
 
 ---
@@ -268,6 +269,33 @@ sopa-libros-thematic --title "Black History Word Search Collection" --input word
 
 Si todo está correcto, el comando termina después de los informes de validación.
 
+### Preview visual y generación parcial
+
+Para iterar rápido sobre diseño, temas o contenido sin generar un libro entero, usa `--preview`:
+
+```bash
+sopa-libros-thematic --title "Visual Baseline Preview" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --preview --clean-output
+```
+
+Preview mode aplica valores por defecto pensados para revisión visual rápida:
+
+- `--seed 1234` si no indicas seed;
+- `--limit 5` si no indicas límite.
+
+También puedes controlar ambos valores explícitamente:
+
+```bash
+sopa-libros-thematic --title "Premium Preview" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --preview --seed 777 --limit 3 --theme premium-neutral
+```
+
+Opciones útiles para producción:
+
+- `--limit N`: genera solo los primeros N puzzles parseados.
+- `--output-dir PATH`: escribe la salida en una carpeta concreta en vez de `output_puzzles_kdp/<book_slug>`.
+- `--preview`: genera un subconjunto reproducible y escribe `visual_regression_report.json`.
+
+`visual_regression_report.json` contiene fingerprints ligeros de las páginas renderizadas: tamaño, luminancia media, desviación y un hash perceptual simple. No sustituye la revisión visual humana, pero ayuda a detectar cambios inesperados entre ejecuciones.
+
 ### Temas visuales
 
 El modo temático permite seleccionar un preset visual con `--theme`.
@@ -426,7 +454,8 @@ Dentro pueden aparecer:
 - PNGs de índice/instrucciones/bloques.
 - PDF final.
 - `generation_report.json` con metadatos de una generación temática correcta.
-- `preflight_report.json` con comprobaciones básicas del output para KDP.
+- `preflight_report.json` con comprobaciones del output y PDF para KDP.
+- `visual_regression_report.json` cuando se usa `--preview`.
 
 La carpeta de salida está ignorada por Git para evitar subir archivos pesados generados automáticamente.
 
@@ -557,6 +586,12 @@ wordlists/book_block.txt
 sopa-libros-thematic --title "Visual Baseline" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output
 ```
 
+### Generar baseline visual con preview/fingerprint
+
+```bash
+sopa-libros-thematic --title "Visual Baseline Preview" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --preview --clean-output
+```
+
 ### Generar baseline visual con tema premium
 
 ```bash
@@ -592,6 +627,16 @@ pip install -r requirements.txt
 ### `ModuleNotFoundError: No module named 'reportlab'`
 
 Falta ReportLab.
+
+Solución:
+
+```bash
+pip install -r requirements.txt
+```
+
+### `ModuleNotFoundError: No module named 'pypdf'`
+
+Falta pypdf, usado por el preflight para inspeccionar internamente el PDF.
 
 Solución:
 
@@ -671,9 +716,9 @@ Prueba:
 
 1. Crear o editar un archivo temático en `wordlists/`.
 2. Ejecutar `sopa-libros-thematic --validate-only`.
-3. Generar una versión de prueba con pocos puzzles.
+3. Generar una versión de prueba con `--preview` o `--limit`.
 4. Revisar visualmente PNGs y PDF.
-5. Revisar `generation_report.json` y `preflight_report.json`.
+5. Revisar `generation_report.json`, `preflight_report.json` y, en preview, `visual_regression_report.json`.
 6. Ajustar palabras, facts, fondos o dificultad.
 7. Generar versión completa.
 8. Revisar márgenes y legibilidad.
@@ -720,6 +765,12 @@ Generar la baseline visual reproducible:
 
 ```bash
 sopa-libros-thematic --title "Visual Baseline" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output
+```
+
+Generar un preview reproducible con fingerprint visual:
+
+```bash
+sopa-libros-thematic --title "Visual Baseline Preview" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --preview --clean-output
 ```
 
 Generar la baseline visual con un tema concreto:

@@ -15,6 +15,7 @@ from wordsearch.config.design import DEFAULT_THEME_NAME, get_theme
 from wordsearch.config.paths import BASE_OUTPUT_DIR, build_book_output_dir, build_output_file
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.page_plan import build_page_plan
+from wordsearch.domain.puzzle import PuzzleSpec
 from wordsearch.generation.book_assembly import render_thematic_book_images
 from wordsearch.generation.grid_batch import generate_thematic_grids
 from wordsearch.generation.reporting import build_thematic_generation_report, write_generation_report
@@ -23,6 +24,7 @@ from wordsearch.rendering.pdf import generate_pdf
 from wordsearch.validation.assets import validate_generation_assets
 from wordsearch.validation.kdp import build_kdp_preflight_report, write_kdp_preflight_report
 from wordsearch.validation.thematic import validate_thematic_specs
+from wordsearch.validation.visual import build_visual_regression_report, write_visual_regression_report
 from wordsearch.utils.slug import slugify
 
 
@@ -35,6 +37,12 @@ def print_run_summary(options: ThematicGenerationOptions) -> None:
     print(f"Tema: {options.theme_name}")
     if options.seed is not None:
         print(f"Seed: {options.seed}")
+    if options.output_dir:
+        print(f"Output dir: {options.output_dir}")
+    if options.limit is not None:
+        print(f"Limite de puzzles: {options.limit}")
+    if options.preview:
+        print("Modo: preview")
     if options.validate_only:
         print("Modo: validate-only")
     if options.clean_output:
@@ -50,6 +58,20 @@ def build_pdf_metadata(options: ThematicGenerationOptions) -> dict[str, str]:
         "keywords": f"word search, puzzle book, KDP, {options.difficulty.name.lower()}, {options.theme_name}",
         "creator": "sopa-libros",
     }
+
+
+def _resolve_output_dir(options: ThematicGenerationOptions, book_slug: str) -> str:
+    """Return the output directory requested by the user or the default book folder."""
+    if options.output_dir:
+        return str(Path(options.output_dir))
+    return build_book_output_dir(book_slug, BASE_OUTPUT_DIR)
+
+
+def _apply_preview_limit(specs: list[PuzzleSpec], limit: int | None) -> list[PuzzleSpec]:
+    """Return the first N specs when a production preview limit is enabled."""
+    if limit is None:
+        return specs
+    return specs[:limit]
 
 
 def _print_grid_failures(failures: list[str]) -> None:
@@ -104,10 +126,18 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         print("No se ha encontrado ningun bloque [Puzzle] en el fichero.")
         return None
 
-    print(f"\nSe han cargado {len(specs)} puzzles del fichero.")
+    parsed_count = len(specs)
+    specs = _apply_preview_limit(specs, options.limit)
+    print(f"\nSe han cargado {parsed_count} puzzles del fichero.")
+    if options.limit is not None:
+        print(f"Preview/limit activo: se generaran {len(specs)} puzzles.")
+
+    if not specs:
+        print("No queda ningun puzzle despues de aplicar el limite de generacion.")
+        return None
 
     book_slug = slugify(options.book_title)
-    output_dir = build_book_output_dir(book_slug, BASE_OUTPUT_DIR)
+    output_dir = _resolve_output_dir(options, book_slug)
     if options.clean_output and not _clean_output_dir(output_dir):
         return None
 
@@ -163,6 +193,16 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         print("No se han generado imagenes suficientes como para crear el PDF.")
         return None
 
+    visual_regression_report_path = None
+    if options.preview:
+        visual_report = build_visual_regression_report(
+            [*rendered_images.content_imgs, *rendered_images.solution_imgs]
+        )
+        visual_regression_report_path = write_visual_regression_report(
+            visual_report,
+            output_dir=output_dir,
+        )
+
     pdf_path = build_output_file(output_dir, f"{book_slug}.pdf")
     pdf_metadata = build_pdf_metadata(options)
 
@@ -202,4 +242,6 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     print("\nPDF generado:", pdf_final)
     print("Reporte generado:", report_path)
     print("Preflight generado:", preflight_report_path)
+    if visual_regression_report_path:
+        print("Visual regression generado:", visual_regression_report_path)
     return pdf_final
