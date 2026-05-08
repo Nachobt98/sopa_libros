@@ -88,7 +88,7 @@ def build_render_quality_report(
     draw = _make_measure_draw(theme)
 
     warnings.extend(_analyze_title_page(book_title, draw=draw, path=path_index.get("00_title_page")))
-    warnings.extend(_analyze_block_covers(generated_puzzles, page_plan, draw=draw, path_index=path_index, theme=theme))
+    warnings.extend(_analyze_block_covers(generated_puzzles, page_plan, draw=draw, path_index=path_index))
 
     for generated in generated_puzzles:
         warnings.extend(
@@ -212,7 +212,6 @@ def _analyze_block_covers(
     *,
     draw: ImageDraw.ImageDraw,
     path_index: dict[str, str],
-    theme: ThemeConfig,
 ) -> list[RenderQualityWarning]:
     warnings: list[RenderQualityWarning] = []
     scale = 3
@@ -452,7 +451,7 @@ def _measure_word_list(
 
     pill_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75) * scale)
     pill_text = "Solution on page 999"
-    tw_pill, th_pill = text_size(draw, pill_text, pill_font)
+    _, th_pill = text_size(draw, pill_text, pill_font)
     pad_h = int(16 * scale)
     box_h = th_pill + 2 * pad_h
     target_pill_y = words_top_hi - gap_pill_to_words_hi - box_h
