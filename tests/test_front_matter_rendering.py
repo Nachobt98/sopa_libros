@@ -1,10 +1,12 @@
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from wordsearch.config.design import DEFAULT_THEME, KIDS_THEME, PREMIUM_NEUTRAL_THEME
+from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD
 from wordsearch.config.layout import PAGE_H_PX, PAGE_W_PX
 from wordsearch.rendering import front_matter
+from wordsearch.rendering.common import load_font
 from wordsearch.rendering.front_matter import (
     _draw_main_panel,
     _make_background,
@@ -12,8 +14,6 @@ from wordsearch.rendering.front_matter import (
     render_instructions_page,
     render_table_of_contents,
 )
-from wordsearch.rendering.common import load_font
-from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD
 
 
 def assert_valid_png(path: str | Path) -> Image.Image:
@@ -47,12 +47,8 @@ def test_make_background_applies_theme_opacity_to_existing_background(tmp_path):
 def test_draw_main_panel_returns_expected_bounds_and_changes_canvas():
     image = Image.new("RGBA", (PAGE_W_PX, PAGE_H_PX), DEFAULT_THEME.page_background_fill)
     before = image.copy()
-    draw = Image.Draw.Draw(image) if hasattr(Image, "Draw") else None
-    # Pillow exposes ImageDraw as a separate module in normal runtime; import locally
-    # to keep this assertion independent from renderer internals.
-    from PIL import ImageDraw
-
     draw = ImageDraw.Draw(image)
+
     bounds = _draw_main_panel(draw, 1, theme=PREMIUM_NEUTRAL_THEME)
 
     assert bounds == (110, 105, PAGE_W_PX - 110, PAGE_H_PX - 150)
@@ -61,8 +57,6 @@ def test_draw_main_panel_returns_expected_bounds_and_changes_canvas():
 
 def test_measure_instruction_block_height_increases_with_wrapped_content():
     image = Image.new("RGBA", (PAGE_W_PX, PAGE_H_PX), DEFAULT_THEME.page_background_fill)
-    from PIL import ImageDraw
-
     draw = ImageDraw.Draw(image)
     number_font = load_font(FONT_PATH_BOLD, 24)
     body_font = load_font(FONT_PATH, 22)
