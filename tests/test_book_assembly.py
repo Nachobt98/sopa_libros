@@ -1,3 +1,4 @@
+from wordsearch.config.design import PREMIUM_NEUTRAL_THEME
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.grid import PlacedWord
 from wordsearch.domain.page_plan import build_page_plan
@@ -50,20 +51,20 @@ def test_render_thematic_book_images_orchestrates_pages_in_order(monkeypatch, tm
     page_plan = build_page_plan(generated)
     calls = []
 
-    def fake_render_title_page(book_title, *, filename, background_path):
-        calls.append(("title", book_title, filename, background_path))
+    def fake_render_title_page(book_title, *, filename, background_path, theme):
+        calls.append(("title", book_title, filename, background_path, theme.name))
         return filename
 
-    def fake_render_table_of_contents(entries, *, output_dir, background_path):
-        calls.append(("toc", entries, output_dir, background_path))
+    def fake_render_table_of_contents(entries, *, output_dir, background_path, theme):
+        calls.append(("toc", entries, output_dir, background_path, theme.name))
         return [str(tmp_path / "toc_1.png"), str(tmp_path / "toc_2.png")]
 
-    def fake_render_instructions_page(book_title, *, filename, background_path):
-        calls.append(("instructions", book_title, filename, background_path))
+    def fake_render_instructions_page(book_title, *, filename, background_path, theme):
+        calls.append(("instructions", book_title, filename, background_path, theme.name))
         return filename
 
-    def fake_render_block_cover(*, block_name, block_index, filename, background_path):
-        calls.append(("block", block_name, block_index, filename, background_path))
+    def fake_render_block_cover(*, block_name, block_index, filename, background_path, theme):
+        calls.append(("block", block_name, block_index, filename, background_path, theme.name))
         return filename
 
     def fake_render_page(
@@ -76,6 +77,7 @@ def test_render_thematic_book_images_orchestrates_pages_in_order(monkeypatch, tm
         fun_fact,
         solution_page_number,
         background_path,
+        theme=None,
     ):
         calls.append(
             (
@@ -88,6 +90,7 @@ def test_render_thematic_book_images_orchestrates_pages_in_order(monkeypatch, tm
                 fun_fact,
                 solution_page_number,
                 background_path,
+                None if theme is None else theme.name,
             )
         )
         return filename
@@ -101,6 +104,7 @@ def test_render_thematic_book_images_orchestrates_pages_in_order(monkeypatch, tm
         placed_words,
         puzzle_title,
         background_path,
+        theme=None,
     ):
         calls.append(
             (
@@ -112,6 +116,7 @@ def test_render_thematic_book_images_orchestrates_pages_in_order(monkeypatch, tm
                 list(placed_words),
                 puzzle_title,
                 background_path,
+                None if theme is None else theme.name,
             )
         )
         return filename
@@ -128,6 +133,7 @@ def test_render_thematic_book_images_orchestrates_pages_in_order(monkeypatch, tm
         generated_puzzles=generated,
         page_plan=page_plan,
         output_dir=str(tmp_path),
+        theme=PREMIUM_NEUTRAL_THEME,
     )
 
     assert rendered.is_complete
@@ -161,20 +167,29 @@ def test_render_thematic_book_images_orchestrates_pages_in_order(monkeypatch, tm
         "solution",
     ]
 
+    front_matter_calls = [call for call in calls if call[0] in {"title", "toc", "instructions"}]
+    assert [call[-1] for call in front_matter_calls] == ["premium-neutral"] * 3
+
     block_calls = [call for call in calls if call[0] == "block"]
     assert block_calls[0][1:] == (
         "Block A",
         1,
         str(tmp_path / "block_01_block_a.png"),
         "a.png",
+        "premium-neutral",
     )
     assert block_calls[1][1:] == (
         "Block B",
         2,
         str(tmp_path / "block_02_block_b.png"),
         "b.png",
+        "premium-neutral",
     )
 
     puzzle_calls = [call for call in calls if call[0] == "puzzle"]
     assert [call[7] for call in puzzle_calls] == [page_plan.first_solution_page + index for index in range(3)]
     assert [call[8] for call in puzzle_calls] == ["a.png", "a.png", "b.png"]
+    assert [call[9] for call in puzzle_calls] == ["premium-neutral"] * 3
+
+    solution_calls = [call for call in calls if call[0] == "solution"]
+    assert [call[-1] for call in solution_calls] == ["premium-neutral"] * 3

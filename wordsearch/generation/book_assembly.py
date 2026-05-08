@@ -56,6 +56,7 @@ def render_thematic_book_images(
             book_title,
             filename=title_page_filename,
             background_path=None,
+            theme=theme,
         )
     )
 
@@ -64,6 +65,7 @@ def render_thematic_book_images(
             build_toc_entries(page_plan),
             output_dir=output_dir,
             background_path=None,
+            theme=theme,
         )
     )
 
@@ -73,6 +75,7 @@ def render_thematic_book_images(
             book_title,
             filename=instr_filename,
             background_path=None,
+            theme=theme,
         )
     )
 
@@ -100,6 +103,7 @@ def render_thematic_book_images(
                     block_index=block_index,
                     filename=block_cover_filename,
                     background_path=bg_path,
+                    theme=theme,
                 )
             )
 

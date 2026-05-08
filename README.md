@@ -285,7 +285,7 @@ Ejemplo:
 sopa-libros-thematic --title "Visual Baseline Premium" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output --theme premium-neutral
 ```
 
-Actualmente los temas afectan principalmente al marco compartido de las páginas de puzzle y solución: fondo base, opacidad de fondo, panel, borde, radio, color de título y color de texto base. El resto de páginas se migrará progresivamente a estos presets.
+Los temas afectan al conjunto principal del interior temático: portada interior, índice, instrucciones, portadas de bloque, páginas de puzzle, páginas de solución, paneles, títulos, textos, grids, pills, fun facts y highlights. El objetivo es que cada preset tenga una dirección editorial coherente en todo el libro.
 
 ### Baseline visual reproducible
 

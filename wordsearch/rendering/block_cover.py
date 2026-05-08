@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from typing import Optional
 
-from PIL import Image, ImageDraw
+from PIL import ImageDraw
 
+from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_TITLE,
@@ -18,8 +18,14 @@ from wordsearch.config.layout import (
     PAGE_W_PX,
 )
 from wordsearch.config.paths import build_default_output_file
-from wordsearch.rendering.backgrounds import BACKGROUND_PATH
-from wordsearch.rendering.common import load_font, save_page, text_size, wrap_text
+from wordsearch.rendering.common import load_font, rounded_rectangle, save_page, text_size, wrap_text
+from wordsearch.rendering.page_frame import create_page_canvas
+
+
+def _shadow_for(color: tuple[int, int, int, int], alpha: int = 85) -> tuple[int, int, int, int]:
+    """Return a subtle shadow color that works with light and dark theme colors."""
+    brightness = sum(color[:3]) / 3
+    return (0, 0, 0, alpha) if brightness > 128 else (255, 255, 255, alpha)
 
 
 def render_block_cover(
@@ -27,41 +33,44 @@ def render_block_cover(
     block_index: int,
     filename: Optional[str] = None,
     background_path: Optional[str] = None,
+    *,
+    theme: ThemeConfig = DEFAULT_THEME,
 ) -> str:
     """
     Genera una página de portada para un bloque temático.
 
-    Fondo completo + título centrado + subtítulo de una línea. Sin panel blanco.
+    Fondo completo + título centrado + subtítulo de una línea.
     """
     scale = 3
     page_w_hi = PAGE_W_PX * scale
     page_h_hi = PAGE_H_PX * scale
 
-    bg_path = background_path or BACKGROUND_PATH
-    if bg_path and os.path.exists(bg_path):
-        img = Image.open(bg_path).convert("RGBA")
-        img = img.resize((page_w_hi, page_h_hi), Image.LANCZOS)
-
-        if img.mode == "RGBA":
-            r, g, b, a = img.split()
-            a = a.point(lambda value: int(value * 0.70))
-            img = Image.merge("RGBA", (r, g, b, a))
-    else:
-        img = Image.new("RGBA", (page_w_hi, page_h_hi), (255, 255, 255, 255))
-
+    img = create_page_canvas(background_path, scale, theme=theme)
     draw = ImageDraw.Draw(img)
 
     margin_x = int(page_w_hi * 0.10)
     max_text_width = page_w_hi - 2 * margin_x
 
+    panel_left = int(page_w_hi * 0.09)
+    panel_top = int(page_h_hi * 0.245)
+    panel_right = page_w_hi - panel_left
+    panel_bottom = int(page_h_hi * 0.56)
+    rounded_rectangle(
+        draw,
+        (panel_left, panel_top, panel_right, panel_bottom),
+        radius=int(theme.panel_radius_px * scale),
+        fill=theme.panel_fill,
+        outline=theme.panel_border,
+        width=max(1, int(theme.panel_border_width_px * scale)),
+    )
+
     center_x = page_w_hi // 2
-    title_y = int(page_h_hi * 0.33)
+    title_y = int(page_h_hi * 0.35)
     subtitle_gap = int(40 * scale)
 
-    small = img.resize((50, 50)).convert("L")
-    avg_brightness = sum(small.getdata()) / (50 * 50)
-    main_color = (255, 255, 255, 255) if avg_brightness < 128 else (0, 0, 0, 255)
-    shadow_color = (0, 0, 0, 90) if main_color[0] == 255 else (255, 255, 255, 90)
+    main_color = theme.title_color
+    body_color = theme.body_color
+    shadow_color = _shadow_for(main_color)
 
     raw_title = block_name.strip() or f"Block {block_index}"
 
@@ -83,7 +92,7 @@ def render_block_cover(
     total_title_h = len(title_lines) * line_height
 
     first_line_y = title_y - total_title_h // 2
-    shadow_offset = int(4 * scale)
+    shadow_offset = int(3 * scale)
 
     y = first_line_y
     for line in title_lines:
@@ -125,20 +134,21 @@ def render_block_cover(
         sub_w, sub_h = text_size(draw, subtitle, font_sub)
 
     subtitle_y = y + subtitle_gap
+    subtitle_shadow = _shadow_for(body_color, alpha=70)
 
     try:
         draw.text(
             (center_x + shadow_offset, subtitle_y + sub_h / 2 + shadow_offset),
             subtitle,
             font=font_sub,
-            fill=shadow_color,
+            fill=subtitle_shadow,
             anchor="mm",
         )
         draw.text(
             (center_x, subtitle_y + sub_h / 2),
             subtitle,
             font=font_sub,
-            fill=main_color,
+            fill=body_color,
             anchor="mm",
         )
     except TypeError:
@@ -148,9 +158,9 @@ def render_block_cover(
             (sx + shadow_offset, sy + shadow_offset),
             subtitle,
             font=font_sub,
-            fill=shadow_color,
+            fill=subtitle_shadow,
         )
-        draw.text((sx, sy), subtitle, font=font_sub, fill=main_color)
+        draw.text((sx, sy), subtitle, font=font_sub, fill=body_color)
 
     if filename is None:
         filename = build_default_output_file(f"block_{block_index}.png")

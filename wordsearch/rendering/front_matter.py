@@ -9,6 +9,7 @@ from typing import Optional, Sequence, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 
+from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_PATH_BOLD,
@@ -35,7 +36,12 @@ from wordsearch.rendering.common import (
 TocEntry = Tuple[str, int, bool]
 
 
-def _make_background(background_path: Optional[str], scale: int) -> Image.Image:
+def _make_background(
+    background_path: Optional[str],
+    scale: int,
+    *,
+    theme: ThemeConfig = DEFAULT_THEME,
+) -> Image.Image:
     width_hi = PAGE_W_PX * scale
     height_hi = PAGE_H_PX * scale
     bg_path = background_path or BACKGROUND_PATH
@@ -44,13 +50,18 @@ def _make_background(background_path: Optional[str], scale: int) -> Image.Image:
         img = Image.open(bg_path).convert("RGBA")
         img = img.resize((width_hi, height_hi), Image.LANCZOS)
         r, g, b, a = img.split()
-        a = a.point(lambda value: int(value * 0.72))
+        a = a.point(lambda value: int(value * theme.background_opacity))
         return Image.merge("RGBA", (r, g, b, a))
 
-    return Image.new("RGBA", (width_hi, height_hi), (255, 255, 255, 255))
+    return Image.new("RGBA", (width_hi, height_hi), theme.page_background_fill)
 
 
-def _draw_main_panel(draw: ImageDraw.ImageDraw, scale: int) -> Tuple[int, int, int, int]:
+def _draw_main_panel(
+    draw: ImageDraw.ImageDraw,
+    scale: int,
+    *,
+    theme: ThemeConfig = DEFAULT_THEME,
+) -> Tuple[int, int, int, int]:
     left = int(110 * scale)
     top = int(105 * scale)
     right = PAGE_W_PX * scale - int(110 * scale)
@@ -59,10 +70,10 @@ def _draw_main_panel(draw: ImageDraw.ImageDraw, scale: int) -> Tuple[int, int, i
     rounded_rectangle(
         draw,
         (left, top, right, bottom),
-        radius=int(26 * scale),
-        fill=(255, 255, 255, 150),
-        outline=(0, 0, 0, 55),
-        width=max(1, int(2 * scale)),
+        radius=int(theme.panel_radius_px * 0.75 * scale),
+        fill=theme.panel_fill,
+        outline=theme.panel_border,
+        width=max(1, int(theme.panel_border_width_px * 0.70 * scale)),
     )
     return left, top, right, bottom
 
@@ -71,6 +82,8 @@ def render_table_of_contents(
     toc_entries: Sequence[TocEntry],
     output_dir: str,
     background_path: Optional[str] = None,
+    *,
+    theme: ThemeConfig = DEFAULT_THEME,
 ) -> list[str]:
     """
     Renderiza un índice editorial con más aire vertical.
@@ -79,9 +92,13 @@ def render_table_of_contents(
     detalles de renderizado.
     """
     scale = 3
-    img = _make_background(background_path, scale)
+    img = _make_background(background_path, scale, theme=theme)
     draw = ImageDraw.Draw(img)
-    panel_left, panel_top, panel_right, _panel_bottom = _draw_main_panel(draw, scale)
+    panel_left, panel_top, panel_right, _panel_bottom = _draw_main_panel(
+        draw,
+        scale,
+        theme=theme,
+    )
 
     center_x = PAGE_W_PX * scale // 2
     title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.15) * scale)
@@ -90,16 +107,16 @@ def render_table_of_contents(
     page_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.78) * scale)
 
     y = panel_top + int(96 * scale)
-    y = draw_centered_text(draw, "Table of Contents", title_font, center_x, y, (0, 0, 0, 255))
+    y = draw_centered_text(draw, "Table of Contents", title_font, center_x, y, theme.title_color)
 
     y += int(54 * scale)
-    y = draw_centered_text(draw, "SECTIONS", section_font, center_x, y, (0, 0, 0, 190))
+    y = draw_centered_text(draw, "SECTIONS", section_font, center_x, y, theme.body_color)
 
     line_y = y + int(44 * scale)
     line_width = int((panel_right - panel_left) * 0.46)
     draw.line(
         (center_x - line_width // 2, line_y, center_x + line_width // 2, line_y),
-        fill=(0, 0, 0, 95),
+        fill=theme.panel_border,
         width=max(1, int(1.5 * scale)),
     )
 
@@ -114,7 +131,7 @@ def render_table_of_contents(
             y += int(70 * scale)
             draw.line(
                 (content_left, y, content_right, y),
-                fill=(0, 0, 0, 75),
+                fill=theme.panel_border,
                 width=max(1, int(1 * scale)),
             )
             y += int(72 * scale)
@@ -127,8 +144,8 @@ def render_table_of_contents(
         label_x = content_left
         baseline_y = y
 
-        draw.text((label_x, baseline_y), label, font=entry_font, fill=(0, 0, 0, 235))
-        draw.text((page_x, baseline_y), page_text, font=page_font, fill=(0, 0, 0, 235))
+        draw.text((label_x, baseline_y), label, font=entry_font, fill=theme.body_color)
+        draw.text((page_x, baseline_y), page_text, font=page_font, fill=theme.body_color)
 
         dot_start = label_x + label_width + int(18 * scale)
         dot_end = page_x - int(18 * scale)
@@ -140,7 +157,7 @@ def render_table_of_contents(
             while x < dot_end:
                 draw.line(
                     (x, dot_y, min(x + dash_w, dot_end), dot_y),
-                    fill=(0, 0, 0, 70),
+                    fill=theme.panel_border,
                     width=max(1, int(1 * scale)),
                 )
                 x += dash_w + gap_w
@@ -175,14 +192,20 @@ def render_instructions_page(
     book_title: str,
     filename: Optional[str] = None,
     background_path: Optional[str] = None,
+    *,
+    theme: ThemeConfig = DEFAULT_THEME,
 ) -> str:
     """
     Renderiza una página de instrucciones limpia y genérica.
     """
     scale = 3
-    img = _make_background(background_path, scale)
+    img = _make_background(background_path, scale, theme=theme)
     draw = ImageDraw.Draw(img)
-    panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale)
+    panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(
+        draw,
+        scale,
+        theme=theme,
+    )
 
     center_x = PAGE_W_PX * scale // 2
     title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.05) * scale)
@@ -191,7 +214,7 @@ def render_instructions_page(
     body_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.70) * scale)
 
     title_y = panel_top + int(78 * scale)
-    title_bottom = draw_centered_text(draw, "Instructions", title_font, center_x, title_y, (0, 0, 0, 255))
+    title_bottom = draw_centered_text(draw, "Instructions", title_font, center_x, title_y, theme.title_color)
 
     subtitle_y = title_bottom + int(46 * scale)
     subtitle_bottom = draw_centered_text(
@@ -200,7 +223,7 @@ def render_instructions_page(
         subtitle_font,
         center_x,
         subtitle_y,
-        (0, 0, 0, 220),
+        theme.body_color,
     )
 
     instructions = [
@@ -240,14 +263,14 @@ def render_instructions_page(
             (content_left + number_col_width - num_w, y),
             number_text,
             font=number_font,
-            fill=(0, 0, 0, 235),
+            fill=theme.title_color,
         )
 
         lines = wrap_text(draw, instruction, body_font, max_text_width)
         text_y = y
         line_h = int(body_font.size * 1.18)
         for line in lines:
-            draw.text((text_left, text_y), line, font=body_font, fill=(0, 0, 0, 235))
+            draw.text((text_left, text_y), line, font=body_font, fill=theme.body_color)
             text_y += line_h
 
         number_h = text_size(draw, number_text, number_font)[1]

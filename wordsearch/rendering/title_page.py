@@ -7,11 +7,11 @@ antes del índice para dar al PDF una estructura más editorial.
 
 from __future__ import annotations
 
-import os
 from typing import Optional
 
-from PIL import Image, ImageDraw
+from PIL import ImageDraw
 
+from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_TITLE,
@@ -23,25 +23,32 @@ from wordsearch.config.layout import (
     PAGE_W_PX,
 )
 from wordsearch.config.paths import build_default_output_file
-from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import (
     draw_centered_lines,
     load_font,
+    rounded_rectangle,
     save_page,
     text_size,
     wrap_text,
 )
+from wordsearch.rendering.page_frame import create_page_canvas
 
 
-def _draw_soft_panel(draw: ImageDraw.ImageDraw, scale: int) -> None:
+def _draw_soft_panel(
+    draw: ImageDraw.ImageDraw,
+    scale: int,
+    *,
+    theme: ThemeConfig = DEFAULT_THEME,
+) -> None:
     """Draw a compact editorial panel, leaving visible textured background."""
     margin_x = int(135 * scale)
     margin_top = int(210 * scale)
     margin_bottom = int(760 * scale)
-    radius = int(30 * scale)
-    outline_width = max(1, int(2 * scale))
+    radius = int(theme.panel_radius_px * 0.86 * scale)
+    outline_width = max(1, int(theme.panel_border_width_px * 0.70 * scale))
 
-    draw.rounded_rectangle(
+    rounded_rectangle(
+        draw,
         (
             margin_x,
             margin_top,
@@ -49,8 +56,8 @@ def _draw_soft_panel(draw: ImageDraw.ImageDraw, scale: int) -> None:
             PAGE_H_PX * scale - margin_bottom,
         ),
         radius=radius,
-        fill=(255, 255, 255, 125),
-        outline=(0, 0, 0, 45),
+        fill=theme.panel_fill,
+        outline=theme.panel_border,
         width=outline_width,
     )
 
@@ -61,10 +68,10 @@ def _draw_ornamental_separator(
     y: int,
     width: int,
     scale: int,
+    *,
+    theme: ThemeConfig = DEFAULT_THEME,
 ) -> None:
     """Draw a small centered separator used in the title page."""
-    line_color = (0, 0, 0, 145)
-    dot_color = (0, 0, 0, 170)
     gap = int(18 * scale)
     dot_r = int(5 * scale)
     line_w = max(1, int(2 * scale))
@@ -74,9 +81,12 @@ def _draw_ornamental_separator(
     right_inner = center_x + gap
     right_outer = center_x + width // 2
 
-    draw.line((left_outer, y, left_inner, y), fill=line_color, width=line_w)
-    draw.line((right_inner, y, right_outer, y), fill=line_color, width=line_w)
-    draw.ellipse((center_x - dot_r, y - dot_r, center_x + dot_r, y + dot_r), fill=dot_color)
+    draw.line((left_outer, y, left_inner, y), fill=theme.panel_border, width=line_w)
+    draw.line((right_inner, y, right_outer, y), fill=theme.panel_border, width=line_w)
+    draw.ellipse(
+        (center_x - dot_r, y - dot_r, center_x + dot_r, y + dot_r),
+        fill=theme.title_color,
+    )
 
 
 def render_title_page(
@@ -85,6 +95,7 @@ def render_title_page(
     subtitle: str = "A themed collection of word search puzzles",
     filename: Optional[str] = None,
     background_path: Optional[str] = None,
+    theme: ThemeConfig = DEFAULT_THEME,
 ) -> str:
     """
     Renderiza una portada interior para el libro.
@@ -95,19 +106,9 @@ def render_title_page(
     width_hi = PAGE_W_PX * scale
     height_hi = PAGE_H_PX * scale
 
-    bg_path = background_path or BACKGROUND_PATH
-    if bg_path and os.path.exists(bg_path):
-        img = Image.open(bg_path).convert("RGBA")
-        img = img.resize((width_hi, height_hi), Image.LANCZOS)
-        if img.mode == "RGBA":
-            r, g, b, a = img.split()
-            a = a.point(lambda value: int(value * 0.72))
-            img = Image.merge("RGBA", (r, g, b, a))
-    else:
-        img = Image.new("RGBA", (width_hi, height_hi), (255, 255, 255, 255))
-
+    img = create_page_canvas(background_path, scale, theme=theme)
     draw = ImageDraw.Draw(img)
-    _draw_soft_panel(draw, scale)
+    _draw_soft_panel(draw, scale, theme=theme)
 
     center_x = width_hi // 2
     max_width = int(width_hi * 0.70)
@@ -134,8 +135,7 @@ def render_title_page(
     title_block_height += int(title_size * 0.12) * max(0, len(title_lines) - 1)
 
     title_start_y = int(height_hi * 0.265) - title_block_height // 2
-    shadow = (0, 0, 0, 60)
-    black = (0, 0, 0, 255)
+    shadow = tuple(max(0, min(255, channel - 40)) for channel in theme.panel_border[:3]) + (65,)
 
     y = draw_centered_lines(
         draw,
@@ -143,7 +143,7 @@ def render_title_page(
         title_font,
         center_x,
         title_start_y,
-        black,
+        theme.title_color,
         line_spacing=1.07,
         shadow_fill=shadow,
         shadow_offset=int(2 * scale),
@@ -151,7 +151,7 @@ def render_title_page(
 
     sep_y = y + int(120 * scale)
     sep_w = int(width_hi * 0.38)
-    _draw_ornamental_separator(draw, center_x, sep_y, sep_w, scale)
+    _draw_ornamental_separator(draw, center_x, sep_y, sep_w, scale, theme=theme)
 
     subtitle_lines = wrap_text(draw, subtitle, subtitle_font, max_width)
     subtitle_y = sep_y + int(95 * scale)
@@ -161,7 +161,7 @@ def render_title_page(
         subtitle_font,
         center_x,
         subtitle_y,
-        (0, 0, 0, 225),
+        theme.body_color,
         line_spacing=1.18,
     )
 
