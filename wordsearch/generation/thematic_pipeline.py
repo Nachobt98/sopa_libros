@@ -24,6 +24,7 @@ from wordsearch.rendering.pdf import generate_pdf
 from wordsearch.validation.assets import validate_generation_assets
 from wordsearch.validation.kdp import build_kdp_preflight_report, write_kdp_preflight_report
 from wordsearch.validation.thematic import validate_thematic_specs
+from wordsearch.validation.visual import build_visual_regression_report, write_visual_regression_report
 from wordsearch.utils.slug import slugify
 
 
@@ -192,6 +193,16 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         print("No se han generado imagenes suficientes como para crear el PDF.")
         return None
 
+    visual_regression_report_path = None
+    if options.preview:
+        visual_report = build_visual_regression_report(
+            [*rendered_images.content_imgs, *rendered_images.solution_imgs]
+        )
+        visual_regression_report_path = write_visual_regression_report(
+            visual_report,
+            output_dir=output_dir,
+        )
+
     pdf_path = build_output_file(output_dir, f"{book_slug}.pdf")
     pdf_metadata = build_pdf_metadata(options)
 
@@ -231,4 +242,6 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     print("\nPDF generado:", pdf_final)
     print("Reporte generado:", report_path)
     print("Preflight generado:", preflight_report_path)
+    if visual_regression_report_path:
+        print("Visual regression generado:", visual_regression_report_path)
     return pdf_final
