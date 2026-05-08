@@ -19,6 +19,23 @@ class StubValidationReport:
         self.summary_printed = True
 
 
+class StubRenderQualityReport:
+    def __init__(self):
+        self.summary_printed = False
+
+    def print_summary(self) -> None:
+        self.summary_printed = True
+
+    def to_dict(self) -> dict:
+        return {
+            "schema_version": 1,
+            "warning_count": 0,
+            "by_severity": {},
+            "by_code": {},
+            "warnings": [],
+        }
+
+
 def make_options() -> ThematicGenerationOptions:
     return ThematicGenerationOptions(
         book_title="Thematic Test Book",
@@ -181,6 +198,7 @@ def test_generate_thematic_book_cleans_existing_output_before_validation(monkeyp
         "render_thematic_book_images",
         lambda **kwargs: RenderedBookImages(content_imgs=["content.png"], solution_imgs=["solution.png"]),
     )
+    monkeypatch.setattr(thematic_pipeline, "build_render_quality_report", lambda **kwargs: StubRenderQualityReport())
     monkeypatch.setattr(thematic_pipeline, "generate_pdf", lambda *args, **kwargs: kwargs["outname"])
     monkeypatch.setattr(thematic_pipeline, "build_thematic_generation_report", lambda **kwargs: "report")
     monkeypatch.setattr(thematic_pipeline, "write_generation_report", lambda *args, **kwargs: "report.json")
@@ -326,6 +344,7 @@ def test_generate_thematic_book_returns_none_when_pdf_is_locked(monkeypatch, tmp
         "render_thematic_book_images",
         lambda **kwargs: RenderedBookImages(content_imgs=["content.png"], solution_imgs=["solution.png"]),
     )
+    monkeypatch.setattr(thematic_pipeline, "build_render_quality_report", lambda **kwargs: StubRenderQualityReport())
     monkeypatch.setattr(
         thematic_pipeline,
         "generate_pdf",
@@ -343,6 +362,7 @@ def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypat
     report = StubValidationReport(has_errors=False)
     grid_batch = GridBatchResult(generated_puzzles=generated_puzzles)
     rendered_images = RenderedBookImages(content_imgs=["content.png"], solution_imgs=["solution.png"])
+    render_quality_report = StubRenderQualityReport()
     calls = {}
 
     monkeypatch.setattr(thematic_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
@@ -372,6 +392,10 @@ def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypat
         calls["render_kwargs"] = kwargs
         return rendered_images
 
+    def fake_build_render_quality_report(**kwargs):
+        calls["render_quality_kwargs"] = kwargs
+        return render_quality_report
+
     def fake_generate_pdf(content_imgs, solution_imgs, *, outname, metadata=None):
         calls["pdf"] = (content_imgs, solution_imgs, outname, metadata)
         return outname
@@ -394,6 +418,7 @@ def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypat
 
     monkeypatch.setattr(thematic_pipeline, "build_page_plan", fake_build_page_plan)
     monkeypatch.setattr(thematic_pipeline, "render_thematic_book_images", fake_render_thematic_book_images)
+    monkeypatch.setattr(thematic_pipeline, "build_render_quality_report", fake_build_render_quality_report)
     monkeypatch.setattr(thematic_pipeline, "generate_pdf", fake_generate_pdf)
     monkeypatch.setattr(thematic_pipeline, "build_kdp_preflight_report", fake_build_kdp_preflight_report)
     monkeypatch.setattr(thematic_pipeline, "write_kdp_preflight_report", fake_write_kdp_preflight_report)
@@ -422,6 +447,14 @@ def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypat
         "page_plan": "page-plan",
         "output_dir": str(expected_output_dir),
     }
+    assert calls["render_quality_kwargs"] == {
+        "book_title": options.book_title,
+        "generated_puzzles": generated_puzzles,
+        "page_plan": "page-plan",
+        "content_image_paths": rendered_images.content_imgs,
+        "theme": thematic_pipeline.get_theme(options.theme_name),
+    }
+    assert render_quality_report.summary_printed is True
     assert calls["pdf"] == (["content.png"], ["solution.png"], expected_pdf_path, expected_metadata)
     assert calls["preflight_kwargs"] == {
         "pdf_path": expected_pdf_path,
@@ -438,6 +471,7 @@ def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypat
         "page_plan": "page-plan",
         "rendered_images": rendered_images,
         "puzzle_count": len(generated_puzzles),
+        "render_quality_report": render_quality_report,
     }
     assert calls["report_write"] == ("report", str(expected_output_dir))
 
@@ -472,6 +506,7 @@ def test_generate_thematic_book_passes_seed_to_grid_generation(monkeypatch, tmp_
         "render_thematic_book_images",
         lambda **kwargs: rendered_images,
     )
+    monkeypatch.setattr(thematic_pipeline, "build_render_quality_report", lambda **kwargs: StubRenderQualityReport())
     monkeypatch.setattr(thematic_pipeline, "generate_pdf", lambda *args, **kwargs: kwargs["outname"])
     monkeypatch.setattr(thematic_pipeline, "build_thematic_generation_report", lambda **kwargs: "report")
     monkeypatch.setattr(thematic_pipeline, "write_generation_report", lambda *args, **kwargs: "report.json")
