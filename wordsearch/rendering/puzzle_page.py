@@ -9,12 +9,12 @@ from PIL import ImageDraw
 from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
-    FONT_PATH_BOLD,
-    WORDLIST_FONT_SIZE,
+    wordlist_font_size as WORDLIST_FONT_SIZE,
 )
 from wordsearch.config.paths import build_default_output_file
 from wordsearch.rendering.adaptive_layout import plan_fact_layout, plan_title_layout
 from wordsearch.rendering.common import (
+    load_font,
     rounded_rectangle,
     save_page,
     text_size,
