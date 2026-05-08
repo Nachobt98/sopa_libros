@@ -15,15 +15,18 @@ from PIL import Image, ImageDraw
 
 from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
 from wordsearch.config.fonts import (
-    FONT_PATH,
-    FONT_PATH_BOLD,
     FONT_TITLE,
     title_font_size as TITLE_FONT_SIZE,
-    wordlist_font_size as WORDLIST_FONT_SIZE,
 )
 from wordsearch.config.layout import PAGE_H_PX, PAGE_W_PX
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.page_plan import PagePlan
+from wordsearch.rendering.adaptive_layout import (
+    WORD_LIST_DENSE_FILL_RATIO,
+    plan_fact_layout,
+    plan_title_layout,
+    plan_word_list_layout,
+)
 from wordsearch.rendering.common import load_font, text_size, wrap_text
 from wordsearch.rendering.page_frame import draw_page_frame
 
@@ -344,12 +347,14 @@ def _measure_puzzle_layout(
     spec = generated.spec
     title_text = f"{spec.index + 1}. {spec.title}" if spec.title else f"Puzzle {spec.index + 1}"
 
-    title_font = load_font(FONT_TITLE, TITLE_FONT_SIZE * scale)
-    title_max_width = int(frame.content_right_hi - frame.content_left_hi)
-    title_lines = wrap_text(draw, title_text, title_font, title_max_width)
-    title_line_height = text_size(draw, "Ag", title_font)[1]
-    y_after_title = frame.panel_top + int(25 * scale) + int(len(title_lines) * title_line_height * 1.05)
-    y_cursor_hi = y_after_title + int(80 * scale)
+    title_plan = plan_title_layout(
+        draw=draw,
+        title_text=title_text,
+        max_width_hi=int(frame.content_right_hi - frame.content_left_hi),
+        start_y_hi=frame.panel_top + int(25 * scale),
+        scale=scale,
+    )
+    y_cursor_hi = title_plan.y_after_title_hi + title_plan.title_to_fact_gap_hi
 
     fact_metrics = _measure_fact_block(
         spec.fact,
@@ -359,11 +364,15 @@ def _measure_puzzle_layout(
         scale=scale,
     )
 
+    if fact_metrics.get("present"):
+        y_cursor_hi = int(fact_metrics["box_bottom_hi"] + fact_metrics["after_gap_hi"])
+
     rows = len(generated.grid)
     cols = len(generated.grid[0]) if rows else 0
     content_width_hi = frame.content_right_hi - frame.content_left_hi
     grid_width_target_hi = int(content_width_hi * 0.85)
     cell_size_hi = int(grid_width_target_hi / max(cols, 1))
+    grid_top_hi = max(frame.grid_top_base, y_cursor_hi)
 
     word_list_metrics = _measure_word_list(
         spec.words,
@@ -371,13 +380,16 @@ def _measure_puzzle_layout(
         frame=frame,
         grid_rows=rows,
         grid_cols=cols,
+        grid_top_hi=grid_top_hi,
         cell_size_hi=cell_size_hi,
         scale=scale,
     )
 
     return {
-        "title_lines": title_lines,
+        "title_lines": title_plan.lines,
         "title_text": title_text,
+        "title_font_scale": title_plan.font_scale,
+        "title_to_fact_gap_px": round(title_plan.title_to_fact_gap_hi / scale, 2),
         "fact": fact_metrics,
         "word_list": word_list_metrics,
         "grid_rows": rows,
@@ -399,33 +411,27 @@ def _measure_fact_block(
     if not fun_fact:
         return {"present": False}
 
-    fact_label_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.9) * scale)
-    fact_text_font_size_hi = int(WORDLIST_FONT_SIZE * 0.5) * scale
-    fact_text_font = load_font(FONT_PATH, fact_text_font_size_hi)
-
-    inner_horizontal_pad = int(18 * scale)
-    max_text_width_hi = int((frame.content_right_hi - frame.content_left_hi) - 2 * inner_horizontal_pad)
-    label_h = text_size(draw, "FUN FACT", fact_label_font)[1]
-    header_height_hi = label_h + 2 * int(8 * scale)
-    text_pad_v_hi = int(10 * scale)
-    line_height_hi = int(fact_text_font.size * 1.10)
-    min_gap_hi = int(30 * scale)
-
-    min_fact_block_hi = header_height_hi + 2 * text_pad_v_hi + line_height_hi
-    max_fact_height_hi = max(min_fact_block_hi, frame.grid_top_base - y_cursor_hi - min_gap_hi)
-    fact_lines = wrap_text(draw, fun_fact, fact_text_font, max_text_width_hi)
-    available_text_h = max(0, max_fact_height_hi - header_height_hi - 2 * text_pad_v_hi)
-    max_lines_fit = max(1, available_text_h // line_height_hi)
-    rendered_line_count = min(len(fact_lines), max_lines_fit)
+    fact_plan = plan_fact_layout(
+        draw=draw,
+        fun_fact=fun_fact,
+        content_left_hi=frame.content_left_hi,
+        content_right_hi=frame.content_right_hi,
+        grid_top_base_hi=frame.grid_top_base,
+        y_cursor_hi=y_cursor_hi,
+        scale=scale,
+    )
 
     return {
         "present": True,
         "char_count": len(fun_fact),
-        "line_count": len(fact_lines),
-        "max_lines_fit": max_lines_fit,
-        "rendered_line_count": rendered_line_count,
-        "truncated": len(fact_lines) > max_lines_fit,
-        "used_ratio": round(rendered_line_count / max(max_lines_fit, 1), 3),
+        "line_count": len(fact_plan.raw_lines or []),
+        "max_lines_fit": fact_plan.max_lines_fit,
+        "rendered_line_count": fact_plan.rendered_line_count,
+        "truncated": fact_plan.truncated,
+        "used_ratio": fact_plan.used_ratio,
+        "text_font_scale": fact_plan.text_font_scale,
+        "box_bottom_hi": fact_plan.box_bottom_hi,
+        "after_gap_hi": fact_plan.after_gap_hi,
     }
 
 
@@ -436,6 +442,7 @@ def _measure_word_list(
     frame: Any,
     grid_rows: int,
     grid_cols: int,
+    grid_top_hi: int,
     cell_size_hi: int,
     scale: int,
 ) -> dict[str, Any]:
@@ -446,7 +453,6 @@ def _measure_word_list(
     safe_bottom_hi = frame.safe_bottom_hi
     content_left_hi = frame.content_left_hi
     content_right_hi = frame.content_right_hi
-    grid_top_hi = frame.grid_top_base
     grid_bottom_hi = grid_top_hi + cell_size_hi * grid_rows
     base_gap_hi = int(60 * scale)
     gap_pill_to_words_hi = int(70 * scale)
@@ -455,7 +461,9 @@ def _measure_word_list(
     original_words_top_hi = max(0, words_bottom_hi - words_area_height_hi)
     words_top_hi = original_words_top_hi
 
-    pill_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75) * scale)
+    # Match the renderer's conservative pill measurement. The real page number may
+    # be shorter; measuring 999 keeps the quality pass from underestimating space.
+    pill_font = load_font("fonts/montserrat/static/Montserrat-Regular.ttf", int(80 * 0.75) * scale)
     pill_text = "Solution on page 999"
     _, th_pill = text_size(draw, pill_text, pill_font)
     pad_h = int(16 * scale)
@@ -472,60 +480,41 @@ def _measure_word_list(
     words_height_hi = max(0, words_bottom_hi - words_top_hi)
     original_words_height_hi = max(0, words_bottom_hi - original_words_top_hi)
     height_reduction_ratio = 1 - (words_height_hi / max(original_words_height_hi, 1))
-    words_inner_margin_hi = int(35 * scale)
-    area_left_hi = content_left_hi + words_inner_margin_hi
-    area_right_hi = content_right_hi - words_inner_margin_hi
-    total_w_hi = area_right_hi - area_left_hi
-    font_words_real = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.6) * scale)
-    line_h_hi = int(font_words_real.size * 1.12)
-    max_lines_per_col = max(1, words_height_hi // line_h_hi)
-    word_widths = {word: text_size(draw, word, font_words_real)[0] for word in words_upper}
-    word_max_w = max(word_widths.values()) if word_widths else 0
 
-    best_layout = None
-    for col_count in range(2, 6):
-        if col_count * max_lines_per_col < len(words_upper):
-            continue
-        col_w_hi = total_w_hi / col_count
-        if word_max_w <= col_w_hi * 0.92:
-            best_layout = (col_count, col_w_hi, False)
-            break
+    plan = plan_word_list_layout(
+        draw=draw,
+        words=words,
+        words_top_hi=words_top_hi,
+        words_bottom_hi=words_bottom_hi,
+        content_left_hi=content_left_hi,
+        content_right_hi=content_right_hi,
+        scale=scale,
+    )
 
-    if best_layout is None:
-        col_count = max(2, min(5, _ceil_div(len(words_upper), max_lines_per_col)))
-        col_w_hi = total_w_hi / col_count
-        best_layout = (col_count, col_w_hi, True)
-
-    col_count, col_w_hi, forced_layout = best_layout
-    required_lines_per_col = _ceil_div(len(words_upper), col_count)
-    fill_ratio = required_lines_per_col / max(max_lines_per_col, 1)
-    longest_by_width = max(word_widths, key=word_widths.get, default="")
-    max_word_width_ratio = word_max_w / max(col_w_hi, 1)
     spacing_tight = (
         height_reduction_ratio >= WORD_LIST_SPACING_HEIGHT_REDUCTION_RATIO
-        and fill_ratio >= WORD_LIST_SPACING_FILL_RATIO
+        and plan.fill_ratio >= WORD_LIST_SPACING_FILL_RATIO
         and len(words_upper) >= WORD_LIST_SPACING_MIN_WORD_COUNT
     )
 
     return {
         "present": True,
         "word_count": len(words_upper),
-        "col_count": col_count,
-        "max_lines_per_col": max_lines_per_col,
-        "required_lines_per_col": required_lines_per_col,
-        "fill_ratio": round(fill_ratio, 3),
-        "forced_layout": forced_layout,
-        "max_word_width_ratio": round(max_word_width_ratio, 3),
-        "longest_by_width": longest_by_width,
+        "col_count": plan.col_count,
+        "max_lines_per_col": plan.max_lines_per_col,
+        "required_lines_per_col": plan.required_lines_per_col,
+        "fill_ratio": plan.fill_ratio,
+        "forced_layout": plan.forced_layout,
+        "max_word_width_ratio": plan.max_word_width_ratio,
+        "longest_by_width": plan.longest_by_width,
         "words_height_px": round(words_height_hi / scale, 2),
         "height_reduction_ratio": round(height_reduction_ratio, 3),
         "grid_to_words_compacted": spacing_tight,
         "grid_cols": grid_cols,
+        "font_scale": plan.font_scale,
+        "font_reduced": plan.font_reduced,
+        "uses_extra_column_capacity": plan.uses_extra_column_capacity,
     }
-
-
-def _ceil_div(value: int, divisor: int) -> int:
-    return -(-value // max(divisor, 1))
 
 
 def _analyze_puzzle_title(
@@ -543,13 +532,18 @@ def _analyze_puzzle_title(
         _warning(
             severity="warning" if line_count == 4 else "error",
             code="PUZZLE_TITLE_DENSE",
-            message="Puzzle title wraps to many lines and may crowd the fact/card area.",
+            message="Puzzle title still wraps to many lines after adaptive title sizing.",
             page_type="puzzle",
             page_number=page_number,
             puzzle_index=spec_index,
             title=title,
             path=path,
-            details={"line_count": line_count, "title_text": layout["title_text"]},
+            details={
+                "line_count": line_count,
+                "title_text": layout["title_text"],
+                "title_font_scale": layout.get("title_font_scale"),
+                "title_to_fact_gap_px": layout.get("title_to_fact_gap_px"),
+            },
         )
     ]
 
@@ -572,7 +566,7 @@ def _analyze_fun_fact(
             _warning(
                 severity="warning",
                 code="FACT_TRUNCATED",
-                message="Fun fact is expected to be truncated in the rendered card.",
+                message="Fun fact is still truncated after adaptive font/gap adjustments.",
                 page_type="puzzle",
                 page_number=page_number,
                 puzzle_index=spec_index,
@@ -586,7 +580,7 @@ def _analyze_fun_fact(
             _warning(
                 severity="info",
                 code="FACT_CARD_TIGHT",
-                message="Fun fact fits but uses nearly all available card text space.",
+                message="Fun fact fits after adaptive layout, but uses nearly all available card text space.",
                 page_type="puzzle",
                 page_number=page_number,
                 puzzle_index=spec_index,
@@ -616,7 +610,7 @@ def _analyze_word_list(
             _warning(
                 severity="warning",
                 code="WORD_LIST_COLUMN_OVERFLOW_RISK",
-                message="At least one word is wider than the computed word-list column by a clear margin.",
+                message="At least one word remains wider than the adaptive word-list column by a clear margin.",
                 page_type="puzzle",
                 page_number=page_number,
                 puzzle_index=spec_index,
@@ -625,12 +619,14 @@ def _analyze_word_list(
                 details=word_list,
             )
         )
-    elif word_list["fill_ratio"] >= WORD_LIST_DENSE_FILL_RATIO or word_list["word_count"] >= 26:
+    elif word_list["fill_ratio"] >= WORD_LIST_DENSE_FILL_RATIO or (
+        word_list.get("font_reduced") and word_list["fill_ratio"] >= 0.86
+    ):
         warnings.append(
             _warning(
                 severity="info",
                 code="WORD_LIST_DENSE",
-                message="Word list fits but is dense enough to deserve manual review.",
+                message="Word list fits after adaptive layout, but remains dense enough to deserve manual review.",
                 page_type="puzzle",
                 page_number=page_number,
                 puzzle_index=spec_index,
