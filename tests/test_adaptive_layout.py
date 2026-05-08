@@ -1,7 +1,10 @@
+from types import SimpleNamespace
+
 from PIL import Image, ImageDraw
 
 from wordsearch.config.design import DEFAULT_THEME
 from wordsearch.config.layout import PAGE_H_PX, PAGE_W_PX
+from wordsearch.rendering import adaptive_layout
 from wordsearch.rendering.adaptive_layout import (
     plan_fact_layout,
     plan_title_layout,
@@ -32,28 +35,33 @@ def test_title_layout_keeps_short_titles_unchanged():
     assert plan.title_to_fact_gap_hi == 80 * 3
 
 
-def test_title_layout_reduces_dense_titles_deterministically():
+def test_title_layout_reduces_dense_titles_deterministically(monkeypatch):
     draw = make_draw()
     frame = draw_page_frame(draw=draw, scale=3, theme=DEFAULT_THEME)
-    title = (
-        "1. Extremely Long Historical Cultural Foundations And Civil Rights "
-        "Movement Vocabulary Challenge"
-    )
+
+    def fake_load_font(path, size):
+        return SimpleNamespace(size=size)
+
+    def fake_wrap_text(draw, text, font, max_width):
+        if font.size > int(100 * 3 * 0.92):
+            return ["Line 1", "Line 2", "Line 3", "Line 4"]
+        return ["Line 1", "Line 2", "Line 3"]
+
+    monkeypatch.setattr(adaptive_layout, "load_font", fake_load_font)
+    monkeypatch.setattr(adaptive_layout, "wrap_text", fake_wrap_text)
+    monkeypatch.setattr(adaptive_layout, "text_size", lambda draw, text, font: (80, 20))
 
     plan = plan_title_layout(
         draw=draw,
-        title_text=title,
-        # Use a deliberately narrow width so the behavior is tested independently
-        # from whether CI has the real project fonts or Pillow's tiny fallback font.
-        max_width_hi=int((frame.content_right_hi - frame.content_left_hi) * 0.28),
+        title_text="1. Dense Title",
+        max_width_hi=int(frame.content_right_hi - frame.content_left_hi),
         start_y_hi=frame.panel_top + int(25 * 3),
         scale=3,
     )
 
-    assert plan.font_scale < 1.0
-    assert plan.font_scale >= 0.86
-    assert len(plan.lines) >= 3
-    assert plan.title_to_fact_gap_hi in {52 * 3, 62 * 3}
+    assert plan.font_scale == 0.92
+    assert len(plan.lines) == 3
+    assert plan.title_to_fact_gap_hi == 62 * 3
 
 
 def test_fact_layout_prefers_small_editorial_adjustment_before_truncating():
