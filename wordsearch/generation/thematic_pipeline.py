@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 
 from wordsearch.config.design import DEFAULT_THEME_NAME, get_theme
+from wordsearch.config.formats import get_format_preset
 from wordsearch.config.paths import BASE_OUTPUT_DIR, build_book_output_dir, build_output_file
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.page_plan import build_page_plan
@@ -31,6 +32,7 @@ def print_run_summary(options: ThematicGenerationOptions) -> None:
     print(f"Dificultad: {options.difficulty.name}")
     print(f"Grid: {options.grid_size}x{options.grid_size}")
     print(f"Tema: {options.theme_name}")
+    print(f"Formato: {options.format_name}")
     if options.seed is not None:
         print(f"Seed: {options.seed}")
     if options.output_dir:
@@ -50,7 +52,10 @@ def build_pdf_metadata(options: ThematicGenerationOptions) -> dict[str, str]:
         "title": options.book_title,
         "author": "",
         "subject": f"Word search puzzle book generated with {options.difficulty.name} difficulty",
-        "keywords": f"word search, puzzle book, KDP, {options.difficulty.name.lower()}, {options.theme_name}",
+        "keywords": (
+            f"word search, puzzle book, KDP, {options.difficulty.name.lower()}, "
+            f"{options.theme_name}, {options.format_name}"
+        ),
         "creator": "sopa-libros",
     }
 
@@ -91,6 +96,8 @@ def _clean_output_dir(output_dir: str) -> bool:
 def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     print_run_summary(options)
     theme = get_theme(options.theme_name)
+    book_format = get_format_preset(options.format_name)
+    layout = book_format.to_layout_config()
 
     try:
         specs = parse_puzzle_file(options.puzzles_txt_path)
@@ -147,15 +154,14 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     print(f"OK: {len(generated_puzzles)} grids generados correctamente.")
 
     page_plan = build_page_plan(generated_puzzles)
-    render_kwargs = {
-        "book_title": options.book_title,
-        "generated_puzzles": generated_puzzles,
-        "page_plan": page_plan,
-        "output_dir": output_dir,
-    }
-    if options.theme_name != DEFAULT_THEME_NAME:
-        render_kwargs["theme"] = theme
-    rendered_images = render_thematic_book_images(**render_kwargs)
+    rendered_images = render_thematic_book_images(
+        book_title=options.book_title,
+        generated_puzzles=generated_puzzles,
+        page_plan=page_plan,
+        output_dir=output_dir,
+        theme=theme,
+        layout=layout,
+    )
     if not rendered_images.is_complete:
         print("No se han generado imagenes suficientes como para crear el PDF.")
         return None
@@ -182,6 +188,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
             rendered_images.solution_imgs,
             outname=pdf_path,
             metadata=pdf_metadata,
+            layout=layout,
         )
     except PermissionError:
         print("\nERROR: No se pudo guardar el PDF.")
@@ -195,6 +202,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         content_image_paths=rendered_images.content_imgs,
         solution_image_paths=rendered_images.solution_imgs,
         expected_pdf_metadata=pdf_metadata,
+        layout=layout,
     )
     preflight_report.print_summary()
     preflight_report_path = write_kdp_preflight_report(preflight_report, output_dir=output_dir)
