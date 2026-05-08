@@ -5,7 +5,15 @@ from wordsearch.domain.puzzle import PuzzleSpec
 from wordsearch.validation.render_quality import build_render_quality_report
 
 
-def make_generated(index: int, *, title="Puzzle Title", fact="Short fact.", words=None, block_name="Block", grid_size=14):
+def make_generated(
+    index: int,
+    *,
+    title="Puzzle Title",
+    fact="Short fact.",
+    words=None,
+    block_name="Block",
+    grid_size=14,
+):
     words = words or ["WORD", "SEARCH", "PUZZLE"]
     return GeneratedPuzzle(
         spec=PuzzleSpec(index=index, title=title, fact=fact, words=words, block_name=block_name),
@@ -68,3 +76,87 @@ def test_render_quality_detects_truncated_fact_and_dense_title():
     assert fact_warning.puzzle_index == 0
     assert fact_warning.path == "puzzle_1.png"
     assert fact_warning.details["truncated"] is True
+
+
+def test_render_quality_detects_word_list_column_overflow_risk():
+    generated = [
+        make_generated(
+            0,
+            words=[
+                "EXTREMELY LONG PHRASE THAT WILL NOT FIT NICELY IN A COLUMN",
+                "ANOTHER UNUSUALLY LONG PHRASE FOR THE WORD LIST",
+                "SHORT",
+            ],
+        )
+    ]
+    page_plan = build_page_plan(generated)
+
+    report = build_render_quality_report(
+        book_title="Simple Book",
+        generated_puzzles=generated,
+        page_plan=page_plan,
+        content_image_paths=["00_title_page.png", "block_01_block.png", "puzzle_1.png"],
+    )
+
+    assert "WORD_LIST_COLUMN_OVERFLOW_RISK" in codes(report)
+
+
+def test_render_quality_detects_small_grid_cells():
+    generated = [make_generated(0, grid_size=22)]
+    page_plan = build_page_plan(generated)
+
+    report = build_render_quality_report(
+        book_title="Simple Book",
+        generated_puzzles=generated,
+        page_plan=page_plan,
+        content_image_paths=["00_title_page.png", "block_01_block.png", "puzzle_1.png"],
+    )
+
+    assert "GRID_CELL_SMALL" in codes(report)
+
+
+def test_render_quality_detects_dense_block_cover_title():
+    block_name = " ".join(["Extraordinary Cultural Historical Foundations"] * 8)
+    generated = [make_generated(0, block_name=block_name)]
+    page_plan = build_page_plan(generated)
+
+    report = build_render_quality_report(
+        book_title="Simple Book",
+        generated_puzzles=generated,
+        page_plan=page_plan,
+        content_image_paths=[
+            "00_title_page.png",
+            "block_01_extraordinary_cultural_historical_foundations.png",
+            "puzzle_1.png",
+        ],
+    )
+
+    assert "BLOCK_COVER_DENSE_TITLE" in codes(report)
+    warning = next(warning for warning in report.warnings if warning.code == "BLOCK_COVER_DENSE_TITLE")
+    assert warning.page_number == page_plan.block_first_page[block_name]
+    assert warning.path == "block_01_extraordinary_cultural_historical_foundations.png"
+
+
+def test_render_quality_report_groups_warnings_by_code_and_severity():
+    generated = [
+        make_generated(
+            0,
+            fact=" ".join(["Long fact text"] * 120),
+            grid_size=22,
+        )
+    ]
+    page_plan = build_page_plan(generated)
+
+    report = build_render_quality_report(
+        book_title="Simple Book",
+        generated_puzzles=generated,
+        page_plan=page_plan,
+        content_image_paths=["00_title_page.png", "block_01_block.png", "puzzle_1.png"],
+    )
+
+    assert report.warning_count == len(report.warnings)
+    assert report.by_code["FACT_TRUNCATED"] == 1
+    assert report.by_code["GRID_CELL_SMALL"] == 1
+    assert sum(report.by_severity.values()) == report.warning_count
+    payload = report.to_dict()
+    assert payload["warnings"][0]["code"] in report.by_code
