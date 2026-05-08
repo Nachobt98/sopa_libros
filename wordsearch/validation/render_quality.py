@@ -15,14 +15,15 @@ from PIL import Image, ImageDraw
 
 from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
 from wordsearch.config.fonts import (
+    FONT_PATH,
     FONT_TITLE,
     title_font_size as TITLE_FONT_SIZE,
+    wordlist_font_size as WORDLIST_FONT_SIZE,
 )
 from wordsearch.config.layout import PAGE_H_PX, PAGE_W_PX
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.page_plan import PagePlan
 from wordsearch.rendering.adaptive_layout import (
-    WORD_LIST_DENSE_FILL_RATIO,
     plan_fact_layout,
     plan_title_layout,
     plan_word_list_layout,
@@ -463,7 +464,7 @@ def _measure_word_list(
 
     # Match the renderer's conservative pill measurement. The real page number may
     # be shorter; measuring 999 keeps the quality pass from underestimating space.
-    pill_font = load_font("fonts/montserrat/static/Montserrat-Regular.ttf", int(80 * 0.75) * scale)
+    pill_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75) * scale)
     pill_text = "Solution on page 999"
     _, th_pill = text_size(draw, pill_text, pill_font)
     pad_h = int(16 * scale)
