@@ -16,6 +16,9 @@ from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.generation.difficulty import DifficultyLevel, difficulty_settings
 from wordsearch.generation.thematic_pipeline import generate_thematic_book
 
+PREVIEW_DEFAULT_LIMIT = 5
+PREVIEW_DEFAULT_SEED = 1234
+
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -54,6 +57,23 @@ def _parse_args() -> argparse.Namespace:
         choices=theme_names(),
         default=DEFAULT_THEME_NAME,
         help="Visual theme preset for shared page-frame styling.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        help="Optional output directory. Defaults to output_puzzles_kdp/<book_slug>.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="Generate only the first N parsed puzzles. Useful for visual iteration.",
+    )
+    parser.add_argument(
+        "--preview",
+        action="store_true",
+        help=(
+            "Preview mode: generate a small, reproducible subset. "
+            f"Defaults to --limit {PREVIEW_DEFAULT_LIMIT} and --seed {PREVIEW_DEFAULT_SEED} when omitted."
+        ),
     )
     parser.add_argument(
         "--validate-only",
@@ -100,6 +120,8 @@ def _ask_difficulty() -> DifficultyLevel:
 def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
     if args.validate_only and args.clean_output:
         raise ValueError("--clean-output no se puede combinar con --validate-only.")
+    if args.limit is not None and args.limit <= 0:
+        raise ValueError("--limit debe ser un entero positivo.")
 
     book_title = (args.title or "").strip()
     if not book_title:
@@ -130,16 +152,28 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
         grid_size = ask_grid_size(settings)
 
     theme = get_theme(args.theme)
+    seed = args.seed
+    limit = args.limit
+    if args.preview:
+        if seed is None:
+            seed = PREVIEW_DEFAULT_SEED
+        if limit is None:
+            limit = PREVIEW_DEFAULT_LIMIT
+
+    output_dir = (args.output_dir or "").strip() or None
 
     return ThematicGenerationOptions(
         book_title=book_title,
         puzzles_txt_path=puzzles_txt_path,
         difficulty=difficulty,
         grid_size=grid_size,
-        seed=args.seed,
+        seed=seed,
         validate_only=args.validate_only,
         clean_output=args.clean_output,
         theme_name=theme.name,
+        output_dir=output_dir,
+        limit=limit,
+        preview=args.preview,
     )
 
 
