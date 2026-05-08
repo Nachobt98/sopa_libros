@@ -30,8 +30,9 @@ from wordsearch.rendering.page_frame import draw_page_frame
 RENDER_QUALITY_SCHEMA_VERSION = 1
 WORD_LIST_OVERFLOW_RATIO = 1.08
 WORD_LIST_DENSE_FILL_RATIO = 0.92
-WORD_LIST_SPACING_HEIGHT_REDUCTION_RATIO = 0.20
-WORD_LIST_SPACING_FILL_RATIO = 0.88
+WORD_LIST_SPACING_HEIGHT_REDUCTION_RATIO = 0.30
+WORD_LIST_SPACING_FILL_RATIO = 0.95
+WORD_LIST_SPACING_MIN_WORD_COUNT = 30
 
 
 @dataclass(frozen=True)
@@ -503,6 +504,7 @@ def _measure_word_list(
     spacing_tight = (
         height_reduction_ratio >= WORD_LIST_SPACING_HEIGHT_REDUCTION_RATIO
         and fill_ratio >= WORD_LIST_SPACING_FILL_RATIO
+        and len(words_upper) >= WORD_LIST_SPACING_MIN_WORD_COUNT
     )
 
     return {
