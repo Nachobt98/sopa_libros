@@ -48,8 +48,6 @@ def render_page(
     draw = ImageDraw.Draw(img)
     frame = draw_page_frame(draw=draw, scale=scale, theme=theme)
 
-    page_w_hi = frame.page_w_hi
-    page_h_hi = frame.page_h_hi
     safe_bottom_hi = frame.safe_bottom_hi
     panel_top = frame.panel_top
     content_left_hi = frame.content_left_hi
@@ -61,19 +59,6 @@ def render_page(
     font_title = load_font(FONT_TITLE, TITLE_FONT_SIZE * scale)
 
     text_color = theme.body_color
-
-    # FUN FACT
-    fact_bg = (245, 245, 245, 245)
-    fact_border = (170, 170, 170, 255)
-    fact_header_bg = (30, 30, 30, 255)
-    fact_header_text = (255, 255, 255, 255)
-
-    pill_bg = (230, 230, 230, 255)
-    pill_border = (120, 120, 120, 255)
-
-    # Resaltado soluciones
-    highlight_fill = (243, 226, 200, 230)  # beige
-    highlight_border = (0, 0, 0, 255)  # borde oscuro
 
     # --------------------------------------------------------
     # TÍTULO (con wrap)
@@ -146,14 +131,14 @@ def render_page(
         box_top_hi = y_cursor_hi
         box_bottom_hi = box_top_hi + box_height_hi
 
-        card_radius = int(18 * scale)
+        card_radius = int(theme.fact_card_radius_px * scale)
         rounded_rectangle(
             draw,
             (int(left_hi), int(box_top_hi), int(right_hi), int(box_bottom_hi)),
             radius=card_radius,
-            fill=fact_bg,
-            outline=fact_border,
-            width=max(1, int(2 * scale)),
+            fill=theme.fact_card_fill,
+            outline=theme.fact_card_border,
+            width=max(1, int(theme.fact_card_border_width_px * scale)),
         )
 
         header_left_hi = left_hi
@@ -166,7 +151,7 @@ def render_page(
             draw,
             (int(header_left_hi), int(header_top_hi), int(header_right_hi), int(header_bottom_hi)),
             radius=header_radius,
-            fill=fact_header_bg,
+            fill=theme.fact_header_fill,
             outline=None,
             width=0,
         )
@@ -177,7 +162,7 @@ def render_page(
                 int(header_right_hi),
                 int(header_bottom_hi),
             ),
-            fill=fact_header_bg,
+            fill=theme.fact_header_fill,
             outline=None,
         )
 
@@ -188,13 +173,13 @@ def render_page(
                 (header_cx, header_cy),
                 fact_label,
                 font=fact_label_font,
-                fill=fact_header_text,
+                fill=theme.fact_header_text,
                 anchor="mm",
             )
         except TypeError:
             hx = header_cx - label_w / 2
             hy = header_cy - label_h / 2
-            draw.text((hx, hy), fact_label, font=fact_label_font, fill=fact_header_text)
+            draw.text((hx, hy), fact_label, font=fact_label_font, fill=theme.fact_header_text)
 
         text_x_hi = left_hi + inner_horizontal_pad
         text_y_hi = header_bottom_hi + text_pad_v_hi
@@ -230,10 +215,9 @@ def render_page(
         grid_top_hi=grid_top_hi,
         cell_size_hi=cell_size_hi,
         scale=scale,
-        page_w_hi=page_w_hi,
-        page_h_hi=page_h_hi,
-        highlight_fill=highlight_fill,
-        highlight_border=highlight_border,
+        highlight_fill=theme.highlight_fill,
+        highlight_border=theme.highlight_border,
+        theme=theme,
     )
 
     # --------------------------------------------------------
@@ -268,17 +252,17 @@ def render_page(
             draw,
             (pill_x, pill_y, pill_x + box_w, pill_y + box_h),
             radius=box_h // 2,
-            fill=pill_bg,
-            outline=pill_border,
-            width=max(1, int(2 * scale)),
+            fill=theme.pill_fill,
+            outline=theme.pill_border,
+            width=max(1, int(theme.pill_border_width_px * scale)),
         )
 
         tx = pill_x + box_w / 2
         ty = pill_y + box_h / 2
         try:
-            draw.text((tx, ty), pill_text, font=pill_font, fill=text_color, anchor="mm")
+            draw.text((tx, ty), pill_text, font=pill_font, fill=theme.pill_text, anchor="mm")
         except TypeError:
-            draw.text((tx - tw_pill / 2, ty - th_pill / 2), pill_text, font=pill_font, fill=text_color)
+            draw.text((tx - tw_pill / 2, ty - th_pill / 2), pill_text, font=pill_font, fill=theme.pill_text)
 
     desired_words_top_hi = pill_y + pill_box_h + gap_pill_to_words_hi
     if desired_words_top_hi > words_top_hi:

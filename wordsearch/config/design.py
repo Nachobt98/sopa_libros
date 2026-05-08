@@ -25,6 +25,7 @@ from wordsearch.config.layout import (
 )
 
 ColorRgba = tuple[int, int, int, int]
+ColorValue = ColorRgba | str
 
 
 @dataclass(frozen=True)
@@ -76,6 +77,21 @@ class ThemeConfig:
     body_color: ColorRgba
     panel_radius_px: int
     panel_border_width_px: int
+    fact_card_fill: ColorRgba
+    fact_card_border: ColorRgba
+    fact_header_fill: ColorRgba
+    fact_header_text: ColorRgba
+    fact_card_radius_px: int
+    fact_card_border_width_px: int
+    pill_fill: ColorRgba
+    pill_border: ColorRgba
+    pill_text: ColorRgba
+    pill_border_width_px: int
+    grid_line_color: ColorValue
+    letter_color: ColorRgba
+    solution_letter_color: ColorRgba
+    highlight_fill: ColorRgba
+    highlight_border: ColorRgba
 
 
 DEFAULT_LAYOUT = LayoutConfig(
@@ -109,42 +125,102 @@ DEFAULT_THEME = ThemeConfig(
     body_color=(0, 0, 0, 255),
     panel_radius_px=DEFAULT_LAYOUT.panel_radius_px,
     panel_border_width_px=DEFAULT_LAYOUT.panel_border_width_px,
+    fact_card_fill=(245, 245, 245, 245),
+    fact_card_border=(170, 170, 170, 255),
+    fact_header_fill=(30, 30, 30, 255),
+    fact_header_text=(255, 255, 255, 255),
+    fact_card_radius_px=18,
+    fact_card_border_width_px=2,
+    pill_fill=(230, 230, 230, 255),
+    pill_border=(120, 120, 120, 255),
+    pill_text=(0, 0, 0, 255),
+    pill_border_width_px=2,
+    grid_line_color="#444444",
+    letter_color=(0, 0, 0, 255),
+    solution_letter_color=(0, 0, 0, 255),
+    highlight_fill=(243, 226, 200, 230),
+    highlight_border=(0, 0, 0, 255),
 )
 
 PREMIUM_NEUTRAL_THEME = ThemeConfig(
     name="premium-neutral",
-    background_opacity=0.55,
-    page_background_fill=(250, 247, 241, 255),
-    panel_fill=(255, 252, 246, 210),
-    panel_border=(84, 70, 55, 80),
-    title_color=(42, 35, 28, 255),
-    body_color=(42, 35, 28, 255),
-    panel_radius_px=DEFAULT_LAYOUT.panel_radius_px,
-    panel_border_width_px=DEFAULT_LAYOUT.panel_border_width_px,
+    background_opacity=0.42,
+    page_background_fill=(247, 241, 229, 255),
+    panel_fill=(255, 251, 242, 232),
+    panel_border=(106, 84, 58, 150),
+    title_color=(54, 43, 30, 255),
+    body_color=(59, 48, 35, 255),
+    panel_radius_px=34,
+    panel_border_width_px=4,
+    fact_card_fill=(253, 246, 235, 250),
+    fact_card_border=(151, 119, 78, 190),
+    fact_header_fill=(92, 70, 44, 255),
+    fact_header_text=(255, 247, 232, 255),
+    fact_card_radius_px=22,
+    fact_card_border_width_px=3,
+    pill_fill=(238, 221, 195, 255),
+    pill_border=(137, 101, 60, 220),
+    pill_text=(69, 50, 29, 255),
+    pill_border_width_px=3,
+    grid_line_color=(116, 93, 64, 255),
+    letter_color=(48, 38, 27, 255),
+    solution_letter_color=(36, 29, 21, 255),
+    highlight_fill=(215, 169, 98, 138),
+    highlight_border=(101, 72, 38, 235),
 )
 
 BOLD_MODERN_THEME = ThemeConfig(
     name="bold-modern",
-    background_opacity=0.45,
-    page_background_fill=(248, 250, 252, 255),
-    panel_fill=(255, 255, 255, 220),
-    panel_border=(15, 23, 42, 110),
-    title_color=(15, 23, 42, 255),
+    background_opacity=0.22,
+    page_background_fill=(241, 245, 249, 255),
+    panel_fill=(255, 255, 255, 238),
+    panel_border=(15, 23, 42, 215),
+    title_color=(2, 6, 23, 255),
     body_color=(15, 23, 42, 255),
-    panel_radius_px=28,
-    panel_border_width_px=4,
+    panel_radius_px=18,
+    panel_border_width_px=6,
+    fact_card_fill=(226, 232, 240, 255),
+    fact_card_border=(15, 23, 42, 230),
+    fact_header_fill=(15, 23, 42, 255),
+    fact_header_text=(248, 250, 252, 255),
+    fact_card_radius_px=14,
+    fact_card_border_width_px=4,
+    pill_fill=(219, 234, 254, 255),
+    pill_border=(29, 78, 216, 245),
+    pill_text=(30, 64, 175, 255),
+    pill_border_width_px=4,
+    grid_line_color=(30, 41, 59, 255),
+    letter_color=(2, 6, 23, 255),
+    solution_letter_color=(2, 6, 23, 255),
+    highlight_fill=(96, 165, 250, 115),
+    highlight_border=(29, 78, 216, 245),
 )
 
 KIDS_THEME = ThemeConfig(
     name="kids",
-    background_opacity=0.5,
-    page_background_fill=(255, 253, 239, 255),
-    panel_fill=(255, 255, 255, 225),
-    panel_border=(80, 130, 180, 120),
-    title_color=(32, 80, 130, 255),
-    body_color=(25, 40, 60, 255),
-    panel_radius_px=46,
-    panel_border_width_px=4,
+    background_opacity=0.36,
+    page_background_fill=(255, 248, 220, 255),
+    panel_fill=(255, 255, 255, 238),
+    panel_border=(37, 99, 235, 175),
+    title_color=(190, 24, 93, 255),
+    body_color=(31, 41, 55, 255),
+    panel_radius_px=58,
+    panel_border_width_px=6,
+    fact_card_fill=(255, 247, 237, 255),
+    fact_card_border=(249, 115, 22, 220),
+    fact_header_fill=(37, 99, 235, 255),
+    fact_header_text=(255, 255, 255, 255),
+    fact_card_radius_px=32,
+    fact_card_border_width_px=5,
+    pill_fill=(254, 240, 138, 255),
+    pill_border=(234, 88, 12, 235),
+    pill_text=(124, 45, 18, 255),
+    pill_border_width_px=5,
+    grid_line_color=(37, 99, 235, 210),
+    letter_color=(17, 24, 39, 255),
+    solution_letter_color=(17, 24, 39, 255),
+    highlight_fill=(244, 114, 182, 120),
+    highlight_border=(190, 24, 93, 235),
 )
 
 THEME_PRESETS: dict[str, ThemeConfig] = {
