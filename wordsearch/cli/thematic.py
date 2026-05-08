@@ -17,9 +17,7 @@ PREVIEW_DEFAULT_SEED = 1234
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Generate a thematic KDP word search book from a [Block]/[Puzzle] text file.",
-    )
+    parser = argparse.ArgumentParser(description="Generate a thematic KDP word search book from a [Block]/[Puzzle] text file.")
     parser.add_argument("--title", "-t", help="Book title. If omitted, the script asks interactively.")
     parser.add_argument("--input", "-i", dest="input_path", help="Path to the thematic TXT file. Example: wordlists/book_block.txt")
     parser.add_argument("--difficulty", "-d", choices=("easy", "medium", "hard"), help="Difficulty level. If omitted, the script asks interactively.")
@@ -99,7 +97,7 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
         grid_size = ask_grid_size(settings)
 
     theme = get_theme(args.theme)
-    book_format = get_format_preset(args.format)
+    book_format = get_format_preset(getattr(args, "format", DEFAULT_FORMAT_NAME))
     seed = args.seed
     limit = args.limit
     if args.preview:
