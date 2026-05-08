@@ -15,7 +15,7 @@ from wordsearch.generation.book_assembly import RenderedBookImages
 from wordsearch.validation.render_quality import RenderQualityReport
 
 REPORT_FILENAME = "generation_report.json"
-REPORT_SCHEMA_VERSION = 3
+REPORT_SCHEMA_VERSION = 4
 
 
 @dataclass(frozen=True)
@@ -33,6 +33,8 @@ class ThematicGenerationReport:
     preview: bool
     limit: int | None
     requested_output_dir: str | None
+    theme_name: str
+    format_name: str
     puzzle_count: int
     block_count: int
     content_image_count: int
@@ -80,6 +82,8 @@ def build_thematic_generation_report(
         preview=options.preview,
         limit=options.limit,
         requested_output_dir=options.output_dir,
+        theme_name=options.theme_name,
+        format_name=options.format_name,
         puzzle_count=puzzle_count,
         block_count=len(page_plan.blocks_in_order),
         content_image_count=len(rendered_images.content_imgs),
