@@ -102,7 +102,7 @@ def test_render_quality_detects_word_list_column_overflow_risk():
 
 
 def test_render_quality_detects_small_grid_cells():
-    generated = [make_generated(0, grid_size=22)]
+    generated = [make_generated(0, grid_size=28)]
     page_plan = build_page_plan(generated)
 
     report = build_render_quality_report(
@@ -142,7 +142,7 @@ def test_render_quality_report_groups_warnings_by_code_and_severity():
         make_generated(
             0,
             fact=" ".join(["Long fact text"] * 120),
-            grid_size=22,
+            grid_size=28,
         )
     ]
     page_plan = build_page_plan(generated)
