@@ -48,8 +48,6 @@ def render_page(
     draw = ImageDraw.Draw(img)
     frame = draw_page_frame(draw=draw, scale=scale, theme=theme)
 
-    page_w_hi = frame.page_w_hi
-    page_h_hi = frame.page_h_hi
     safe_bottom_hi = frame.safe_bottom_hi
     panel_top = frame.panel_top
     content_left_hi = frame.content_left_hi
@@ -217,8 +215,6 @@ def render_page(
         grid_top_hi=grid_top_hi,
         cell_size_hi=cell_size_hi,
         scale=scale,
-        page_w_hi=page_w_hi,
-        page_h_hi=page_h_hi,
         highlight_fill=theme.highlight_fill,
         highlight_border=theme.highlight_border,
         theme=theme,
