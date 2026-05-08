@@ -39,6 +39,11 @@ def build_toc_entries(page_plan: PagePlan) -> List[TocEntry]:
     return toc_entries
 
 
+def _layout_kwargs(layout: LayoutConfig) -> dict:
+    """Pass layout only for opt-in non-default formats to preserve historical call shapes."""
+    return {"layout": layout} if layout != DEFAULT_LAYOUT else {}
+
+
 def render_thematic_book_images(
     *,
     book_title: str,
@@ -50,6 +55,7 @@ def render_thematic_book_images(
 ) -> RenderedBookImages:
     """Render all PNG page assets for the thematic book."""
     rendered = RenderedBookImages()
+    layout_kwargs = _layout_kwargs(layout)
 
     title_page_filename = build_output_file(output_dir, "00_title_page.png")
     rendered.content_imgs.append(
@@ -58,7 +64,7 @@ def render_thematic_book_images(
             filename=title_page_filename,
             background_path=None,
             theme=theme,
-            layout=layout,
+            **layout_kwargs,
         )
     )
 
@@ -68,7 +74,7 @@ def render_thematic_book_images(
             output_dir=output_dir,
             background_path=None,
             theme=theme,
-            layout=layout,
+            **layout_kwargs,
         )
     )
 
@@ -79,7 +85,7 @@ def render_thematic_book_images(
             filename=instr_filename,
             background_path=None,
             theme=theme,
-            layout=layout,
+            **layout_kwargs,
         )
     )
 
@@ -108,7 +114,7 @@ def render_thematic_book_images(
                     filename=block_cover_filename,
                     background_path=bg_path,
                     theme=theme,
-                    layout=layout,
+                    **layout_kwargs,
                 )
             )
 
@@ -127,7 +133,7 @@ def render_thematic_book_images(
                 solution_page_number=solution_page_number,
                 background_path=bg_path,
                 theme=theme,
-                layout=layout,
+                **layout_kwargs,
             )
         )
 
@@ -141,7 +147,7 @@ def render_thematic_book_images(
                 puzzle_title=spec.title,
                 background_path=bg_path,
                 theme=theme,
-                layout=layout,
+                **layout_kwargs,
             )
         )
 
