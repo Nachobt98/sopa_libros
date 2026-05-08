@@ -6,6 +6,7 @@ from typing import Iterable, Optional, Sequence
 
 from PIL import ImageDraw
 
+from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_TITLE,
@@ -33,12 +34,13 @@ def render_solution_page(
     filename: Optional[str] = None,
     placed_words: Optional[Sequence[PlacedWord]] = None,
     puzzle_title: Optional[str] = None,
+    theme: ThemeConfig = DEFAULT_THEME,
 ) -> str:
     """Render a solution page with highlighted placed words."""
     scale = 3
-    img = create_page_canvas(background_path, scale)
+    img = create_page_canvas(background_path, scale, theme=theme)
     draw = ImageDraw.Draw(img)
-    frame = draw_page_frame(draw=draw, scale=scale)
+    frame = draw_page_frame(draw=draw, scale=scale, theme=theme)
 
     page_w_hi = frame.page_w_hi
     page_h_hi = frame.page_h_hi
@@ -49,7 +51,7 @@ def render_solution_page(
     grid_top_base = frame.grid_top_base
 
     font_title = load_font(FONT_TITLE, TITLE_FONT_SIZE * scale)
-    text_color = (0, 0, 0, 255)
+    text_color = theme.body_color
     highlight_fill = (243, 226, 200, 230)
     highlight_border = (0, 0, 0, 255)
 
@@ -63,6 +65,7 @@ def render_solution_page(
         area_left=content_left_hi,
         area_right=content_right_hi,
         line_spacing=1.05,
+        theme=theme,
     )
 
     rows = len(grid)
