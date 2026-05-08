@@ -268,6 +268,25 @@ sopa-libros-thematic --title "Black History Word Search Collection" --input word
 
 Si todo está correcto, el comando termina después de los informes de validación.
 
+### Temas visuales
+
+El modo temático permite seleccionar un preset visual con `--theme`.
+
+Temas disponibles:
+
+- `current-default`: mantiene el aspecto actual por defecto.
+- `premium-neutral`: estilo más sobrio, cálido y editorial.
+- `bold-modern`: estilo más limpio, moderno y con más contraste.
+- `kids`: estilo más amable e infantil.
+
+Ejemplo:
+
+```bash
+sopa-libros-thematic --title "Visual Baseline Premium" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output --theme premium-neutral
+```
+
+Actualmente los temas afectan principalmente al marco compartido de las páginas de puzzle y solución: fondo base, opacidad de fondo, panel, borde, radio, color de título y color de texto base. El resto de páginas se migrará progresivamente a estos presets.
+
 ### Baseline visual reproducible
 
 Para revisar cambios visuales con una entrada pequeña y estable, usa el fixture documentado en:
@@ -538,6 +557,12 @@ wordlists/book_block.txt
 sopa-libros-thematic --title "Visual Baseline" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output
 ```
 
+### Generar baseline visual con tema premium
+
+```bash
+sopa-libros-thematic --title "Visual Baseline Premium" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output --theme premium-neutral
+```
+
 ### Generar libro temático grande
 
 ```bash
@@ -695,6 +720,12 @@ Generar la baseline visual reproducible:
 
 ```bash
 sopa-libros-thematic --title "Visual Baseline" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output
+```
+
+Generar la baseline visual con un tema concreto:
+
+```bash
+sopa-libros-thematic --title "Visual Baseline Kids" --input wordlists/fixtures/visual_baseline.txt --difficulty medium --grid-size 14 --seed 1234 --clean-output --theme kids
 ```
 
 Ejecutar checks locales:
