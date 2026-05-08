@@ -1,0 +1,22 @@
+[Block]
+name: Extremely Long Historical And Cultural Foundations Section Title Designed To Stress The Block Cover Layout
+[/Block]
+
+[Puzzle]
+title: Short Puzzle Title
+fact: This is an intentionally long fun fact designed to exceed the available card space on the rendered puzzle page. It keeps adding contextual information, historical background, explanatory detail, and extra descriptive wording so that the fun fact box cannot reasonably display the whole paragraph without truncation. The purpose of this fixture is not to produce good editorial content, but to verify that the render quality analyzer detects when the fun fact is too long for the available design space and correctly emits a FACT_TRUNCATED warning for manual review before publication.
+words:
+History
+Culture
+Legacy
+Memory
+Justice
+Rights
+Voices
+Leaders
+Change
+Courage
+Archive
+Freedom
+Progress
+[/Puzzle]

@@ -1,0 +1,35 @@
+[Block]
+name: Dense Word List Probe
+[/Block]
+
+[Puzzle]
+title: Dense But Valid Word List
+fact: This puzzle intentionally uses many short words to test whether the render quality analyzer flags dense word lists without confusing density with overflow.
+words:
+Alpha
+Beta
+Gamma
+Delta
+Eagle
+River
+Stone
+Light
+Music
+Dance
+Dream
+Honor
+Unity
+Voice
+Power
+Truth
+Peace
+Pride
+Roots
+Story
+March
+Brave
+Hope
+Rise
+Skill
+Focus
+[/Puzzle]
