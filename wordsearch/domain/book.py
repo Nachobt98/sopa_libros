@@ -21,6 +21,9 @@ class ThematicGenerationOptions:
     validate_only: bool = False
     clean_output: bool = False
     theme_name: str = DEFAULT_THEME_NAME
+    output_dir: str | None = None
+    limit: int | None = None
+    preview: bool = False
 
 
 @dataclass
