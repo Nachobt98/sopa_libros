@@ -28,6 +28,10 @@ from wordsearch.rendering.common import load_font, text_size, wrap_text
 from wordsearch.rendering.page_frame import draw_page_frame
 
 RENDER_QUALITY_SCHEMA_VERSION = 1
+WORD_LIST_OVERFLOW_RATIO = 1.08
+WORD_LIST_DENSE_FILL_RATIO = 0.92
+WORD_LIST_SPACING_HEIGHT_REDUCTION_RATIO = 0.20
+WORD_LIST_SPACING_FILL_RATIO = 0.88
 
 
 @dataclass(frozen=True)
@@ -447,7 +451,8 @@ def _measure_word_list(
     gap_pill_to_words_hi = int(70 * scale)
     words_area_height_hi = int(850 * scale)
     words_bottom_hi = safe_bottom_hi - int(8 * scale)
-    words_top_hi = max(0, words_bottom_hi - words_area_height_hi)
+    original_words_top_hi = max(0, words_bottom_hi - words_area_height_hi)
+    words_top_hi = original_words_top_hi
 
     pill_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75) * scale)
     pill_text = "Solution on page 999"
@@ -464,6 +469,8 @@ def _measure_word_list(
         words_top_hi = words_bottom_hi
 
     words_height_hi = max(0, words_bottom_hi - words_top_hi)
+    original_words_height_hi = max(0, words_bottom_hi - original_words_top_hi)
+    height_reduction_ratio = 1 - (words_height_hi / max(original_words_height_hi, 1))
     words_inner_margin_hi = int(35 * scale)
     area_left_hi = content_left_hi + words_inner_margin_hi
     area_right_hi = content_right_hi - words_inner_margin_hi
@@ -493,6 +500,10 @@ def _measure_word_list(
     fill_ratio = required_lines_per_col / max(max_lines_per_col, 1)
     longest_by_width = max(word_widths, key=word_widths.get, default="")
     max_word_width_ratio = word_max_w / max(col_w_hi, 1)
+    spacing_tight = (
+        height_reduction_ratio >= WORD_LIST_SPACING_HEIGHT_REDUCTION_RATIO
+        and fill_ratio >= WORD_LIST_SPACING_FILL_RATIO
+    )
 
     return {
         "present": True,
@@ -505,7 +516,8 @@ def _measure_word_list(
         "max_word_width_ratio": round(max_word_width_ratio, 3),
         "longest_by_width": longest_by_width,
         "words_height_px": round(words_height_hi / scale, 2),
-        "grid_to_words_compacted": desired_words_top_hi > max(0, words_bottom_hi - words_area_height_hi),
+        "height_reduction_ratio": round(height_reduction_ratio, 3),
+        "grid_to_words_compacted": spacing_tight,
         "grid_cols": grid_cols,
     }
 
@@ -597,12 +609,12 @@ def _analyze_word_list(
         return []
 
     warnings: list[RenderQualityWarning] = []
-    if word_list["forced_layout"] or word_list["max_word_width_ratio"] > 0.98:
+    if word_list["max_word_width_ratio"] > WORD_LIST_OVERFLOW_RATIO:
         warnings.append(
             _warning(
                 severity="warning",
                 code="WORD_LIST_COLUMN_OVERFLOW_RISK",
-                message="At least one word is likely too wide for the computed word-list columns.",
+                message="At least one word is wider than the computed word-list column by a clear margin.",
                 page_type="puzzle",
                 page_number=page_number,
                 puzzle_index=spec_index,
@@ -611,7 +623,7 @@ def _analyze_word_list(
                 details=word_list,
             )
         )
-    elif word_list["fill_ratio"] >= 0.90 or word_list["word_count"] >= 24:
+    elif word_list["fill_ratio"] >= WORD_LIST_DENSE_FILL_RATIO or word_list["word_count"] >= 26:
         warnings.append(
             _warning(
                 severity="info",
@@ -631,7 +643,7 @@ def _analyze_word_list(
             _warning(
                 severity="info",
                 code="GRID_WORD_LIST_SPACING_TIGHT",
-                message="The lower area was compacted to keep the solution pill and word list inside safe bounds.",
+                message="The lower area was materially compressed while keeping the solution pill and word list inside safe bounds.",
                 page_type="puzzle",
                 page_number=page_number,
                 puzzle_index=spec_index,
