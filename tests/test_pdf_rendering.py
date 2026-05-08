@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from PIL import Image
+from pypdf import PdfReader
 
 from wordsearch.config.layout import PAGE_H_PX, PAGE_W_PX
 from wordsearch.rendering.pdf import generate_pdf
@@ -52,3 +53,30 @@ def test_generate_pdf_accepts_multiple_puzzle_and_solution_images(tmp_path):
 
     assert returned_path == str(pdf_path)
     assert_valid_pdf(pdf_path)
+
+
+def test_generate_pdf_writes_basic_metadata(tmp_path):
+    puzzle_img = create_sample_png(tmp_path / "puzzle.png", (255, 255, 255))
+    solution_img = create_sample_png(tmp_path / "solution.png", (240, 240, 240))
+    pdf_path = tmp_path / "metadata_book.pdf"
+
+    generate_pdf(
+        [puzzle_img],
+        [solution_img],
+        outname=str(pdf_path),
+        metadata={
+            "title": "Metadata Book",
+            "author": "Author Name",
+            "subject": "Puzzle Book",
+            "keywords": "word search, KDP",
+            "creator": "sopa-libros",
+        },
+    )
+
+    assert_valid_pdf(pdf_path)
+    metadata = PdfReader(str(pdf_path)).metadata
+    assert metadata["/Title"] == "Metadata Book"
+    assert metadata["/Author"] == "Author Name"
+    assert metadata["/Subject"] == "Puzzle Book"
+    assert metadata["/Keywords"] == "word search, KDP"
+    assert metadata["/Creator"] == "sopa-libros"
