@@ -54,6 +54,19 @@ def test_default_theme_preserves_current_page_frame_tokens():
     assert DEFAULT_THEME.body_color == (0, 0, 0, 255)
 
 
+def test_default_theme_preserves_existing_puzzle_component_tokens():
+    assert DEFAULT_THEME.fact_card_fill == (245, 245, 245, 245)
+    assert DEFAULT_THEME.fact_card_border == (170, 170, 170, 255)
+    assert DEFAULT_THEME.fact_header_fill == (30, 30, 30, 255)
+    assert DEFAULT_THEME.fact_header_text == (255, 255, 255, 255)
+    assert DEFAULT_THEME.pill_fill == (230, 230, 230, 255)
+    assert DEFAULT_THEME.pill_border == (120, 120, 120, 255)
+    assert DEFAULT_THEME.highlight_fill == (243, 226, 200, 230)
+    assert DEFAULT_THEME.highlight_border == (0, 0, 0, 255)
+    assert DEFAULT_THEME.grid_line_color == "#444444"
+    assert DEFAULT_THEME.letter_color == (0, 0, 0, 255)
+
+
 def test_theme_presets_are_registered_by_name():
     assert set(theme_names()) == set(THEME_PRESETS)
     assert get_theme("current-default") is DEFAULT_THEME
@@ -61,6 +74,18 @@ def test_theme_presets_are_registered_by_name():
     assert get_theme("premium-neutral").name == "premium-neutral"
     assert get_theme("bold-modern").name == "bold-modern"
     assert get_theme("kids").name == "kids"
+
+
+def test_non_default_themes_have_distinct_component_tokens():
+    premium = get_theme("premium-neutral")
+    modern = get_theme("bold-modern")
+    kids = get_theme("kids")
+
+    assert premium.fact_header_fill != modern.fact_header_fill != kids.fact_header_fill
+    assert premium.highlight_fill != modern.highlight_fill != kids.highlight_fill
+    assert premium.pill_fill != modern.pill_fill != kids.pill_fill
+    assert premium.grid_line_color != modern.grid_line_color != kids.grid_line_color
+    assert premium.panel_radius_px != modern.panel_radius_px != kids.panel_radius_px
 
 
 def test_get_theme_rejects_unknown_theme():
