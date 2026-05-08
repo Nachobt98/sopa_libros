@@ -10,23 +10,19 @@ from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_PATH_BOLD,
-    FONT_TITLE,
-    title_font_size as TITLE_FONT_SIZE,
-    wordlist_font_size as WORDLIST_FONT_SIZE,
+    WORDLIST_FONT_SIZE,
 )
 from wordsearch.config.paths import build_default_output_file
+from wordsearch.rendering.adaptive_layout import plan_fact_layout, plan_title_layout
 from wordsearch.rendering.common import (
-    load_font,
     rounded_rectangle,
     save_page,
     text_size,
-    wrap_text,
 )
 from wordsearch.rendering.grid import draw_letter_grid
 from wordsearch.rendering.page_frame import (
     create_page_canvas,
     draw_page_frame,
-    draw_wrapped_centered_title,
 )
 from wordsearch.rendering.word_list import draw_word_list
 
@@ -53,15 +49,11 @@ def render_page(
     content_left_hi = frame.content_left_hi
     content_right_hi = frame.content_right_hi
     grid_top_base = frame.grid_top_base
-    min_gap_hi = int(30 * scale)
-
-    # Fuentes
-    font_title = load_font(FONT_TITLE, TITLE_FONT_SIZE * scale)
 
     text_color = theme.body_color
 
     # --------------------------------------------------------
-    # TÍTULO (con wrap)
+    # TÍTULO (adaptive wrap/font)
     # --------------------------------------------------------
     if puzzle_title:
         title_text = f"{idx}. {puzzle_title}"
@@ -69,67 +61,42 @@ def render_page(
         title_text = f"Puzzle {idx}"
 
     title_max_width = int(content_right_hi - content_left_hi)
-    y_after_title = draw_wrapped_centered_title(
-        draw,
-        title_text,
-        font_title,
-        max_width=title_max_width,
-        start_y=panel_top + int(25 * scale),
-        area_left=content_left_hi,
-        area_right=content_right_hi,
-        line_spacing=1.05,
-        theme=theme,
+    title_plan = plan_title_layout(
+        draw=draw,
+        title_text=title_text,
+        max_width_hi=title_max_width,
+        start_y_hi=panel_top + int(25 * scale),
+        scale=scale,
     )
 
-    # Más separación título → fact
-    y_cursor_hi = y_after_title + int(80 * scale)
+    title_y_hi = panel_top + int(25 * scale)
+    container_width = max(0, content_right_hi - content_left_hi)
+    for line in title_plan.lines:
+        width, height = text_size(draw, line, title_plan.font)
+        x = content_left_hi + max(0, (container_width - width) // 2)
+        draw.text((x, title_y_hi), line, font=title_plan.font, fill=theme.title_color)
+        title_y_hi += int(height * 1.05)
+
+    y_cursor_hi = title_plan.y_after_title_hi + title_plan.title_to_fact_gap_hi
 
     # --------------------------------------------------------
-    # FUN FACT – tarjeta con cabecera
+    # FUN FACT – tarjeta con cabecera adaptativa
     # --------------------------------------------------------
     if fun_fact:
-        fact_label_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.9) * scale)
-        fact_text_font_size_hi = int(WORDLIST_FONT_SIZE * 0.5) * scale
+        fact_plan = plan_fact_layout(
+            draw=draw,
+            fun_fact=fun_fact,
+            content_left_hi=content_left_hi,
+            content_right_hi=content_right_hi,
+            grid_top_base_hi=grid_top_base,
+            y_cursor_hi=y_cursor_hi,
+            scale=scale,
+        )
 
         left_hi = content_left_hi
         right_hi = content_right_hi
-
-        inner_horizontal_pad = int(18 * scale)
-        max_text_width_hi = int((right_hi - left_hi) - 2 * inner_horizontal_pad)
-
-        fact_label = "FUN FACT"
-        label_w, label_h = text_size(draw, fact_label, fact_label_font)
-
-        header_pad_v_hi = int(8 * scale)
-        text_pad_v_hi = int(10 * scale)
-        header_height_hi = label_h + 2 * header_pad_v_hi
-
-        fact_text_font = load_font(FONT_PATH, fact_text_font_size_hi)
-        line_height_hi = int(fact_text_font.size * 1.10)
-
-        min_fact_block_hi = header_height_hi + 2 * text_pad_v_hi + line_height_hi
-        max_fact_height_hi = max(min_fact_block_hi, grid_top_base - y_cursor_hi - min_gap_hi)
-
-        fact_lines = wrap_text(draw, fun_fact, fact_text_font, max_text_width_hi)
-
-        available_text_h = max(0, max_fact_height_hi - header_height_hi - 2 * text_pad_v_hi)
-        max_lines_fit = max(1, available_text_h // line_height_hi)
-        if len(fact_lines) > max_lines_fit:
-            fact_lines = fact_lines[:max_lines_fit]
-            last_line = fact_lines[-1] if fact_lines else ""
-            ellipsis = "..."
-            while last_line and text_size(draw, last_line + ellipsis, fact_text_font)[0] > max_text_width_hi:
-                last_line = last_line[:-1].rstrip()
-            if last_line:
-                fact_lines[-1] = last_line + ellipsis
-            else:
-                fact_lines[-1] = ellipsis
-
-        fact_text_height_hi = len(fact_lines) * line_height_hi
-        box_height_hi = header_height_hi + text_pad_v_hi + fact_text_height_hi + text_pad_v_hi
-
         box_top_hi = y_cursor_hi
-        box_bottom_hi = box_top_hi + box_height_hi
+        box_bottom_hi = box_top_hi + fact_plan.box_height_hi
 
         card_radius = int(theme.fact_card_radius_px * scale)
         rounded_rectangle(
@@ -144,9 +111,9 @@ def render_page(
         header_left_hi = left_hi
         header_right_hi = right_hi
         header_top_hi = box_top_hi
-        header_bottom_hi = header_top_hi + header_height_hi
+        header_bottom_hi = header_top_hi + fact_plan.header_height_hi
 
-        header_radius = min(card_radius, header_height_hi // 2)
+        header_radius = min(card_radius, fact_plan.header_height_hi // 2)
         rounded_rectangle(
             draw,
             (int(header_left_hi), int(header_top_hi), int(header_right_hi), int(header_bottom_hi)),
@@ -166,29 +133,31 @@ def render_page(
             outline=None,
         )
 
+        fact_label = "FUN FACT"
+        label_w, label_h = text_size(draw, fact_label, fact_plan.label_font)
         header_cx = (header_left_hi + header_right_hi) / 2
         header_cy = (header_top_hi + header_bottom_hi) / 2
         try:
             draw.text(
                 (header_cx, header_cy),
                 fact_label,
-                font=fact_label_font,
+                font=fact_plan.label_font,
                 fill=theme.fact_header_text,
                 anchor="mm",
             )
         except TypeError:
             hx = header_cx - label_w / 2
             hy = header_cy - label_h / 2
-            draw.text((hx, hy), fact_label, font=fact_label_font, fill=theme.fact_header_text)
+            draw.text((hx, hy), fact_label, font=fact_plan.label_font, fill=theme.fact_header_text)
 
-        text_x_hi = left_hi + inner_horizontal_pad
-        text_y_hi = header_bottom_hi + text_pad_v_hi
+        text_x_hi = left_hi + fact_plan.inner_horizontal_pad_hi
+        text_y_hi = header_bottom_hi + fact_plan.text_pad_v_hi
 
-        for line in fact_lines:
-            draw.text((text_x_hi, text_y_hi), line, font=fact_text_font, fill=text_color)
-            text_y_hi += line_height_hi
+        for line in fact_plan.rendered_lines or []:
+            draw.text((text_x_hi, text_y_hi), line, font=fact_plan.text_font, fill=text_color)
+            text_y_hi += fact_plan.line_height_hi
 
-        y_cursor_hi = box_bottom_hi + int(50 * scale)
+        y_cursor_hi = box_bottom_hi + fact_plan.after_gap_hi
 
     # --------------------------------------------------------
     # GRID
@@ -202,7 +171,7 @@ def render_page(
 
     grid_w_hi = cell_size_hi * cols
 
-    grid_top_hi = grid_top_base
+    grid_top_hi = max(grid_top_base, y_cursor_hi)
     grid_left_hi = int((content_left_hi + content_right_hi - grid_w_hi) // 2)
 
     grid_bottom_hi = draw_letter_grid(
