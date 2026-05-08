@@ -23,6 +23,7 @@ from wordsearch.parsing.thematic import PuzzleParseError, parse_puzzle_file
 from wordsearch.rendering.pdf import generate_pdf
 from wordsearch.validation.assets import validate_generation_assets
 from wordsearch.validation.kdp import build_kdp_preflight_report, write_kdp_preflight_report
+from wordsearch.validation.render_quality import build_render_quality_report
 from wordsearch.validation.thematic import validate_thematic_specs
 from wordsearch.validation.visual import build_visual_regression_report, write_visual_regression_report
 from wordsearch.utils.slug import slugify
@@ -193,6 +194,15 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         print("No se han generado imagenes suficientes como para crear el PDF.")
         return None
 
+    render_quality_report = build_render_quality_report(
+        book_title=options.book_title,
+        generated_puzzles=generated_puzzles,
+        page_plan=page_plan,
+        content_image_paths=rendered_images.content_imgs,
+        theme=theme,
+    )
+    render_quality_report.print_summary()
+
     visual_regression_report_path = None
     if options.preview:
         visual_report = build_visual_regression_report(
@@ -236,6 +246,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         page_plan=page_plan,
         rendered_images=rendered_images,
         puzzle_count=len(generated_puzzles),
+        render_quality_report=render_quality_report,
     )
     report_path = write_generation_report(report, output_dir=output_dir)
 
