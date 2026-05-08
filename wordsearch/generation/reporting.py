@@ -12,9 +12,10 @@ from wordsearch.config.paths import build_output_file
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.page_plan import PagePlan
 from wordsearch.generation.book_assembly import RenderedBookImages
+from wordsearch.validation.render_quality import RenderQualityReport
 
 REPORT_FILENAME = "generation_report.json"
-REPORT_SCHEMA_VERSION = 2
+REPORT_SCHEMA_VERSION = 3
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,7 @@ class ThematicGenerationReport:
     first_solution_page: int
     output_dir: str
     pdf_path: str
+    render_quality: dict[str, Any]
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -52,8 +54,20 @@ def build_thematic_generation_report(
     page_plan: PagePlan,
     rendered_images: RenderedBookImages,
     puzzle_count: int,
+    render_quality_report: RenderQualityReport | None = None,
 ) -> ThematicGenerationReport:
     """Build a serializable report for a successful thematic generation run."""
+    render_quality = (
+        render_quality_report.to_dict()
+        if render_quality_report is not None
+        else {
+            "schema_version": 1,
+            "warning_count": 0,
+            "by_severity": {},
+            "by_code": {},
+            "warnings": [],
+        }
+    )
     return ThematicGenerationReport(
         schema_version=REPORT_SCHEMA_VERSION,
         generated_at_utc=datetime.now(timezone.utc).isoformat(),
@@ -73,6 +87,7 @@ def build_thematic_generation_report(
         first_solution_page=page_plan.first_solution_page,
         output_dir=output_dir,
         pdf_path=pdf_path,
+        render_quality=render_quality,
     )
 
 
