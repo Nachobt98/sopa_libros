@@ -191,7 +191,7 @@ def _inspect_pdf(pdf_path: str, report: KdpPreflightReport) -> None:
     path = Path(pdf_path)
     try:
         reader = PdfReader(str(path))
-    except (PdfReadError, OSError, ValueError) as exc:
+    except Exception as exc:
         report.add_warning(f"No se pudo inspeccionar internamente el PDF ({exc})", path=str(path))
         return
 
