@@ -17,6 +17,20 @@ class StubValidationReport:
         pass
 
 
+class StubRenderQualityReport:
+    def print_summary(self) -> None:
+        pass
+
+    def to_dict(self) -> dict:
+        return {
+            "schema_version": 1,
+            "warning_count": 0,
+            "by_severity": {},
+            "by_code": {},
+            "warnings": [],
+        }
+
+
 def make_options() -> ThematicGenerationOptions:
     return ThematicGenerationOptions(
         book_title="Preview Test Book",
@@ -99,6 +113,10 @@ def test_generate_thematic_book_applies_limit_and_writes_visual_report(monkeypat
         calls["render_kwargs"] = kwargs
         return rendered_images
 
+    def fake_build_render_quality_report(**kwargs):
+        calls["render_quality_kwargs"] = kwargs
+        return StubRenderQualityReport()
+
     def fake_build_visual_regression_report(image_paths):
         calls["visual_image_paths"] = image_paths
         return "visual-report"
@@ -110,6 +128,7 @@ def test_generate_thematic_book_applies_limit_and_writes_visual_report(monkeypat
     monkeypatch.setattr(thematic_pipeline, "generate_thematic_grids", fake_generate_thematic_grids)
     monkeypatch.setattr(thematic_pipeline, "build_page_plan", lambda generated: "page-plan")
     monkeypatch.setattr(thematic_pipeline, "render_thematic_book_images", fake_render_thematic_book_images)
+    monkeypatch.setattr(thematic_pipeline, "build_render_quality_report", fake_build_render_quality_report)
     monkeypatch.setattr(thematic_pipeline, "build_visual_regression_report", fake_build_visual_regression_report)
     monkeypatch.setattr(thematic_pipeline, "write_visual_regression_report", fake_write_visual_regression_report)
     monkeypatch.setattr(thematic_pipeline, "generate_pdf", lambda *args, **kwargs: kwargs["outname"])
@@ -123,6 +142,7 @@ def test_generate_thematic_book_applies_limit_and_writes_visual_report(monkeypat
     assert pdf_path == str(tmp_path / "preview_output" / "preview_test_book.pdf")
     assert [spec.index for spec in calls["grid_specs"]] == [0, 1]
     assert calls["render_kwargs"]["output_dir"] == str(tmp_path / "preview_output")
+    assert calls["render_quality_kwargs"]["content_image_paths"] == rendered_images.content_imgs
     assert calls["visual_image_paths"] == [
         "title.png",
         "block.png",
