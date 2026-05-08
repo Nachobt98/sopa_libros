@@ -50,10 +50,16 @@ def _draw_main_panel(
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
 ) -> Tuple[int, int, int, int]:
-    left = int(layout.page_width_px * scale * 0.061)
-    top = int(layout.page_height_px * scale * 0.039)
-    right = layout.page_width_px * scale - left
-    bottom = layout.page_height_px * scale - int(layout.page_height_px * scale * 0.056)
+    if layout == DEFAULT_LAYOUT:
+        left = int(110 * scale)
+        top = int(105 * scale)
+        right = layout.page_width_px * scale - int(110 * scale)
+        bottom = layout.page_height_px * scale - int(150 * scale)
+    else:
+        left = int(round(layout.page_width_px * scale * 0.061))
+        top = int(round(layout.page_height_px * scale * 0.039))
+        right = layout.page_width_px * scale - left
+        bottom = layout.page_height_px * scale - int(round(layout.page_height_px * scale * 0.056))
 
     rounded_rectangle(
         draw,
@@ -78,12 +84,7 @@ def render_table_of_contents(
     scale = 3
     img = _make_background(background_path, scale, theme=theme, layout=layout)
     draw = ImageDraw.Draw(img)
-    panel_left, panel_top, panel_right, _panel_bottom = _draw_main_panel(
-        draw,
-        scale,
-        theme=theme,
-        layout=layout,
-    )
+    panel_left, panel_top, panel_right, _panel_bottom = _draw_main_panel(draw, scale, theme=theme, layout=layout)
 
     center_x = layout.page_width_px * scale // 2
     title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.15) * scale)
@@ -98,11 +99,7 @@ def render_table_of_contents(
 
     line_y = y + int(44 * scale)
     line_width = int((panel_right - panel_left) * 0.46)
-    draw.line(
-        (center_x - line_width // 2, line_y, center_x + line_width // 2, line_y),
-        fill=theme.panel_border,
-        width=max(1, int(1.5 * scale)),
-    )
+    draw.line((center_x - line_width // 2, line_y, center_x + line_width // 2, line_y), fill=theme.panel_border, width=max(1, int(1.5 * scale)))
 
     y = line_y + int(110 * scale)
     content_left = panel_left + int(70 * scale)
@@ -178,14 +175,7 @@ def render_instructions_page(
     body_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.70) * scale)
 
     title_bottom = draw_centered_text(draw, "Instructions", title_font, center_x, panel_top + int(78 * scale), theme.title_color)
-    subtitle_bottom = draw_centered_text(
-        draw,
-        "How to enjoy this book",
-        subtitle_font,
-        center_x,
-        title_bottom + int(46 * scale),
-        theme.body_color,
-    )
+    subtitle_bottom = draw_centered_text(draw, "How to enjoy this book", subtitle_font, center_x, title_bottom + int(46 * scale), theme.body_color)
 
     instructions = [
         "Find each word from the list at the bottom of the puzzle page.",
