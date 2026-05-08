@@ -51,10 +51,10 @@ def render_block_cover(
     margin_x = int(page_w_hi * 0.10)
     max_text_width = page_w_hi - 2 * margin_x
 
-    panel_left = int(page_w_hi * 0.09)
-    panel_top = int(page_h_hi * 0.245)
+    panel_left = int(page_w_hi * 0.075)
+    panel_top = int(page_h_hi * 0.225)
     panel_right = page_w_hi - panel_left
-    panel_bottom = int(page_h_hi * 0.56)
+    panel_bottom = int(page_h_hi * 0.60)
     rounded_rectangle(
         draw,
         (panel_left, panel_top, panel_right, panel_bottom),

@@ -47,6 +47,21 @@ def make_generated(index: int = 0) -> GeneratedPuzzle:
     )
 
 
+def test_build_pdf_metadata_uses_thematic_options():
+    options = make_options()
+    options.theme_name = "premium-neutral"
+
+    metadata = thematic_pipeline.build_pdf_metadata(options)
+
+    assert metadata == {
+        "title": "Thematic Test Book",
+        "author": "",
+        "subject": "Word search puzzle book generated with MEDIUM difficulty",
+        "keywords": "word search, puzzle book, KDP, medium, premium-neutral",
+        "creator": "sopa-libros",
+    }
+
+
 def test_generate_thematic_book_returns_none_when_input_file_is_missing(monkeypatch):
     monkeypatch.setattr(
         thematic_pipeline,
@@ -357,9 +372,17 @@ def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypat
         calls["render_kwargs"] = kwargs
         return rendered_images
 
-    def fake_generate_pdf(content_imgs, solution_imgs, *, outname):
-        calls["pdf"] = (content_imgs, solution_imgs, outname)
+    def fake_generate_pdf(content_imgs, solution_imgs, *, outname, metadata=None):
+        calls["pdf"] = (content_imgs, solution_imgs, outname, metadata)
         return outname
+
+    def fake_build_kdp_preflight_report(**kwargs):
+        calls["preflight_kwargs"] = kwargs
+        return StubValidationReport(has_errors=False)
+
+    def fake_write_kdp_preflight_report(preflight_report, *, output_dir):
+        calls["preflight_write"] = (preflight_report, output_dir)
+        return f"{output_dir}/preflight_report.json"
 
     def fake_build_thematic_generation_report(**kwargs):
         calls["report_kwargs"] = kwargs
@@ -372,6 +395,8 @@ def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypat
     monkeypatch.setattr(thematic_pipeline, "build_page_plan", fake_build_page_plan)
     monkeypatch.setattr(thematic_pipeline, "render_thematic_book_images", fake_render_thematic_book_images)
     monkeypatch.setattr(thematic_pipeline, "generate_pdf", fake_generate_pdf)
+    monkeypatch.setattr(thematic_pipeline, "build_kdp_preflight_report", fake_build_kdp_preflight_report)
+    monkeypatch.setattr(thematic_pipeline, "write_kdp_preflight_report", fake_write_kdp_preflight_report)
     monkeypatch.setattr(
         thematic_pipeline,
         "build_thematic_generation_report",
@@ -383,6 +408,7 @@ def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypat
 
     expected_output_dir = tmp_path / "thematic_test_book"
     expected_pdf_path = str(expected_output_dir / "thematic_test_book.pdf")
+    expected_metadata = thematic_pipeline.build_pdf_metadata(options)
     assert pdf_path == expected_pdf_path
     assert calls["asset_validation"]["output_dir"] == str(expected_output_dir)
     assert list(calls["asset_validation"]["optional_backgrounds"]) == ["assets/block.png"]
@@ -396,7 +422,15 @@ def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypat
         "page_plan": "page-plan",
         "output_dir": str(expected_output_dir),
     }
-    assert calls["pdf"] == (["content.png"], ["solution.png"], expected_pdf_path)
+    assert calls["pdf"] == (["content.png"], ["solution.png"], expected_pdf_path, expected_metadata)
+    assert calls["preflight_kwargs"] == {
+        "pdf_path": expected_pdf_path,
+        "output_dir": str(expected_output_dir),
+        "content_image_paths": rendered_images.content_imgs,
+        "solution_image_paths": rendered_images.solution_imgs,
+        "expected_pdf_metadata": expected_metadata,
+    }
+    assert calls["preflight_write"] == (calls["preflight_write"][0], str(expected_output_dir))
     assert calls["report_kwargs"] == {
         "options": options,
         "output_dir": str(expected_output_dir),
