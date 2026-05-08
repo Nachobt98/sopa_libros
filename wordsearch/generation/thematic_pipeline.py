@@ -52,7 +52,7 @@ def build_pdf_metadata(options: ThematicGenerationOptions) -> dict[str, str]:
         "title": options.book_title,
         "author": "",
         "subject": f"Word search puzzle book generated with {options.difficulty.name} difficulty",
-        "keywords": f"word search, puzzle book, KDP, {options.difficulty.name.lower()}, {options.theme_name}, {options.format_name}",
+        "keywords": f"word search, puzzle book, KDP, {options.difficulty.name.lower()}, {options.theme_name}",
         "creator": "sopa-libros",
     }
 
