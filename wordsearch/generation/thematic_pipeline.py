@@ -164,12 +164,14 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         return None
 
     pdf_path = build_output_file(output_dir, f"{book_slug}.pdf")
+    pdf_metadata = build_pdf_metadata(options)
 
     try:
         pdf_final = generate_pdf(
             rendered_images.content_imgs,
             rendered_images.solution_imgs,
             outname=pdf_path,
+            metadata=pdf_metadata,
         )
     except PermissionError:
         print("\nERROR: No se pudo guardar el PDF.")
@@ -182,6 +184,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         output_dir=output_dir,
         content_image_paths=rendered_images.content_imgs,
         solution_image_paths=rendered_images.solution_imgs,
+        expected_pdf_metadata=pdf_metadata,
     )
     preflight_report.print_summary()
     preflight_report_path = write_kdp_preflight_report(preflight_report, output_dir=output_dir)
