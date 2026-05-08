@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from PIL import Image, ImageDraw, ImageFont
 
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import rounded_rectangle, text_size, wrap_text
 
@@ -32,10 +32,11 @@ def create_page_canvas(
     scale: int,
     *,
     theme: ThemeConfig = DEFAULT_THEME,
+    layout: LayoutConfig = DEFAULT_LAYOUT,
 ) -> Image.Image:
     """Create a high-resolution page canvas with optional translucent background."""
-    page_w_hi = DEFAULT_LAYOUT.page_width_px * scale
-    page_h_hi = DEFAULT_LAYOUT.page_height_px * scale
+    page_w_hi = layout.page_width_px * scale
+    page_h_hi = layout.page_height_px * scale
     bg_path = background_path or BACKGROUND_PATH
 
     if bg_path and os.path.exists(bg_path):
@@ -58,18 +59,19 @@ def draw_page_frame(
     scale: int,
     title_area_hi: int | None = None,
     theme: ThemeConfig = DEFAULT_THEME,
+    layout: LayoutConfig = DEFAULT_LAYOUT,
 ) -> PageFrame:
     """Draw the shared white content panel and return its layout bounds."""
-    page_w_hi = DEFAULT_LAYOUT.page_width_px * scale
-    page_h_hi = DEFAULT_LAYOUT.page_height_px * scale
-    safe_left_hi = DEFAULT_LAYOUT.safe_left_px * scale
-    safe_right_hi = DEFAULT_LAYOUT.safe_right_px * scale
-    safe_bottom_hi = DEFAULT_LAYOUT.safe_bottom_px * scale
-    top_px_hi = DEFAULT_LAYOUT.top_px * scale
+    page_w_hi = layout.page_width_px * scale
+    page_h_hi = layout.page_height_px * scale
+    safe_left_hi = layout.safe_left_px * scale
+    safe_right_hi = layout.safe_right_px * scale
+    safe_bottom_hi = layout.safe_bottom_px * scale
+    top_px_hi = layout.top_px * scale
 
-    panel_pad_x = int(DEFAULT_LAYOUT.panel_pad_x_px * scale)
-    panel_pad_top = int(DEFAULT_LAYOUT.panel_pad_top_px * scale)
-    panel_pad_bottom = int(DEFAULT_LAYOUT.panel_pad_bottom_px * scale)
+    panel_pad_x = int(layout.panel_pad_x_px * scale)
+    panel_pad_top = int(layout.panel_pad_top_px * scale)
+    panel_pad_bottom = int(layout.panel_pad_bottom_px * scale)
 
     panel_left = max(0, safe_left_hi - panel_pad_x)
     panel_top = max(0, top_px_hi - panel_pad_top)
@@ -85,12 +87,8 @@ def draw_page_frame(
         width=max(1, int(theme.panel_border_width_px * scale)),
     )
 
-    content_margin_x = int(DEFAULT_LAYOUT.content_margin_x_px * scale)
-    title_area_hi = (
-        title_area_hi
-        if title_area_hi is not None
-        else int(DEFAULT_LAYOUT.default_title_area_px * scale)
-    )
+    content_margin_x = int(layout.content_margin_x_px * scale)
+    title_area_hi = title_area_hi if title_area_hi is not None else int(layout.default_title_area_px * scale)
 
     return PageFrame(
         scale=scale,
