@@ -52,8 +52,6 @@ def render_solution_page(
 
     font_title = load_font(FONT_TITLE, TITLE_FONT_SIZE * scale)
     text_color = theme.body_color
-    highlight_fill = (243, 226, 200, 230)
-    highlight_border = (0, 0, 0, 255)
 
     title_text = f"Solution – {idx}. {puzzle_title}" if puzzle_title else f"Solution {idx}"
     draw_wrapped_centered_title(
@@ -89,8 +87,9 @@ def render_solution_page(
         scale=scale,
         page_w_hi=page_w_hi,
         page_h_hi=page_h_hi,
-        highlight_fill=highlight_fill,
-        highlight_border=highlight_border,
+        highlight_fill=theme.highlight_fill,
+        highlight_border=theme.highlight_border,
+        theme=theme,
     )
 
     base_gap_hi = int(60 * scale)
