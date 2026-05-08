@@ -5,16 +5,21 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from PIL import Image
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 
 from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD, FONT_TITLE
 from wordsearch.config.layout import DPI, PAGE_H_PX, PAGE_W_PX, TRIM_H_IN, TRIM_W_IN
 from wordsearch.config.paths import build_output_file
 
 PREFLIGHT_REPORT_FILENAME = "preflight_report.json"
-PREFLIGHT_SCHEMA_VERSION = 1
+PREFLIGHT_SCHEMA_VERSION = 2
+PDF_POINTS_PER_INCH = 72
+PDF_SIZE_TOLERANCE_IN = 0.01
+PdfMetadata = Mapping[str, str | None]
 
 
 @dataclass(frozen=True)
@@ -47,6 +52,11 @@ class KdpPreflightReport:
     solution_image_count: int
     pdf_path: str
     output_dir: str
+    expected_pdf_metadata: dict[str, str | None] = field(default_factory=dict)
+    actual_pdf_metadata: dict[str, str | None] = field(default_factory=dict)
+    actual_page_count: int | None = None
+    actual_page_width_in: float | None = None
+    actual_page_height_in: float | None = None
     issues: list[KdpPreflightIssue] = field(default_factory=list)
 
     @property
@@ -76,6 +86,10 @@ class KdpPreflightReport:
         print("\n=== KDP preflight ===")
         print(f"Trim: {self.trim_width_in}x{self.trim_height_in} in @ {self.dpi} DPI")
         print(f"Paginas esperadas: {self.expected_page_count}")
+        if self.actual_page_count is not None:
+            print(f"Paginas reales PDF: {self.actual_page_count}")
+        if self.actual_page_width_in is not None and self.actual_page_height_in is not None:
+            print(f"Tamano real PDF: {self.actual_page_width_in}x{self.actual_page_height_in} in")
 
         if not self.issues:
             print("OK: no se han detectado problemas basicos de preflight.")
@@ -102,6 +116,7 @@ def build_kdp_preflight_report(
     output_dir: str,
     content_image_paths: Iterable[str],
     solution_image_paths: Iterable[str],
+    expected_pdf_metadata: PdfMetadata | None = None,
 ) -> KdpPreflightReport:
     """Build a basic preflight report for a generated KDP interior."""
     content_images = list(content_image_paths)
@@ -118,11 +133,14 @@ def build_kdp_preflight_report(
         solution_image_count=len(solution_images),
         pdf_path=pdf_path,
         output_dir=output_dir,
+        expected_pdf_metadata=dict(expected_pdf_metadata or {}),
     )
 
     _check_output_dir(output_dir, report)
     _check_required_fonts(report)
-    _check_pdf_file(pdf_path, report)
+    pdf_exists = _check_pdf_file(pdf_path, report)
+    if pdf_exists:
+        _inspect_pdf(pdf_path, report)
     _check_page_images(content_images, report, label="content")
     _check_page_images(solution_images, report, label="solution")
 
@@ -155,16 +173,115 @@ def _check_required_fonts(report: KdpPreflightReport) -> None:
             report.add_error("No se encuentra una fuente requerida", path=font_path)
 
 
-def _check_pdf_file(pdf_path: str, report: KdpPreflightReport) -> None:
+def _check_pdf_file(pdf_path: str, report: KdpPreflightReport) -> bool:
     path = Path(pdf_path)
     if not path.exists():
         report.add_error("No existe el PDF final", path=str(path))
-        return
+        return False
     if path.stat().st_size == 0:
         report.add_error("El PDF final esta vacio", path=str(path))
-        return
+        return False
     if not path.read_bytes()[:4] == b"%PDF":
         report.add_error("El archivo final no parece un PDF valido", path=str(path))
+        return False
+    return True
+
+
+def _inspect_pdf(pdf_path: str, report: KdpPreflightReport) -> None:
+    path = Path(pdf_path)
+    try:
+        reader = PdfReader(str(path))
+    except (PdfReadError, OSError, ValueError) as exc:
+        report.add_warning(f"No se pudo inspeccionar internamente el PDF ({exc})", path=str(path))
+        return
+
+    report.actual_page_count = len(reader.pages)
+    if report.actual_page_count != report.expected_page_count:
+        report.add_error(
+            f"El PDF tiene {report.actual_page_count} paginas reales, "
+            f"pero se esperaban {report.expected_page_count}",
+            path=str(path),
+        )
+
+    if reader.pages:
+        first_width, first_height = _page_size_in(reader.pages[0])
+        report.actual_page_width_in = first_width
+        report.actual_page_height_in = first_height
+        _check_pdf_page_size(first_width, first_height, path=str(path), report=report)
+
+        for index, page in enumerate(reader.pages[1:], start=2):
+            width, height = _page_size_in(page)
+            if not _same_size(width, first_width) or not _same_size(height, first_height):
+                report.add_error(
+                    f"La pagina {index} no tiene el mismo tamano que la primera "
+                    f"({width}x{height} in frente a {first_width}x{first_height} in)",
+                    path=str(path),
+                )
+
+    report.actual_pdf_metadata = _normalize_pdf_metadata(reader.metadata)
+    _check_pdf_metadata(report)
+
+
+def _page_size_in(page: Any) -> tuple[float, float]:
+    box = page.mediabox
+    width = round(float(box.width) / PDF_POINTS_PER_INCH, 4)
+    height = round(float(box.height) / PDF_POINTS_PER_INCH, 4)
+    return width, height
+
+
+def _check_pdf_page_size(
+    width_in: float,
+    height_in: float,
+    *,
+    path: str,
+    report: KdpPreflightReport,
+) -> None:
+    if not _same_size(width_in, TRIM_W_IN) or not _same_size(height_in, TRIM_H_IN):
+        report.add_error(
+            f"El tamano fisico del PDF no coincide con el trim esperado "
+            f"{TRIM_W_IN}x{TRIM_H_IN} in; recibido {width_in}x{height_in} in",
+            path=path,
+        )
+
+
+def _same_size(actual: float, expected: float) -> bool:
+    return abs(actual - expected) <= PDF_SIZE_TOLERANCE_IN
+
+
+def _normalize_pdf_metadata(metadata: Any) -> dict[str, str | None]:
+    if not metadata:
+        return {}
+
+    normalized: dict[str, str | None] = {}
+    key_map = {
+        "/Title": "title",
+        "/Author": "author",
+        "/Subject": "subject",
+        "/Keywords": "keywords",
+        "/Creator": "creator",
+        "/Producer": "producer",
+    }
+    for raw_key, clean_key in key_map.items():
+        value = metadata.get(raw_key)
+        normalized[clean_key] = str(value) if value is not None else None
+    return normalized
+
+
+def _check_pdf_metadata(report: KdpPreflightReport) -> None:
+    if not report.expected_pdf_metadata:
+        report.add_warning("No se definio metadata esperada para validar el PDF")
+        return
+
+    for key, expected_value in report.expected_pdf_metadata.items():
+        if not expected_value:
+            continue
+        actual_value = report.actual_pdf_metadata.get(key)
+        if actual_value != expected_value:
+            report.add_warning(
+                f"Metadata PDF inesperada para '{key}': esperado '{expected_value}', "
+                f"recibido '{actual_value}'",
+                path=report.pdf_path,
+            )
 
 
 def _check_page_images(
