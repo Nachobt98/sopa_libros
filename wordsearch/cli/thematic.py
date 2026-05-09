@@ -1,9 +1,4 @@
-"""
-CLI entry point for the thematic KDP word search generator.
-
-This module owns command-line parsing and interactive prompts. The generation
-pipeline itself lives in `wordsearch.generation.thematic_pipeline`.
-"""
+"""CLI entry point for the thematic KDP word search generator."""
 
 from __future__ import annotations
 
@@ -11,6 +6,7 @@ import argparse
 
 from wordsearch.cli.grid_size_prompts import ask_grid_size
 from wordsearch.config.design import DEFAULT_THEME_NAME, get_theme, theme_names
+from wordsearch.config.formats import DEFAULT_FORMAT_NAME, format_names, get_format_preset
 from wordsearch.config.paths import DEFAULT_THEMATIC_WORDLIST
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.generation.difficulty import DifficultyLevel, difficulty_settings
@@ -21,52 +17,16 @@ PREVIEW_DEFAULT_SEED = 1234
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Generate a thematic KDP word search book from a [Block]/[Puzzle] text file.",
-    )
-    parser.add_argument(
-        "--title",
-        "-t",
-        help="Book title. If omitted, the script asks interactively.",
-    )
-    parser.add_argument(
-        "--input",
-        "-i",
-        dest="input_path",
-        help="Path to the thematic TXT file. Example: wordlists/book_block.txt",
-    )
-    parser.add_argument(
-        "--difficulty",
-        "-d",
-        choices=("easy", "medium", "hard"),
-        help="Difficulty level. If omitted, the script asks interactively.",
-    )
-    parser.add_argument(
-        "--grid-size",
-        "-g",
-        type=int,
-        help="Grid size. If omitted, the script asks interactively.",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        help="Optional random seed for reproducible grids.",
-    )
-    parser.add_argument(
-        "--theme",
-        choices=theme_names(),
-        default=DEFAULT_THEME_NAME,
-        help="Visual theme preset for shared page-frame styling.",
-    )
-    parser.add_argument(
-        "--output-dir",
-        help="Optional output directory. Defaults to output_puzzles_kdp/<book_slug>.",
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        help="Generate only the first N parsed puzzles. Useful for visual iteration.",
-    )
+    parser = argparse.ArgumentParser(description="Generate a thematic KDP word search book from a [Block]/[Puzzle] text file.")
+    parser.add_argument("--title", "-t", help="Book title. If omitted, the script asks interactively.")
+    parser.add_argument("--input", "-i", dest="input_path", help="Path to the thematic TXT file. Example: wordlists/book_block.txt")
+    parser.add_argument("--difficulty", "-d", choices=("easy", "medium", "hard"), help="Difficulty level. If omitted, the script asks interactively.")
+    parser.add_argument("--grid-size", "-g", type=int, help="Grid size. If omitted, the script asks interactively.")
+    parser.add_argument("--seed", type=int, help="Optional random seed for reproducible grids.")
+    parser.add_argument("--theme", choices=theme_names(), default=DEFAULT_THEME_NAME, help="Visual theme preset for shared page-frame styling.")
+    parser.add_argument("--format", choices=format_names(), default=DEFAULT_FORMAT_NAME, help="Editorial book format preset for trim size, margins and safe area.")
+    parser.add_argument("--output-dir", help="Optional output directory. Defaults to output_puzzles_kdp/<book_slug>.")
+    parser.add_argument("--limit", type=int, help="Generate only the first N parsed puzzles. Useful for visual iteration.")
     parser.add_argument(
         "--preview",
         action="store_true",
@@ -75,16 +35,8 @@ def _parse_args() -> argparse.Namespace:
             f"Defaults to --limit {PREVIEW_DEFAULT_LIMIT} and --seed {PREVIEW_DEFAULT_SEED} when omitted."
         ),
     )
-    parser.add_argument(
-        "--validate-only",
-        action="store_true",
-        help="Parse and validate the thematic input/assets without generating grids, images or PDF.",
-    )
-    parser.add_argument(
-        "--clean-output",
-        action="store_true",
-        help="Remove the generated output folder for this book before creating new files.",
-    )
+    parser.add_argument("--validate-only", action="store_true", help="Parse and validate the thematic input/assets without generating grids, images or PDF.")
+    parser.add_argument("--clean-output", action="store_true", help="Remove the generated output folder for this book before creating new files.")
     return parser.parse_args()
 
 
@@ -131,18 +83,11 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
 
     puzzles_txt_path = (args.input_path or "").strip()
     if not puzzles_txt_path:
-        puzzles_txt_path = input(
-            "Ruta del TXT con los puzzles temáticos "
-            "[por defecto wordlists/book_thematic.txt]: "
-        ).strip()
+        puzzles_txt_path = input("Ruta del TXT con los puzzles temáticos [por defecto wordlists/book_thematic.txt]: ").strip()
     if not puzzles_txt_path:
         puzzles_txt_path = DEFAULT_THEMATIC_WORDLIST
 
-    if args.difficulty:
-        difficulty = _difficulty_from_cli(args.difficulty)
-    else:
-        difficulty = _ask_difficulty()
-
+    difficulty = _difficulty_from_cli(args.difficulty) if args.difficulty else _ask_difficulty()
     settings = difficulty_settings[difficulty]
     if args.grid_size is not None:
         if args.grid_size <= 0:
@@ -152,6 +97,7 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
         grid_size = ask_grid_size(settings)
 
     theme = get_theme(args.theme)
+    book_format = get_format_preset(getattr(args, "format", DEFAULT_FORMAT_NAME))
     seed = args.seed
     limit = args.limit
     if args.preview:
@@ -159,8 +105,6 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
             seed = PREVIEW_DEFAULT_SEED
         if limit is None:
             limit = PREVIEW_DEFAULT_LIMIT
-
-    output_dir = (args.output_dir or "").strip() or None
 
     return ThematicGenerationOptions(
         book_title=book_title,
@@ -171,7 +115,8 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
         validate_only=args.validate_only,
         clean_output=args.clean_output,
         theme_name=theme.name,
-        output_dir=output_dir,
+        format_name=book_format.name,
+        output_dir=(args.output_dir or "").strip() or None,
         limit=limit,
         preview=args.preview,
     )
@@ -179,13 +124,11 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
 
 def main() -> None:
     print("=== Generador TEMÁTICO de Wordsearch para KDP ===")
-
     try:
         options = _resolve_options(_parse_args())
     except ValueError as exc:
         print(f"ERROR: {exc}")
         return
-
     generate_thematic_book(options)
 
 

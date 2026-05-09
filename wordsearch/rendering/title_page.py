@@ -1,9 +1,4 @@
-"""
-Renderizado de la portada interior del libro temático.
-
-Esta página no es la cubierta de KDP, sino una title page interior que aparece
-antes del índice para dar al PDF una estructura más editorial.
-"""
+"""Renderizado de la portada interior del libro temático."""
 
 from __future__ import annotations
 
@@ -11,26 +6,15 @@ from typing import Optional
 
 from PIL import ImageDraw
 
-from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_TITLE,
     title_font_size as TITLE_FONT_SIZE,
     wordlist_font_size as WORDLIST_FONT_SIZE,
 )
-from wordsearch.config.layout import (
-    PAGE_H_PX,
-    PAGE_W_PX,
-)
 from wordsearch.config.paths import build_default_output_file
-from wordsearch.rendering.common import (
-    draw_centered_lines,
-    load_font,
-    rounded_rectangle,
-    save_page,
-    text_size,
-    wrap_text,
-)
+from wordsearch.rendering.common import draw_centered_lines, load_font, rounded_rectangle, save_page, text_size, wrap_text
 from wordsearch.rendering.page_frame import create_page_canvas
 
 
@@ -39,11 +23,11 @@ def _draw_soft_panel(
     scale: int,
     *,
     theme: ThemeConfig = DEFAULT_THEME,
+    layout: LayoutConfig = DEFAULT_LAYOUT,
 ) -> None:
-    """Draw a compact editorial panel, leaving visible textured background."""
-    margin_x = int(135 * scale)
-    margin_top = int(210 * scale)
-    margin_bottom = int(760 * scale)
+    margin_x = int(layout.page_width_px * scale * 0.075)
+    margin_top = int(layout.page_height_px * scale * 0.078)
+    margin_bottom = int(layout.page_height_px * scale * 0.282)
     radius = int(theme.panel_radius_px * 0.86 * scale)
     outline_width = max(1, int(theme.panel_border_width_px * 0.70 * scale))
 
@@ -52,8 +36,8 @@ def _draw_soft_panel(
         (
             margin_x,
             margin_top,
-            PAGE_W_PX * scale - margin_x,
-            PAGE_H_PX * scale - margin_bottom,
+            layout.page_width_px * scale - margin_x,
+            layout.page_height_px * scale - margin_bottom,
         ),
         radius=radius,
         fill=theme.panel_fill,
@@ -71,22 +55,12 @@ def _draw_ornamental_separator(
     *,
     theme: ThemeConfig = DEFAULT_THEME,
 ) -> None:
-    """Draw a small centered separator used in the title page."""
     gap = int(18 * scale)
     dot_r = int(5 * scale)
     line_w = max(1, int(2 * scale))
-
-    left_outer = center_x - width // 2
-    left_inner = center_x - gap
-    right_inner = center_x + gap
-    right_outer = center_x + width // 2
-
-    draw.line((left_outer, y, left_inner, y), fill=theme.panel_border, width=line_w)
-    draw.line((right_inner, y, right_outer, y), fill=theme.panel_border, width=line_w)
-    draw.ellipse(
-        (center_x - dot_r, y - dot_r, center_x + dot_r, y + dot_r),
-        fill=theme.title_color,
-    )
+    draw.line((center_x - width // 2, y, center_x - gap, y), fill=theme.panel_border, width=line_w)
+    draw.line((center_x + gap, y, center_x + width // 2, y), fill=theme.panel_border, width=line_w)
+    draw.ellipse((center_x - dot_r, y - dot_r, center_x + dot_r, y + dot_r), fill=theme.title_color)
 
 
 def render_title_page(
@@ -96,24 +70,19 @@ def render_title_page(
     filename: Optional[str] = None,
     background_path: Optional[str] = None,
     theme: ThemeConfig = DEFAULT_THEME,
+    layout: LayoutConfig = DEFAULT_LAYOUT,
 ) -> str:
-    """
-    Renderiza una portada interior para el libro.
-
-    Devuelve la ruta del PNG generado.
-    """
+    """Renderiza una portada interior para el libro."""
     scale = 3
-    width_hi = PAGE_W_PX * scale
-    height_hi = PAGE_H_PX * scale
+    width_hi = layout.page_width_px * scale
+    height_hi = layout.page_height_px * scale
 
-    img = create_page_canvas(background_path, scale, theme=theme)
+    img = create_page_canvas(background_path, scale, theme=theme, layout=layout)
     draw = ImageDraw.Draw(img)
-    _draw_soft_panel(draw, scale, theme=theme)
+    _draw_soft_panel(draw, scale, theme=theme, layout=layout)
 
     center_x = width_hi // 2
     max_width = int(width_hi * 0.70)
-
-    # Título principal: se reduce si el título es largo.
     title_size = int(TITLE_FONT_SIZE * 1.70) * scale
     min_title_size = int(TITLE_FONT_SIZE * 0.98) * scale
     title = book_title.strip() or "Word Search Book"
@@ -128,12 +97,10 @@ def render_title_page(
 
     title_font = load_font(FONT_TITLE, title_size)
     title_lines = wrap_text(draw, title, title_font, max_width)
-
     subtitle_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 1.03) * scale)
 
     title_block_height = sum(text_size(draw, line, title_font)[1] for line in title_lines)
     title_block_height += int(title_size * 0.12) * max(0, len(title_lines) - 1)
-
     title_start_y = int(height_hi * 0.265) - title_block_height // 2
     shadow = tuple(max(0, min(255, channel - 40)) for channel in theme.panel_border[:3]) + (65,)
 
@@ -150,17 +117,15 @@ def render_title_page(
     )
 
     sep_y = y + int(120 * scale)
-    sep_w = int(width_hi * 0.38)
-    _draw_ornamental_separator(draw, center_x, sep_y, sep_w, scale, theme=theme)
+    _draw_ornamental_separator(draw, center_x, sep_y, int(width_hi * 0.38), scale, theme=theme)
 
     subtitle_lines = wrap_text(draw, subtitle, subtitle_font, max_width)
-    subtitle_y = sep_y + int(95 * scale)
     draw_centered_lines(
         draw,
         subtitle_lines,
         subtitle_font,
         center_x,
-        subtitle_y,
+        sep_y + int(95 * scale),
         theme.body_color,
         line_spacing=1.18,
     )
@@ -168,4 +133,4 @@ def render_title_page(
     if filename is None:
         filename = build_default_output_file("00_title_page.png")
 
-    return save_page(img, filename)
+    return save_page(img, filename, output_width_px=layout.page_width_px, output_height_px=layout.page_height_px, dpi=layout.dpi)

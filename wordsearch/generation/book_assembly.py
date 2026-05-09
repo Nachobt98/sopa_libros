@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Tuple
 
-from wordsearch.config.design import DEFAULT_THEME, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
 from wordsearch.config.paths import build_output_file
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.page_plan import PagePlan
@@ -39,6 +39,11 @@ def build_toc_entries(page_plan: PagePlan) -> List[TocEntry]:
     return toc_entries
 
 
+def _layout_kwargs(layout: LayoutConfig) -> dict:
+    """Pass layout only for opt-in non-default formats to preserve historical call shapes."""
+    return {"layout": layout} if layout != DEFAULT_LAYOUT else {}
+
+
 def render_thematic_book_images(
     *,
     book_title: str,
@@ -46,9 +51,11 @@ def render_thematic_book_images(
     page_plan: PagePlan,
     output_dir: str,
     theme: ThemeConfig = DEFAULT_THEME,
+    layout: LayoutConfig = DEFAULT_LAYOUT,
 ) -> RenderedBookImages:
     """Render all PNG page assets for the thematic book."""
     rendered = RenderedBookImages()
+    layout_kwargs = _layout_kwargs(layout)
 
     title_page_filename = build_output_file(output_dir, "00_title_page.png")
     rendered.content_imgs.append(
@@ -57,6 +64,7 @@ def render_thematic_book_images(
             filename=title_page_filename,
             background_path=None,
             theme=theme,
+            **layout_kwargs,
         )
     )
 
@@ -66,6 +74,7 @@ def render_thematic_book_images(
             output_dir=output_dir,
             background_path=None,
             theme=theme,
+            **layout_kwargs,
         )
     )
 
@@ -76,6 +85,7 @@ def render_thematic_book_images(
             filename=instr_filename,
             background_path=None,
             theme=theme,
+            **layout_kwargs,
         )
     )
 
@@ -104,13 +114,13 @@ def render_thematic_book_images(
                     filename=block_cover_filename,
                     background_path=bg_path,
                     theme=theme,
+                    **layout_kwargs,
                 )
             )
 
         solution_page_number = page_plan.first_solution_page + spec.index
         puzzle_filename = build_output_file(output_dir, f"puzzle_{spec.index + 1}.png")
         solution_filename = build_output_file(output_dir, f"puzzle_{spec.index + 1}_sol.png")
-        theme_kwargs = {} if theme == DEFAULT_THEME else {"theme": theme}
 
         rendered.content_imgs.append(
             render_page(
@@ -122,7 +132,8 @@ def render_thematic_book_images(
                 fun_fact=spec.fact,
                 solution_page_number=solution_page_number,
                 background_path=bg_path,
-                **theme_kwargs,
+                theme=theme,
+                **layout_kwargs,
             )
         )
 
@@ -135,7 +146,8 @@ def render_thematic_book_images(
                 placed_words=generated.placed_words,
                 puzzle_title=spec.title,
                 background_path=bg_path,
-                **theme_kwargs,
+                theme=theme,
+                **layout_kwargs,
             )
         )
 
