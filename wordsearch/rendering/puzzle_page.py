@@ -105,7 +105,7 @@ def _draw_word_bank_heading(
     visual_scale: float = 1.0,
 ) -> int:
     """Draw a compact word-bank label above the word list and return adjusted list top."""
-    heading_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.38 * visual_scale) * scale)
+    heading_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.36 * visual_scale) * scale)
     heading = "WORD BANK"
     heading_w, heading_h = text_size(draw, heading, heading_font)
     center_x = (content_left_hi + content_right_hi) // 2
@@ -125,7 +125,7 @@ def _draw_word_bank_heading(
         width=line_width,
     )
     draw.text((center_x - heading_w // 2, y_hi), heading, font=heading_font, fill=theme.title_color)
-    return y_hi + heading_h + int(24 * scale)
+    return y_hi + heading_h + int(40 * scale)
 
 
 def _draw_fun_fact_label(
@@ -139,12 +139,12 @@ def _draw_fun_fact_label(
 ) -> tuple[int, int]:
     """Draw a small in-card fun-fact chip that does not invade the body text."""
     fact_label = "FUN FACT"
-    label_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.34 * visual_scale) * scale)
+    label_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.42 * visual_scale) * scale)
     label_w, label_h = text_size(draw, fact_label, label_font)
-    pad_x = int(14 * scale)
-    pad_y = int(5 * scale)
+    pad_x = int(18 * scale)
+    pad_y = int(7 * scale)
     chip_left = left_hi + int(18 * scale)
-    chip_top = top_hi + int(13 * scale)
+    chip_top = top_hi + int(12 * scale)
     chip_right = chip_left + label_w + 2 * pad_x
     chip_bottom = chip_top + label_h + 2 * pad_y
     rounded_rectangle(
@@ -232,10 +232,10 @@ def render_page(
         left_hi = content_left_hi
         right_hi = content_right_hi
         box_top_hi = y_cursor_hi + int(10 * scale)
-        chip_reserved_hi = int(42 * visual_scale * scale)
+        chip_reserved_hi = int(50 * visual_scale * scale)
         text_block_hi = fact_plan.rendered_line_count * fact_plan.line_height_hi
-        box_height_hi = chip_reserved_hi + text_block_hi + int(28 * scale)
-        box_bottom_hi = box_top_hi + max(box_height_hi, int(96 * scale))
+        box_height_hi = chip_reserved_hi + text_block_hi + int(32 * scale)
+        box_bottom_hi = box_top_hi + max(box_height_hi, int(108 * scale))
 
         card_radius = int(theme.fact_card_radius_px * scale)
         rounded_rectangle(
@@ -257,7 +257,7 @@ def render_page(
         )
 
         text_x_hi = left_hi + fact_plan.inner_horizontal_pad_hi
-        text_y_hi = label_bottom_hi + int(10 * scale)
+        text_y_hi = label_bottom_hi + int(12 * scale)
         for line in fact_plan.rendered_lines or []:
             draw.text((text_x_hi, text_y_hi), line, font=fact_plan.text_font, fill=text_color)
             text_y_hi += fact_plan.line_height_hi
@@ -266,7 +266,7 @@ def render_page(
     rows = len(grid)
     cols = len(grid[0]) if rows > 0 else 0
     content_width_hi = content_right_hi - content_left_hi
-    grid_ratio = 0.85 if visual_scale <= 1.02 else 0.90
+    grid_ratio = 0.85 if visual_scale <= 1.02 else 0.875
     grid_width_target_hi = int(content_width_hi * grid_ratio)
     cell_size_hi = int(grid_width_target_hi / max(cols, 1))
     grid_w_hi = cell_size_hi * cols
@@ -299,8 +299,8 @@ def render_page(
         theme=theme,
     )
 
-    base_gap_hi = int(56 * scale)
-    gap_pill_to_words_hi = int(56 * scale)
+    base_gap_hi = int(54 * scale)
+    gap_pill_to_words_hi = int(50 * scale)
     words_area_height_hi = int(900 * visual_scale * scale)
     words_bottom_hi = safe_bottom_hi - int(8 * scale)
     words_top_hi = max(0, words_bottom_hi - words_area_height_hi)
@@ -349,7 +349,7 @@ def render_page(
         theme=theme,
         visual_scale=visual_scale,
     )
-    words_top_hi = min(max(heading_bottom_hi, words_top_hi), words_bottom_hi)
+    words_top_hi = min(max(heading_bottom_hi + int(6 * scale), words_top_hi), words_bottom_hi)
 
     draw_word_list(
         draw=draw,
