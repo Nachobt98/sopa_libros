@@ -16,6 +16,12 @@ from wordsearch.rendering.page_frame import create_page_canvas, draw_page_frame
 from wordsearch.rendering.word_list import draw_word_list
 
 
+def _format_visual_scale(layout: LayoutConfig = DEFAULT_LAYOUT) -> float:
+    width_scale = layout.page_width_px / DEFAULT_LAYOUT.page_width_px
+    height_scale = layout.page_height_px / DEFAULT_LAYOUT.page_height_px
+    return min(1.15, max(1.0, min(width_scale, height_scale)))
+
+
 def _draw_title_separator(
     draw: ImageDraw.ImageDraw,
     *,
@@ -27,9 +33,9 @@ def _draw_title_separator(
 ) -> int:
     """Draw a subtle editorial rule below the puzzle title."""
     center_x = (content_left_hi + content_right_hi) // 2
-    rule_w = int((content_right_hi - content_left_hi) * 0.28)
+    rule_w = int((content_right_hi - content_left_hi) * 0.24)
     gap = int(18 * scale)
-    dot_radius = max(2, int(3.5 * scale))
+    dot_radius = max(2, int(3.0 * scale))
     draw.line(
         (center_x - rule_w // 2, y_hi, center_x - gap, y_hi),
         fill=theme.panel_border,
@@ -48,7 +54,7 @@ def _draw_title_separator(
         outline=None,
         width=0,
     )
-    return y_hi + int(28 * scale)
+    return y_hi + int(24 * scale)
 
 
 def _draw_grid_backplate(
@@ -86,9 +92,10 @@ def _draw_word_bank_heading(
     content_right_hi: int,
     scale: int,
     theme: ThemeConfig,
+    visual_scale: float = 1.0,
 ) -> int:
     """Draw a compact word-bank label above the word list and return adjusted list top."""
-    heading_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.38) * scale)
+    heading_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.38 * visual_scale) * scale)
     heading = "WORD BANK"
     heading_w, heading_h = text_size(draw, heading, heading_font)
     center_x = (content_left_hi + content_right_hi) // 2
@@ -111,6 +118,36 @@ def _draw_word_bank_heading(
     return y_hi + heading_h + int(24 * scale)
 
 
+def _draw_fun_fact_label(
+    draw: ImageDraw.ImageDraw,
+    *,
+    left_hi: int,
+    top_hi: int,
+    label_font,
+    scale: int,
+    theme: ThemeConfig,
+) -> tuple[int, int]:
+    """Draw a lighter chip-style fun fact label instead of a heavy full-width bar."""
+    fact_label = "FUN FACT"
+    label_w, label_h = text_size(draw, fact_label, label_font)
+    pad_x = int(22 * scale)
+    pad_y = int(6 * scale)
+    chip_left = left_hi + int(18 * scale)
+    chip_top = top_hi - int(6 * scale)
+    chip_right = chip_left + label_w + 2 * pad_x
+    chip_bottom = chip_top + label_h + 2 * pad_y
+    rounded_rectangle(
+        draw,
+        (chip_left, chip_top, chip_right, chip_bottom),
+        radius=(chip_bottom - chip_top) // 2,
+        fill=theme.fact_header_fill,
+        outline=None,
+        width=0,
+    )
+    draw.text((chip_left + pad_x, chip_top + pad_y), fact_label, font=label_font, fill=theme.fact_header_text)
+    return chip_right, chip_bottom
+
+
 def render_page(
     grid: Sequence[Sequence[str]],
     words: Iterable[str],
@@ -125,6 +162,7 @@ def render_page(
 ) -> str:
     """Renderiza una página de puzzle."""
     scale = 3
+    visual_scale = _format_visual_scale(layout)
     img = create_page_canvas(background_path, scale, theme=theme, layout=layout)
     draw = ImageDraw.Draw(img)
     frame = draw_page_frame(draw=draw, scale=scale, theme=theme, layout=layout)
@@ -153,7 +191,7 @@ def render_page(
         draw.text((x, title_y_hi), line, font=title_plan.font, fill=theme.title_color)
         title_y_hi += int(height * 1.05)
 
-    separator_y_hi = title_plan.y_after_title_hi + int(17 * scale)
+    separator_y_hi = title_plan.y_after_title_hi + int(18 * scale)
     y_cursor_hi = _draw_title_separator(
         draw,
         content_left_hi=content_left_hi,
@@ -161,7 +199,7 @@ def render_page(
         y_hi=separator_y_hi,
         scale=scale,
         theme=theme,
-    ) + max(int(0.45 * title_plan.title_to_fact_gap_hi), int(24 * scale))
+    ) + max(int(0.35 * title_plan.title_to_fact_gap_hi), int(18 * scale))
 
     if fun_fact:
         fact_plan = plan_fact_layout(
@@ -175,8 +213,9 @@ def render_page(
         )
         left_hi = content_left_hi
         right_hi = content_right_hi
-        box_top_hi = y_cursor_hi
-        box_bottom_hi = box_top_hi + fact_plan.box_height_hi
+        label_extra_hi = int(18 * scale)
+        box_top_hi = y_cursor_hi + int(12 * scale)
+        box_bottom_hi = box_top_hi + fact_plan.box_height_hi - max(0, fact_plan.header_height_hi - label_extra_hi)
 
         card_radius = int(theme.fact_card_radius_px * scale)
         rounded_rectangle(
@@ -188,45 +227,17 @@ def render_page(
             width=max(1, int(theme.fact_card_border_width_px * scale)),
         )
 
-        header_top_hi = box_top_hi
-        header_bottom_hi = header_top_hi + fact_plan.header_height_hi
-        header_radius = min(card_radius, fact_plan.header_height_hi // 2)
-        rounded_rectangle(
+        _label_right_hi, label_bottom_hi = _draw_fun_fact_label(
             draw,
-            (int(left_hi), int(header_top_hi), int(right_hi), int(header_bottom_hi)),
-            radius=header_radius,
-            fill=theme.fact_header_fill,
-            outline=None,
-            width=0,
+            left_hi=int(left_hi),
+            top_hi=int(box_top_hi),
+            label_font=fact_plan.label_font,
+            scale=scale,
+            theme=theme,
         )
-        draw.rectangle(
-            (int(left_hi), int(header_top_hi + header_radius), int(right_hi), int(header_bottom_hi)),
-            fill=theme.fact_header_fill,
-            outline=None,
-        )
-
-        fact_label = "FUN FACT"
-        label_w, label_h = text_size(draw, fact_label, fact_plan.label_font)
-        header_cx = (left_hi + right_hi) / 2
-        header_cy = (header_top_hi + header_bottom_hi) / 2
-        try:
-            draw.text(
-                (header_cx, header_cy),
-                fact_label,
-                font=fact_plan.label_font,
-                fill=theme.fact_header_text,
-                anchor="mm",
-            )
-        except TypeError:
-            draw.text(
-                (header_cx - label_w / 2, header_cy - label_h / 2),
-                fact_label,
-                font=fact_plan.label_font,
-                fill=theme.fact_header_text,
-            )
 
         text_x_hi = left_hi + fact_plan.inner_horizontal_pad_hi
-        text_y_hi = header_bottom_hi + fact_plan.text_pad_v_hi
+        text_y_hi = max(label_bottom_hi + int(8 * scale), box_top_hi + int(32 * scale))
         accent_left = left_hi + int(17 * scale)
         accent_top = text_y_hi + int(2 * scale)
         accent_bottom = box_bottom_hi - int(16 * scale)
@@ -249,7 +260,8 @@ def render_page(
     rows = len(grid)
     cols = len(grid[0]) if rows > 0 else 0
     content_width_hi = content_right_hi - content_left_hi
-    grid_width_target_hi = int(content_width_hi * 0.85)
+    grid_ratio = 0.85 if visual_scale <= 1.02 else 0.90
+    grid_width_target_hi = int(content_width_hi * grid_ratio)
     cell_size_hi = int(grid_width_target_hi / max(cols, 1))
     grid_w_hi = cell_size_hi * cols
     grid_h_hi = cell_size_hi * rows
@@ -281,19 +293,19 @@ def render_page(
         theme=theme,
     )
 
-    base_gap_hi = int(60 * scale)
-    gap_pill_to_words_hi = int(60 * scale)
-    words_area_height_hi = int(880 * scale)
+    base_gap_hi = int(56 * scale)
+    gap_pill_to_words_hi = int(56 * scale)
+    words_area_height_hi = int(900 * visual_scale * scale)
     words_bottom_hi = safe_bottom_hi - int(8 * scale)
     words_top_hi = max(0, words_bottom_hi - words_area_height_hi)
 
     pill_box_h = 0
     pill_y = grid_bottom_hi + base_gap_hi
     if solution_page_number is not None:
-        pill_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75) * scale)
+        pill_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.75 * visual_scale) * scale)
         pill_text = f"Solution on page {solution_page_number}"
         tw_pill, th_pill = text_size(draw, pill_text, pill_font)
-        pad_h = int(16 * scale)
+        pad_h = int(15 * scale)
         pad_w = int(18 * scale)
         box_w = tw_pill + 2 * pad_w
         box_h = th_pill + 2 * pad_h
@@ -329,6 +341,7 @@ def render_page(
         content_right_hi=content_right_hi,
         scale=scale,
         theme=theme,
+        visual_scale=visual_scale,
     )
     words_top_hi = min(max(heading_bottom_hi, words_top_hi), words_bottom_hi)
 
