@@ -23,6 +23,13 @@ TocEntry = Tuple[str, int, bool]
 InstructionEntry = str | tuple[str, str]
 
 
+def _format_visual_scale(layout: LayoutConfig = DEFAULT_LAYOUT) -> float:
+    """Return a modest scale factor so larger trims do not look under-designed."""
+    width_scale = layout.page_width_px / DEFAULT_LAYOUT.page_width_px
+    height_scale = layout.page_height_px / DEFAULT_LAYOUT.page_height_px
+    return min(1.16, max(1.0, min(width_scale, height_scale)))
+
+
 def _make_background(
     background_path: Optional[str],
     scale: int,
@@ -165,9 +172,9 @@ def _draw_instruction_card(
         width=max(1, int(theme.fact_card_border_width_px * 0.65 * scale)),
     )
 
-    badge_size = int(54 * scale)
+    badge_size = int(58 * scale)
     badge_left = left + int(26 * scale)
-    badge_top = top + int(24 * scale)
+    badge_top = top + (card_height - badge_size) // 2
     rounded_rectangle(
         draw,
         (badge_left, badge_top, badge_left + badge_size, badge_top + badge_size),
@@ -184,12 +191,12 @@ def _draw_instruction_card(
         fill=theme.fact_header_text,
     )
 
-    text_left = badge_left + badge_size + int(28 * scale)
-    title_y = top + int(22 * scale)
+    text_left = badge_left + badge_size + int(30 * scale)
+    title_y = top + int(24 * scale)
     draw.text((text_left, title_y), title, font=title_font, fill=theme.title_color)
 
-    body_y = title_y + text_size(draw, title, title_font)[1] + int(10 * scale)
-    max_width = right - text_left - int(28 * scale)
+    body_y = title_y + text_size(draw, title, title_font)[1] + int(11 * scale)
+    max_width = right - text_left - int(30 * scale)
     line_h = int(body_font.size * 1.13)
     for line in wrap_text(draw, body, body_font, max_width):
         draw.text((text_left, body_y), line, font=body_font, fill=theme.body_color)
@@ -208,38 +215,39 @@ def render_table_of_contents(
 ) -> list[str]:
     """Renderiza un índice editorial con jerarquía visual y dot leaders."""
     scale = 3
+    visual_scale = _format_visual_scale(layout)
     img = _make_background(background_path, scale, theme=theme, layout=layout)
     draw = ImageDraw.Draw(img)
     panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale, theme=theme, layout=layout)
 
     center_x = layout.page_width_px * scale // 2
-    title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.08) * scale)
-    subtitle_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.54) * scale)
-    chip_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.42) * scale)
-    section_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.66) * scale)
-    entry_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.72) * scale)
-    page_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.72) * scale)
+    title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.04 * visual_scale) * scale)
+    subtitle_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.52 * visual_scale) * scale)
+    chip_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.40 * visual_scale) * scale)
+    section_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.64 * visual_scale) * scale)
+    entry_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.70 * visual_scale) * scale)
+    page_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.70 * visual_scale) * scale)
 
-    y = panel_top + int(74 * scale)
+    y = panel_top + int(78 * scale)
     y = draw_centered_text(draw, "Contents", title_font, center_x, y, theme.title_color)
-    y += int(22 * scale)
+    y += int(42 * scale)
     y = draw_centered_text(draw, "A guided path through every puzzle section", subtitle_font, center_x, y, theme.body_color)
-    y += int(38 * scale)
+    y += int(48 * scale)
     y = _draw_centered_rule(
         draw,
         center_x=center_x,
         y=y,
-        width=int((panel_right - panel_left) * 0.48),
+        width=int((panel_right - panel_left) * 0.46),
         scale=scale,
         theme=theme,
     )
-    y += int(18 * scale)
+    y += int(22 * scale)
     y = _draw_small_caps_label(draw, "BOOK MAP", chip_font, center_x=center_x, y=y, scale=scale, theme=theme)
 
     content_left = panel_left + int(74 * scale)
     content_right = panel_right - int(74 * scale)
-    y += int(78 * scale)
-    row_gap = int(45 * scale)
+    y += int(86 * scale)
+    row_gap = int(44 * scale)
 
     section_entries = [entry for entry in toc_entries if not (entry[0].lower() == "solutions")]
     solution_entries = [entry for entry in toc_entries if entry[0].lower() == "solutions"]
@@ -342,23 +350,24 @@ def render_instructions_page(
 ) -> str:
     """Renderiza una página de instrucciones con tarjetas compactas y jerarquía editorial."""
     scale = 3
+    visual_scale = _format_visual_scale(layout)
     img = _make_background(background_path, scale, theme=theme, layout=layout)
     draw = ImageDraw.Draw(img)
     panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale, theme=theme, layout=layout)
 
     center_x = layout.page_width_px * scale // 2
-    title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.02) * scale)
-    subtitle_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.54) * scale)
-    chip_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.40) * scale)
-    number_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.48) * scale)
-    card_title_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.48) * scale)
-    body_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.46) * scale)
+    title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 0.98 * visual_scale) * scale)
+    subtitle_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.52 * visual_scale) * scale)
+    chip_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.40 * visual_scale) * scale)
+    number_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.66 * visual_scale) * scale)
+    card_title_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.50 * visual_scale) * scale)
+    body_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.47 * visual_scale) * scale)
 
-    y = panel_top + int(68 * scale)
+    y = panel_top + int(78 * scale)
     y = draw_centered_text(draw, "How to Use This Book", title_font, center_x, y, theme.title_color)
-    y += int(20 * scale)
+    y += int(42 * scale)
     y = draw_centered_text(draw, "Find the words, enjoy the facts, check the answers when needed.", subtitle_font, center_x, y, theme.body_color)
-    y += int(34 * scale)
+    y += int(48 * scale)
     y = _draw_centered_rule(
         draw,
         center_x=center_x,
@@ -367,7 +376,7 @@ def render_instructions_page(
         scale=scale,
         theme=theme,
     )
-    y += int(12 * scale)
+    y += int(14 * scale)
     y = _draw_small_caps_label(draw, "PLAY GUIDE", chip_font, center_x=center_x, y=y, scale=scale, theme=theme)
 
     instructions = [
@@ -378,12 +387,12 @@ def render_instructions_page(
         ("Use solutions wisely", "If you get stuck, check the solutions section at the back of the book."),
     ]
 
-    content_left = panel_left + int(70 * scale)
-    content_right = panel_right - int(70 * scale)
-    badge_reserved = int(54 * scale) + int(28 * scale) + int(52 * scale)
+    content_left = panel_left + int(64 * scale)
+    content_right = panel_right - int(64 * scale)
+    badge_reserved = int(58 * scale) + int(30 * scale) + int(56 * scale)
     max_text_width = content_right - content_left - badge_reserved
-    card_height = int(132 * scale)
-    row_gap = int(23 * scale)
+    card_height = int(140 * visual_scale * scale)
+    row_gap = int(24 * visual_scale * scale)
     block_height = _measure_instruction_block_height(
         draw,
         instructions,
@@ -394,14 +403,15 @@ def render_instructions_page(
         row_gap,
     )
 
-    min_content_y = y + int(54 * scale)
-    available_bottom = panel_bottom - int(120 * scale)
-    y = max(min_content_y, min_content_y + max(0, (available_bottom - min_content_y - block_height) // 2))
+    min_content_y = y + int(70 * scale)
+    available_bottom = panel_bottom - int(118 * scale)
+    centered_y = min_content_y + max(0, (available_bottom - min_content_y - block_height) // 2)
+    y = min(centered_y, min_content_y + int(135 * scale))
 
     for idx, (title, instruction) in enumerate(instructions, start=1):
         y = _draw_instruction_card(
             draw,
-            number_text=f"{idx:02d}",
+            number_text=str(idx),
             title=title,
             body=instruction,
             number_font=number_font,
@@ -416,7 +426,7 @@ def render_instructions_page(
         )
         y += row_gap
 
-    note_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.40) * scale)
+    note_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.40 * visual_scale) * scale)
     note = f"{book_title} · Solutions are placed at the end for easy checking."
     note_w, _note_h = text_size(draw, note, note_font)
     note_y = min(panel_bottom - int(70 * scale), max(y + int(22 * scale), panel_bottom - int(78 * scale)))
