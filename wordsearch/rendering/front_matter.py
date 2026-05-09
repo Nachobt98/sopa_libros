@@ -114,6 +114,25 @@ def _draw_centered_rule(
     return y + int(34 * scale)
 
 
+def _draw_centered_text_in_box(
+    draw: ImageDraw.ImageDraw,
+    text: str,
+    font: ImageFont.FreeTypeFont,
+    *,
+    center_x: float,
+    center_y: float,
+    fill,
+) -> None:
+    """Draw text centered on its optical box, with a fallback for old Pillow versions."""
+    try:
+        draw.text((center_x, center_y), text, font=font, fill=fill, anchor="mm")
+    except TypeError:
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+        draw.text((center_x - text_w / 2 - bbox[0], center_y - text_h / 2 - bbox[1]), text, font=font, fill=fill)
+
+
 def _draw_small_caps_label(
     draw: ImageDraw.ImageDraw,
     text: str,
@@ -127,7 +146,7 @@ def _draw_small_caps_label(
     """Draw a subtle centered label inside a thin rounded chip."""
     label_w, label_h = text_size(draw, text, font)
     pad_x = int(18 * scale)
-    pad_y = int(7 * scale)
+    pad_y = int(10 * scale)
     box = (
         center_x - label_w // 2 - pad_x,
         y,
@@ -142,7 +161,14 @@ def _draw_small_caps_label(
         outline=theme.pill_border,
         width=max(1, int(theme.pill_border_width_px * 0.65 * scale)),
     )
-    draw.text((center_x - label_w // 2, y + pad_y), text, font=font, fill=theme.pill_text)
+    _draw_centered_text_in_box(
+        draw,
+        text,
+        font,
+        center_x=center_x,
+        center_y=(box[1] + box[3]) / 2,
+        fill=theme.pill_text,
+    )
     return box[3]
 
 
@@ -183,11 +209,12 @@ def _draw_instruction_card(
         outline=None,
         width=0,
     )
-    num_w, num_h = text_size(draw, number_text, number_font)
-    draw.text(
-        (badge_left + (badge_size - num_w) // 2, badge_top + (badge_size - num_h) // 2),
+    _draw_centered_text_in_box(
+        draw,
         number_text,
-        font=number_font,
+        number_font,
+        center_x=badge_left + badge_size / 2,
+        center_y=badge_top + badge_size / 2,
         fill=theme.fact_header_text,
     )
 
@@ -221,7 +248,7 @@ def render_table_of_contents(
     panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale, theme=theme, layout=layout)
 
     center_x = layout.page_width_px * scale // 2
-    title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.04 * visual_scale) * scale)
+    title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.02 * visual_scale) * scale)
     subtitle_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.52 * visual_scale) * scale)
     chip_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.40 * visual_scale) * scale)
     section_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.64 * visual_scale) * scale)
@@ -230,9 +257,9 @@ def render_table_of_contents(
 
     y = panel_top + int(78 * scale)
     y = draw_centered_text(draw, "Contents", title_font, center_x, y, theme.title_color)
-    y += int(42 * scale)
+    y += int(70 * scale)
     y = draw_centered_text(draw, "A guided path through every puzzle section", subtitle_font, center_x, y, theme.body_color)
-    y += int(48 * scale)
+    y += int(58 * scale)
     y = _draw_centered_rule(
         draw,
         center_x=center_x,
@@ -241,12 +268,12 @@ def render_table_of_contents(
         scale=scale,
         theme=theme,
     )
-    y += int(22 * scale)
+    y += int(24 * scale)
     y = _draw_small_caps_label(draw, "BOOK MAP", chip_font, center_x=center_x, y=y, scale=scale, theme=theme)
 
     content_left = panel_left + int(74 * scale)
     content_right = panel_right - int(74 * scale)
-    y += int(86 * scale)
+    y += int(90 * scale)
     row_gap = int(44 * scale)
 
     section_entries = [entry for entry in toc_entries if not (entry[0].lower() == "solutions")]
@@ -356,7 +383,7 @@ def render_instructions_page(
     panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale, theme=theme, layout=layout)
 
     center_x = layout.page_width_px * scale // 2
-    title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 0.98 * visual_scale) * scale)
+    title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 0.96 * visual_scale) * scale)
     subtitle_font = load_font(FONT_PATH, int(WORDLIST_FONT_SIZE * 0.52 * visual_scale) * scale)
     chip_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.40 * visual_scale) * scale)
     number_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.66 * visual_scale) * scale)
@@ -365,9 +392,9 @@ def render_instructions_page(
 
     y = panel_top + int(78 * scale)
     y = draw_centered_text(draw, "How to Use This Book", title_font, center_x, y, theme.title_color)
-    y += int(42 * scale)
+    y += int(70 * scale)
     y = draw_centered_text(draw, "Find the words, enjoy the facts, check the answers when needed.", subtitle_font, center_x, y, theme.body_color)
-    y += int(48 * scale)
+    y += int(58 * scale)
     y = _draw_centered_rule(
         draw,
         center_x=center_x,
@@ -376,7 +403,7 @@ def render_instructions_page(
         scale=scale,
         theme=theme,
     )
-    y += int(14 * scale)
+    y += int(18 * scale)
     y = _draw_small_caps_label(draw, "PLAY GUIDE", chip_font, center_x=center_x, y=y, scale=scale, theme=theme)
 
     instructions = [
