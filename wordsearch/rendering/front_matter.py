@@ -20,6 +20,7 @@ from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import draw_centered_text, load_font, rounded_rectangle, save_page, text_size, wrap_text
 
 TocEntry = Tuple[str, int, bool]
+InstructionEntry = str | tuple[str, str]
 
 
 def _make_background(
@@ -303,21 +304,30 @@ def render_table_of_contents(
     return [save_page(img, filename, output_width_px=layout.page_width_px, output_height_px=layout.page_height_px, dpi=layout.dpi)]
 
 
+def _split_instruction_entry(instruction: InstructionEntry) -> tuple[str, str]:
+    if isinstance(instruction, tuple):
+        return instruction
+    return "", instruction
+
+
 def _measure_instruction_block_height(
     draw: ImageDraw.ImageDraw,
-    instructions: Sequence[tuple[str, str]],
+    instructions: Sequence[InstructionEntry],
     title_font: ImageFont.FreeTypeFont,
     body_font: ImageFont.FreeTypeFont,
     max_text_width: int,
-    card_height: int,
-    row_gap: int,
+    card_height: int = 0,
+    row_gap: int = 0,
 ) -> int:
+    """Measure instruction content while accepting legacy string-only entries."""
     total_height = 0
     line_h = int(body_font.size * 1.13)
-    for title, instruction in instructions:
-        title_h = text_size(draw, title, title_font)[1]
+    for instruction_entry in instructions:
+        title, instruction = _split_instruction_entry(instruction_entry)
+        title_h = text_size(draw, title, title_font)[1] if title else 0
+        title_gap = 10 * 3 if title else 0
         line_count = len(wrap_text(draw, instruction, body_font, max_text_width))
-        required_height = 26 * 3 + title_h + 10 * 3 + line_count * line_h + 22 * 3
+        required_height = 26 * 3 + title_h + title_gap + line_count * line_h + 22 * 3
         total_height += max(card_height, required_height) + row_gap
     return max(0, total_height - row_gap)
 
