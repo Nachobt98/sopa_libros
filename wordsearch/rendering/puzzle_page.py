@@ -22,6 +22,16 @@ def _format_visual_scale(layout: LayoutConfig = DEFAULT_LAYOUT) -> float:
     return min(1.15, max(1.0, min(width_scale, height_scale)))
 
 
+def _draw_centered_text_in_box(draw: ImageDraw.ImageDraw, text: str, font, *, center_x: float, center_y: float, fill) -> None:
+    try:
+        draw.text((center_x, center_y), text, font=font, fill=fill, anchor="mm")
+    except TypeError:
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+        draw.text((center_x - text_w / 2 - bbox[0], center_y - text_h / 2 - bbox[1]), text, font=font, fill=fill)
+
+
 def _draw_title_separator(
     draw: ImageDraw.ImageDraw,
     *,
@@ -123,17 +133,18 @@ def _draw_fun_fact_label(
     *,
     left_hi: int,
     top_hi: int,
-    label_font,
     scale: int,
     theme: ThemeConfig,
+    visual_scale: float,
 ) -> tuple[int, int]:
-    """Draw a lighter chip-style fun fact label instead of a heavy full-width bar."""
+    """Draw a small in-card fun-fact chip that does not invade the body text."""
     fact_label = "FUN FACT"
+    label_font = load_font(FONT_PATH_BOLD, int(WORDLIST_FONT_SIZE * 0.34 * visual_scale) * scale)
     label_w, label_h = text_size(draw, fact_label, label_font)
-    pad_x = int(22 * scale)
-    pad_y = int(6 * scale)
+    pad_x = int(14 * scale)
+    pad_y = int(5 * scale)
     chip_left = left_hi + int(18 * scale)
-    chip_top = top_hi - int(6 * scale)
+    chip_top = top_hi + int(13 * scale)
     chip_right = chip_left + label_w + 2 * pad_x
     chip_bottom = chip_top + label_h + 2 * pad_y
     rounded_rectangle(
@@ -144,7 +155,14 @@ def _draw_fun_fact_label(
         outline=None,
         width=0,
     )
-    draw.text((chip_left + pad_x, chip_top + pad_y), fact_label, font=label_font, fill=theme.fact_header_text)
+    _draw_centered_text_in_box(
+        draw,
+        fact_label,
+        label_font,
+        center_x=(chip_left + chip_right) / 2,
+        center_y=(chip_top + chip_bottom) / 2,
+        fill=theme.fact_header_text,
+    )
     return chip_right, chip_bottom
 
 
@@ -213,9 +231,11 @@ def render_page(
         )
         left_hi = content_left_hi
         right_hi = content_right_hi
-        label_extra_hi = int(18 * scale)
-        box_top_hi = y_cursor_hi + int(12 * scale)
-        box_bottom_hi = box_top_hi + fact_plan.box_height_hi - max(0, fact_plan.header_height_hi - label_extra_hi)
+        box_top_hi = y_cursor_hi + int(10 * scale)
+        chip_reserved_hi = int(42 * visual_scale * scale)
+        text_block_hi = fact_plan.rendered_line_count * fact_plan.line_height_hi
+        box_height_hi = chip_reserved_hi + text_block_hi + int(28 * scale)
+        box_bottom_hi = box_top_hi + max(box_height_hi, int(96 * scale))
 
         card_radius = int(theme.fact_card_radius_px * scale)
         rounded_rectangle(
@@ -231,27 +251,13 @@ def render_page(
             draw,
             left_hi=int(left_hi),
             top_hi=int(box_top_hi),
-            label_font=fact_plan.label_font,
             scale=scale,
             theme=theme,
+            visual_scale=visual_scale,
         )
 
         text_x_hi = left_hi + fact_plan.inner_horizontal_pad_hi
-        text_y_hi = max(label_bottom_hi + int(8 * scale), box_top_hi + int(32 * scale))
-        accent_left = left_hi + int(17 * scale)
-        accent_top = text_y_hi + int(2 * scale)
-        accent_bottom = box_bottom_hi - int(16 * scale)
-        if accent_bottom > accent_top:
-            rounded_rectangle(
-                draw,
-                (accent_left, accent_top, accent_left + int(4 * scale), accent_bottom),
-                radius=int(2 * scale),
-                fill=theme.fact_header_fill,
-                outline=None,
-                width=0,
-            )
-            text_x_hi += int(18 * scale)
-
+        text_y_hi = label_bottom_hi + int(10 * scale)
         for line in fact_plan.rendered_lines or []:
             draw.text((text_x_hi, text_y_hi), line, font=fact_plan.text_font, fill=text_color)
             text_y_hi += fact_plan.line_height_hi
