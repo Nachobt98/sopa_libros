@@ -72,7 +72,7 @@ def print_error_panel(title: str, details: Iterable[str]) -> None:
     console.print(
         Panel(
             body,
-            title=f"[bold {PALETTE['error']}]{title}[/bold {PALETTE['error']} ]",
+            title=Text(title, style=f"bold {PALETTE['error']}"),
             border_style=PALETTE["error"],
             padding=(1, 2),
         )
