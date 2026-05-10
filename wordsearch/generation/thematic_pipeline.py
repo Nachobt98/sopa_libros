@@ -123,29 +123,6 @@ def _render_thematic_book_images_with_optional_progress(
     return render_thematic_book_images(**kwargs)
 
 
-def _build_generation_report_with_optional_render_quality(
-    *,
-    options: ThematicGenerationOptions,
-    output_dir: str,
-    pdf_path: str,
-    page_plan,
-    rendered_images,
-    puzzle_count: int,
-    render_quality_report,
-):
-    kwargs: dict[str, Any] = {
-        "options": options,
-        "output_dir": output_dir,
-        "pdf_path": pdf_path,
-        "page_plan": page_plan,
-        "rendered_images": rendered_images,
-        "puzzle_count": puzzle_count,
-    }
-    if _accepts_keyword(build_thematic_generation_report, "render_quality_report"):
-        kwargs["render_quality_report"] = render_quality_report
-    return build_thematic_generation_report(**kwargs)
-
-
 def _print_grid_failures(failures: list[str]) -> None:
     print_error("One or more puzzles could not be generated.")
     print_warning("PDF creation was stopped to avoid incorrect TOC or solution page numbers.")
@@ -351,7 +328,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         preflight_report_path = write_kdp_preflight_report(preflight_report, output_dir=output_dir)
         progress.update(task_id, advance=1)
 
-        report = _build_generation_report_with_optional_render_quality(
+        report = build_thematic_generation_report(
             options=options,
             output_dir=output_dir,
             pdf_path=pdf_final,
