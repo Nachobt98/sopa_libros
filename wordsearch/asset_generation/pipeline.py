@@ -12,9 +12,9 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+from wordsearch.asset_generation.brief import BlockVisualBrief, BookVisualBrief, build_book_visual_brief
 from wordsearch.asset_generation.manifest import AssetManifest, BlockAssetSet, ManifestAsset
 from wordsearch.config.design import DEFAULT_LAYOUT
-from wordsearch.domain.puzzle import PuzzleSpec
 from wordsearch.parsing.thematic import parse_puzzle_file
 from wordsearch.utils.slug import slugify
 
@@ -48,57 +48,54 @@ def generate_local_assets_for_book(
 ) -> GeneratedAssetSet:
     """Generate placeholder image assets and an asset manifest for a thematic book."""
     specs = parse_puzzle_file(input_path)
+    visual_brief = build_book_visual_brief(book_title=title, specs=specs, style=style)
     target_dir = Path(output_dir) if output_dir else build_default_asset_output_dir(title)
     processed_dir = target_dir / "processed"
     processed_dir.mkdir(parents=True, exist_ok=True)
 
     page_size = page_size or (DEFAULT_LAYOUT.page_width_px, DEFAULT_LAYOUT.page_height_px)
-    blocks = _blocks_in_order(specs)
+    blocks = visual_brief.blocks
 
     default_background = processed_dir / "default_background.png"
     _write_editorial_background(default_background, page_size, label="book", variant=0)
 
+    default_prompt = _book_background_prompt(visual_brief)
     block_manifest: dict[str, BlockAssetSet] = {}
     prompt_plan = {
         "book_title": title,
         "style": style,
+        "visual_brief": visual_brief.to_dict(),
         "assets": [
             {
                 "id": "book_default_background",
                 "type": "background",
                 "target": "book",
-                "prompt": _placeholder_prompt(title=title, block_name=None, style=style, asset_kind="default background"),
+                "prompt": default_prompt,
+                "negative_prompt": _negative_prompt(visual_brief),
             }
         ],
         "blocks": [],
     }
 
-    for index, block_name in enumerate(blocks, start=1):
-        block_slug = slugify(block_name)
-        block_background = processed_dir / f"block_{index:02d}_{block_slug}_background.png"
-        block_cover = processed_dir / f"block_{index:02d}_{block_slug}_cover.png"
-        _write_editorial_background(block_background, page_size, label=block_name, variant=index)
-        _write_editorial_background(block_cover, page_size, label=f"cover {block_name}", variant=index + 100)
-        block_manifest[block_slug] = BlockAssetSet(
+    for index, block_brief in enumerate(blocks, start=1):
+        block_background = processed_dir / f"block_{index:02d}_{block_brief.slug}_background.png"
+        block_cover = processed_dir / f"block_{index:02d}_{block_brief.slug}_cover.png"
+        _write_editorial_background(block_background, page_size, label=block_brief.name, variant=index)
+        _write_editorial_background(block_cover, page_size, label=f"cover {block_brief.name}", variant=index + 100)
+        block_manifest[block_brief.slug] = BlockAssetSet(
             background=str(block_background.relative_to(target_dir)),
             cover_background=str(block_cover.relative_to(target_dir)),
         )
         prompt_plan["blocks"].append(
             {
-                "slug": block_slug,
-                "name": block_name,
-                "background_prompt": _placeholder_prompt(
-                    title=title,
-                    block_name=block_name,
-                    style=style,
-                    asset_kind="block puzzle background",
-                ),
-                "cover_prompt": _placeholder_prompt(
-                    title=title,
-                    block_name=block_name,
-                    style=style,
-                    asset_kind="block cover background",
-                ),
+                "slug": block_brief.slug,
+                "name": block_brief.name,
+                "keywords": block_brief.keywords,
+                "sample_titles": block_brief.sample_titles,
+                "visual_direction": block_brief.visual_direction,
+                "background_prompt": _block_background_prompt(visual_brief, block_brief),
+                "cover_prompt": _block_cover_prompt(visual_brief, block_brief),
+                "negative_prompt": _negative_prompt(visual_brief),
             }
         )
 
@@ -110,7 +107,7 @@ def generate_local_assets_for_book(
             "book_default_background": ManifestAsset(
                 type="background",
                 path=str(default_background.relative_to(target_dir)),
-                prompt=prompt_plan["assets"][0]["prompt"],
+                prompt=default_prompt,
                 provider="local-placeholder",
                 notes="Deterministic placeholder asset. Replace with normalized AI output later.",
             )
@@ -130,18 +127,6 @@ def generate_local_assets_for_book(
         asset_count=1 + (2 * len(blocks)),
         block_count=len(blocks),
     )
-
-
-def _blocks_in_order(specs: list[PuzzleSpec]) -> list[str]:
-    blocks: list[str] = []
-    seen: set[str] = set()
-    for spec in specs:
-        block_name = spec.block_name or "default"
-        if block_name in seen:
-            continue
-        seen.add(block_name)
-        blocks.append(block_name)
-    return blocks
 
 
 def _write_editorial_background(path: Path, size: tuple[int, int], *, label: str, variant: int) -> None:
@@ -190,12 +175,49 @@ def _variant_color(variant: int) -> tuple[int, int, int]:
     return palettes[variant % len(palettes)]
 
 
-def _placeholder_prompt(*, title: str, block_name: str | None, style: str, asset_kind: str) -> str:
-    block_text = f" for the section '{block_name}'" if block_name else ""
-    return (
-        f"Create a subtle printable {asset_kind}{block_text} for a word search book titled "
-        f"'{title}', style '{style}', low contrast, no readable text, no logos, clean center area."
+def _book_background_prompt(visual_brief: BookVisualBrief) -> str:
+    return _join_prompt_parts(
+        [
+            f"Subtle printable background for a word search puzzle book about {visual_brief.subject}.",
+            f"Tone: {visual_brief.tone}.",
+            f"Visual language: {', '.join(visual_brief.visual_keywords[:8])}.",
+            f"Content keywords to inspire abstract motifs: {', '.join(visual_brief.keywords[:8])}.",
+            "Portrait page, low contrast, soft paper texture, clean bright center area for a black letter grid.",
+            "Suitable for KDP interior print, 300 DPI, no bleed-critical details near edges.",
+        ]
     )
+
+
+def _block_background_prompt(visual_brief: BookVisualBrief, block_brief: BlockVisualBrief) -> str:
+    return _join_prompt_parts(
+        [
+            f"Subtle printable puzzle-page background for the section '{block_brief.name}' in a word search book about {visual_brief.subject}.",
+            block_brief.visual_direction,
+            f"Section keywords: {', '.join(block_brief.keywords[:8])}.",
+            "Keep the center quiet and readable for puzzle letters; put any motifs near borders or corners.",
+            "Low contrast, elegant print texture, no readable text.",
+        ]
+    )
+
+
+def _block_cover_prompt(visual_brief: BookVisualBrief, block_brief: BlockVisualBrief) -> str:
+    return _join_prompt_parts(
+        [
+            f"Elegant section-opener background for the section '{block_brief.name}' in a word search puzzle book about {visual_brief.subject}.",
+            block_brief.visual_direction,
+            f"Suggested motifs from content: {', '.join(block_brief.keywords[:8])}.",
+            "Balanced empty central area for a large section title panel, refined border detail, premium educational activity-book style.",
+            "Print-ready portrait background, low contrast, no readable text.",
+        ]
+    )
+
+
+def _negative_prompt(visual_brief: BookVisualBrief) -> str:
+    return ", ".join(visual_brief.avoid)
+
+
+def _join_prompt_parts(parts: list[str]) -> str:
+    return " ".join(part.strip() for part in parts if part and part.strip())
 
 
 def _json_dumps(payload: dict) -> str:
