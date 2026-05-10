@@ -152,25 +152,38 @@ def _clean_output_dir(output_dir: str) -> bool:
 
 
 def _print_preflight_report_summary(preflight_report) -> None:
-    status = "PASSED" if preflight_report.passed else "FAILED"
+    errors = list(getattr(preflight_report, "errors", []) or [])
+    warnings = list(getattr(preflight_report, "warnings", []) or [])
+    issues = list(getattr(preflight_report, "issues", [*errors, *warnings]) or [])
+    passed = bool(getattr(preflight_report, "passed", not errors))
+    status = "PASSED" if passed else "FAILED"
+    expected_page_count = getattr(preflight_report, "expected_page_count", "?")
+    actual_page_count = getattr(preflight_report, "actual_page_count", None) or "?"
+    trim_width = getattr(preflight_report, "trim_width_in", "?")
+    trim_height = getattr(preflight_report, "trim_height_in", "?")
+    dpi = getattr(preflight_report, "dpi", "?")
+    format_name = getattr(preflight_report, "format_name", "?")
+
     print_key_value_table(
         "Preflight summary",
         [
             ("Status", status),
-            ("Format", preflight_report.format_name),
-            ("Trim", f"{preflight_report.trim_width_in}x{preflight_report.trim_height_in} in @ {preflight_report.dpi} DPI"),
-            ("Pages", f"{preflight_report.actual_page_count or '?'} / expected {preflight_report.expected_page_count}"),
-            ("Errors", str(len(preflight_report.errors))),
-            ("Warnings", str(len(preflight_report.warnings))),
+            ("Format", str(format_name)),
+            ("Trim", f"{trim_width}x{trim_height} in @ {dpi} DPI"),
+            ("Pages", f"{actual_page_count} / expected {expected_page_count}"),
+            ("Errors", str(len(errors))),
+            ("Warnings", str(len(warnings))),
         ],
     )
-    if preflight_report.errors:
-        for issue in preflight_report.errors:
-            print_error(issue.format())
-    if preflight_report.warnings:
-        for issue in preflight_report.warnings:
-            print_warning(issue.format())
-    if not preflight_report.issues:
+    if errors:
+        for issue in errors:
+            formatter = getattr(issue, "format", None)
+            print_error(formatter() if callable(formatter) else str(issue))
+    if warnings:
+        for issue in warnings:
+            formatter = getattr(issue, "format", None)
+            print_warning(formatter() if callable(formatter) else str(issue))
+    if not issues:
         print_success("No basic KDP preflight issues detected")
 
 
