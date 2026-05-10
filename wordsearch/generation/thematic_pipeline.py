@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import time
 from pathlib import Path
 
 from wordsearch.cli.ui import (
@@ -34,6 +35,8 @@ from wordsearch.validation.render_quality import build_render_quality_report
 from wordsearch.validation.thematic import validate_thematic_specs
 from wordsearch.validation.visual import build_visual_regression_report, write_visual_regression_report
 from wordsearch.utils.slug import slugify
+
+MIN_PREFLIGHT_PROGRESS_SECONDS = 4.0
 
 
 def print_run_summary(options: ThematicGenerationOptions) -> None:
@@ -269,6 +272,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
 
     print_section("Preflight and reports")
     with create_progress() as progress:
+        preflight_start = time.monotonic()
         task_id = progress.add_task("Running preflight and writing reports", total=4)
         preflight_report = build_kdp_preflight_report(
             pdf_path=pdf_final,
@@ -306,6 +310,10 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         )
         review_summary_path = write_production_review_summary(review_summary, output_dir=output_dir)
         progress.update(task_id, advance=1)
+
+        elapsed = time.monotonic() - preflight_start
+        if elapsed < MIN_PREFLIGHT_PROGRESS_SECONDS:
+            time.sleep(MIN_PREFLIGHT_PROGRESS_SECONDS - elapsed)
 
     _print_preflight_report_summary(preflight_report)
     _print_report_paths(
