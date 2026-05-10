@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
+from wordsearch.asset_generation.manifest import AssetManifest
 from wordsearch.config.design import DEFAULT_THEME_NAME, get_theme
 from wordsearch.config.formats import DEFAULT_FORMAT_NAME, get_format_preset
 from wordsearch.config.paths import BASE_OUTPUT_DIR, build_book_output_dir, build_output_file
@@ -33,6 +35,8 @@ def print_run_summary(options: ThematicGenerationOptions) -> None:
     print(f"Grid: {options.grid_size}x{options.grid_size}")
     print(f"Tema: {options.theme_name}")
     print(f"Formato: {options.format_name}")
+    if options.theme_manifest_path:
+        print(f"Theme manifest: {options.theme_manifest_path}")
     if options.seed is not None:
         print(f"Seed: {options.seed}")
     if options.output_dir:
@@ -69,6 +73,19 @@ def _format_kwargs(options: ThematicGenerationOptions, layout) -> dict:
     return {"layout": layout} if options.format_name != DEFAULT_FORMAT_NAME else {}
 
 
+def _load_asset_manifest(path: str | None) -> AssetManifest | None:
+    if not path:
+        return None
+    try:
+        return AssetManifest.load(path)
+    except FileNotFoundError:
+        print(f"ERROR: No se encuentra el theme manifest: {path}")
+        return None
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        print(f"ERROR: No se pudo leer el theme manifest ({exc}): {path}")
+        return None
+
+
 def _print_grid_failures(failures: list[str]) -> None:
     print("\nERROR: uno o mas puzzles no se pudieron generar.")
     print("No se generara el PDF para evitar indice y soluciones con paginas incorrectas.\n")
@@ -99,6 +116,9 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     theme = get_theme(options.theme_name)
     layout = get_format_preset(options.format_name).to_layout_config()
     format_kwargs = _format_kwargs(options, layout)
+    asset_manifest = _load_asset_manifest(options.theme_manifest_path)
+    if options.theme_manifest_path and asset_manifest is None:
+        return None
 
     try:
         specs = parse_puzzle_file(options.puzzles_txt_path)
@@ -127,7 +147,12 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     if options.clean_output and not _clean_output_dir(output_dir):
         return None
 
-    asset_report = validate_generation_assets(output_dir=output_dir, optional_backgrounds=(spec.block_background for spec in specs))
+    optional_backgrounds = [spec.block_background for spec in specs]
+    if asset_manifest is not None:
+        optional_backgrounds.extend(asset.path for asset in asset_manifest.assets.values())
+        for block_assets in asset_manifest.blocks.values():
+            optional_backgrounds.extend([block_assets.background, block_assets.cover_background, block_assets.motif])
+    asset_report = validate_generation_assets(output_dir=output_dir, optional_backgrounds=optional_backgrounds)
     asset_report.print_summary()
     if asset_report.has_errors:
         print("\nCorrige los errores de assets anteriores y vuelve a ejecutar el generador.")
@@ -152,6 +177,8 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     print(f"OK: {len(generated_puzzles)} grids generados correctamente.")
     page_plan = build_page_plan(generated_puzzles)
     render_kwargs = {"book_title": options.book_title, "generated_puzzles": generated_puzzles, "page_plan": page_plan, "output_dir": output_dir}
+    if asset_manifest is not None:
+        render_kwargs["asset_manifest"] = asset_manifest
     if options.theme_name != DEFAULT_THEME_NAME:
         render_kwargs["theme"] = theme
     render_kwargs.update(format_kwargs)
@@ -203,6 +230,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         rendered_images=rendered_images,
         puzzle_count=len(generated_puzzles),
         render_quality_report=render_quality_report,
+        asset_manifest=asset_manifest,
     )
     report_path = write_generation_report(report, output_dir=output_dir)
 
