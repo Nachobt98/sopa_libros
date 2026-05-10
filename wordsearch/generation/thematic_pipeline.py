@@ -87,15 +87,12 @@ def _format_kwargs(options: ThematicGenerationOptions, layout) -> dict:
 
 
 def _accepts_keyword(func: Callable[..., Any], keyword: str) -> bool:
-    """Return whether a callable accepts the given keyword argument."""
+    """Return whether a callable explicitly declares the given keyword argument."""
     try:
         signature = inspect.signature(func)
     except (TypeError, ValueError):
         return True
-    return any(
-        parameter.kind == inspect.Parameter.VAR_KEYWORD or name == keyword
-        for name, parameter in signature.parameters.items()
-    )
+    return keyword in signature.parameters
 
 
 def _generate_thematic_grids_with_optional_progress(
