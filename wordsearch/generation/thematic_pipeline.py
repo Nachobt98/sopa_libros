@@ -305,7 +305,6 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
             time.sleep(MIN_PREFLIGHT_PROGRESS_SECONDS - elapsed)
 
     _print_preflight_report_summary(preflight_report)
-    print_completion_animation()
     print_completion_panel(
         title="GENERATION COMPLETE",
         subtitle="All core production artifacts were created successfully.",
@@ -315,4 +314,5 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         review_summary_path=review_summary_path,
         recommendation=review_summary.recommendation,
     )
+    print_completion_animation()
     return pdf_final
