@@ -222,16 +222,18 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     preflight_report.print_summary()
     preflight_report_path = write_kdp_preflight_report(preflight_report, output_dir=output_dir)
 
-    report = build_thematic_generation_report(
-        options=options,
-        output_dir=output_dir,
-        pdf_path=pdf_final,
-        page_plan=page_plan,
-        rendered_images=rendered_images,
-        puzzle_count=len(generated_puzzles),
-        render_quality_report=render_quality_report,
-        asset_manifest=asset_manifest,
-    )
+    report_kwargs = {
+        "options": options,
+        "output_dir": output_dir,
+        "pdf_path": pdf_final,
+        "page_plan": page_plan,
+        "rendered_images": rendered_images,
+        "puzzle_count": len(generated_puzzles),
+        "render_quality_report": render_quality_report,
+    }
+    if asset_manifest is not None:
+        report_kwargs["asset_manifest"] = asset_manifest
+    report = build_thematic_generation_report(**report_kwargs)
     report_path = write_generation_report(report, output_dir=output_dir)
 
     review_summary = build_production_review_summary(
