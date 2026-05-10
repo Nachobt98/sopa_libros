@@ -25,6 +25,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, help="Optional random seed for reproducible grids.")
     parser.add_argument("--theme", choices=theme_names(), default=DEFAULT_THEME_NAME, help="Visual theme preset for shared page-frame styling.")
     parser.add_argument("--format", choices=format_names(), default=DEFAULT_FORMAT_NAME, help="Editorial book format preset for trim size, margins and safe area.")
+    parser.add_argument(
+        "--theme-manifest",
+        dest="theme_manifest_path",
+        help="Optional generated/reviewed asset_manifest.json to supply book and block backgrounds.",
+    )
     parser.add_argument("--output-dir", help="Optional output directory. Defaults to output_puzzles_kdp/<book_slug>.")
     parser.add_argument("--limit", type=int, help="Generate only the first N parsed puzzles. Useful for visual iteration.")
     parser.add_argument(
@@ -116,6 +121,7 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
         clean_output=args.clean_output,
         theme_name=theme.name,
         format_name=book_format.name,
+        theme_manifest_path=(args.theme_manifest_path or "").strip() or None,
         output_dir=(args.output_dir or "").strip() or None,
         limit=limit,
         preview=args.preview,
