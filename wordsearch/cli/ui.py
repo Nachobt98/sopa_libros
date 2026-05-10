@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Iterable, Iterator, Sequence
 from typing import TypeVar
 
@@ -104,6 +105,23 @@ def print_key_value_table(title: str, rows: Sequence[tuple[str, str]]) -> None:
     for key, value in rows:
         table.add_row(key, value)
     console.print(table)
+
+
+def print_completion_animation() -> None:
+    """Show a short terminal-only completion animation before the final panel."""
+    if not console.is_terminal:
+        return
+
+    steps = [
+        "Checking production artifacts",
+        "Sealing the final book package",
+        "Preparing review handoff",
+    ]
+    with console.status(f"[bold {PALETTE['accent']}]{steps[0]}...[/bold {PALETTE['accent']}]") as status:
+        for step in steps:
+            status.update(f"[bold {PALETTE['accent']}]{step}...[/bold {PALETTE['accent']}]")
+            time.sleep(0.35)
+    print_success("Production package ready")
 
 
 def print_completion_panel(
