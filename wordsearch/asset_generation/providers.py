@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import os
 from pathlib import Path
 from typing import Protocol
 
@@ -10,7 +12,10 @@ from PIL import Image, ImageDraw
 from wordsearch.asset_generation.requests import GeneratedImage, ImageGenerationRequest
 
 LOCAL_PLACEHOLDER_PROVIDER = "local-placeholder"
-AVAILABLE_IMAGE_PROVIDERS = (LOCAL_PLACEHOLDER_PROVIDER,)
+OPENAI_PROVIDER = "openai"
+DEFAULT_OPENAI_IMAGE_MODEL = "gpt-image-1"
+DEFAULT_OPENAI_IMAGE_SIZE = "1024x1536"
+AVAILABLE_IMAGE_PROVIDERS = (LOCAL_PLACEHOLDER_PROVIDER, OPENAI_PROVIDER)
 
 
 class ImageProvider(Protocol):
@@ -34,12 +39,60 @@ class LocalPlaceholderProvider:
         return GeneratedImage(request=request, path=str(output_path), provider=self.name)
 
 
+class OpenAIImageProvider:
+    """OpenAI-backed image provider.
+
+    The dependency is optional. Install with `sopa-libros[ai]` and set
+    `OPENAI_API_KEY` before using `--provider openai`.
+    """
+
+    name = OPENAI_PROVIDER
+
+    def __init__(self, *, client=None, model: str | None = None, image_size: str | None = None):
+        self.model = model or os.getenv("OPENAI_IMAGE_MODEL", DEFAULT_OPENAI_IMAGE_MODEL)
+        self.image_size = image_size or os.getenv("OPENAI_IMAGE_SIZE", DEFAULT_OPENAI_IMAGE_SIZE)
+        self.client = client or self._build_client_from_environment()
+
+    def generate(self, request: ImageGenerationRequest, output_path: Path) -> GeneratedImage:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        response = self.client.images.generate(
+            model=self.model,
+            prompt=_combine_prompt(request),
+            size=self.image_size,
+        )
+        image_data = response.data[0]
+        b64_json = getattr(image_data, "b64_json", None)
+        if not b64_json:
+            raise RuntimeError("OpenAI image response did not include b64_json image data.")
+        output_path.write_bytes(base64.b64decode(b64_json))
+        return GeneratedImage(request=request, path=str(output_path), provider=self.name)
+
+    @staticmethod
+    def _build_client_from_environment():
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError("OPENAI_API_KEY is required when using --provider openai.")
+        try:
+            from openai import OpenAI
+        except ImportError as exc:
+            raise RuntimeError("The OpenAI provider requires the optional dependency: py -m pip install -e .[ai]") from exc
+        return OpenAI(api_key=api_key)
+
+
 def get_image_provider(name: str) -> ImageProvider:
     """Return an image provider by CLI name."""
     if name == LOCAL_PLACEHOLDER_PROVIDER:
         return LocalPlaceholderProvider()
+    if name == OPENAI_PROVIDER:
+        return OpenAIImageProvider()
     available = ", ".join(AVAILABLE_IMAGE_PROVIDERS)
     raise ValueError(f"Unknown image provider '{name}'. Available providers: {available}")
+
+
+def _combine_prompt(request: ImageGenerationRequest) -> str:
+    if not request.negative_prompt:
+        return request.prompt
+    return f"{request.prompt}\n\nAvoid: {request.negative_prompt}"
 
 
 def _write_editorial_placeholder(path: Path, size: tuple[int, int], *, label: str, variant: str) -> None:
