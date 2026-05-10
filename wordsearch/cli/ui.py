@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from typing import TypeVar
 
 from rich.align import Align
 from rich.console import Console
 from rich.panel import Panel
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.text import Text
 
 console = Console()
@@ -23,6 +25,8 @@ PALETTE = {
     "muted": "#AAB7B8",
     "text": "#F8F9F9",
 }
+
+T = TypeVar("T")
 
 
 def print_app_header(subtitle: str | None = None) -> None:
@@ -44,6 +48,12 @@ def print_app_header(subtitle: str | None = None) -> None:
         )
     )
     console.print()
+
+
+def print_section(title: str) -> None:
+    """Print a compact section divider."""
+    console.print()
+    console.rule(f"[bold {PALETTE['primary']}]{title.upper()}[/bold {PALETTE['primary']}]")
 
 
 def print_info(message: str) -> None:
@@ -77,3 +87,30 @@ def print_error_panel(title: str, details: Iterable[str]) -> None:
             padding=(1, 2),
         )
     )
+
+
+def create_progress() -> Progress:
+    """Create the shared SopaLibros progress bar style."""
+    return Progress(
+        SpinnerColumn(style=PALETTE["accent"]),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(
+            bar_width=34,
+            complete_style=PALETTE["primary"],
+            finished_style=PALETTE["success"],
+            pulse_style=PALETTE["accent"],
+        ),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TimeElapsedColumn(),
+        console=console,
+    )
+
+
+def track_progress(items: Iterable[T], *, description: str, total: int | None = None) -> Iterator[T]:
+    """Yield items while rendering a styled progress bar."""
+    resolved_total = total if total is not None else len(items) if hasattr(items, "__len__") else None
+    with create_progress() as progress:
+        task_id = progress.add_task(description, total=resolved_total)
+        for item in items:
+            yield item
+            progress.update(task_id, advance=1)
