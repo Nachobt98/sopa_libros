@@ -219,13 +219,19 @@ def _draw_instruction_card(
     )
 
     text_left = badge_left + badge_size + int(30 * scale)
-    title_y = top + int(29 * scale)
+    max_width = right - text_left - int(30 * scale)
+    body_lines = wrap_text(draw, body, body_font, max_width)
+    title_h = text_size(draw, title, title_font)[1]
+    title_gap = int(12 * scale)
+    line_h = int(body_font.size * 1.15)
+    body_h = len(body_lines) * line_h
+    text_block_h = title_h + title_gap + body_h
+    title_y = top + max(int(18 * scale), (card_height - text_block_h) // 2)
+
     draw.text((text_left, title_y), title, font=title_font, fill=theme.title_color)
 
-    body_y = title_y + text_size(draw, title, title_font)[1] + int(15 * scale)
-    max_width = right - text_left - int(30 * scale)
-    line_h = int(body_font.size * 1.18)
-    for line in wrap_text(draw, body, body_font, max_width):
+    body_y = title_y + title_h + title_gap
+    for line in body_lines:
         draw.text((text_left, body_y), line, font=body_font, fill=theme.body_color)
         body_y += line_h
 
@@ -356,13 +362,13 @@ def _measure_instruction_block_height(
 ) -> int:
     """Measure instruction content while accepting legacy string-only entries."""
     total_height = 0
-    line_h = int(body_font.size * 1.18)
+    line_h = int(body_font.size * 1.15)
     for instruction_entry in instructions:
         title, instruction = _split_instruction_entry(instruction_entry)
         title_h = text_size(draw, title, title_font)[1] if title else 0
-        title_gap = 15 * 3 if title else 0
+        title_gap = 12 * 3 if title else 0
         line_count = len(wrap_text(draw, instruction, body_font, max_text_width))
-        required_height = 29 * 3 + title_h + title_gap + line_count * line_h + 29 * 3
+        required_height = 22 * 3 + title_h + title_gap + line_count * line_h + 22 * 3
         total_height += max(card_height, required_height) + row_gap
     return max(0, total_height - row_gap)
 
@@ -418,8 +424,8 @@ def render_instructions_page(
     content_right = panel_right - int(64 * scale)
     badge_reserved = int(58 * scale) + int(30 * scale) + int(56 * scale)
     max_text_width = content_right - content_left - badge_reserved
-    card_height = int(156 * visual_scale * scale)
-    row_gap = int(30 * visual_scale * scale)
+    card_height = int(150 * visual_scale * scale)
+    row_gap = int(26 * visual_scale * scale)
     block_height = _measure_instruction_block_height(
         draw,
         instructions,
