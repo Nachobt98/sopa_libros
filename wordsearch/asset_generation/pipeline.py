@@ -157,17 +157,26 @@ def _write_editorial_background(path: Path, size: tuple[int, int], *, label: str
         draw.line((x, 0, x + height, height), fill=line_color, width=3)
 
     border_color = tuple(max(channel - 42, 0) for channel in base)
-    margin = max(min(width, height) // 18, 60)
+    margin = _safe_margin_for_size(width, height)
     draw.rounded_rectangle(
         (margin, margin, width - margin, height - margin),
         outline=border_color,
-        width=6,
-        radius=36,
+        width=max(1, min(6, margin // 2)),
+        radius=min(36, margin),
     )
 
     label_color = tuple(max(channel - 72, 0) for channel in base)
-    draw.text((margin + 24, height - margin - 42), label[:80], fill=label_color)
+    label_y = max(margin, height - margin - 42)
+    draw.text((margin + 8, label_y), label[:80], fill=label_color)
     image.save(path)
+
+
+def _safe_margin_for_size(width: int, height: int) -> int:
+    """Return a margin that cannot invert the drawable rectangle on tiny fixtures."""
+    shortest_side = max(1, min(width, height))
+    preferred_margin = max(shortest_side // 18, 8)
+    max_margin = max(1, (shortest_side - 2) // 2)
+    return min(preferred_margin, max_margin)
 
 
 def _variant_color(variant: int) -> tuple[int, int, int]:
