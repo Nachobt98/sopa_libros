@@ -213,13 +213,16 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     pdf_path = build_output_file(output_dir, f"{book_slug}.pdf")
     pdf_metadata = build_pdf_metadata(options)
     try:
-        pdf_final = generate_pdf(
-            rendered_images.content_imgs,
-            rendered_images.solution_imgs,
-            outname=pdf_path,
-            metadata=pdf_metadata,
-            **format_kwargs,
-        )
+        with create_progress() as progress:
+            task_id = progress.add_task("Building final PDF", total=1)
+            pdf_final = generate_pdf(
+                rendered_images.content_imgs,
+                rendered_images.solution_imgs,
+                outname=pdf_path,
+                metadata=pdf_metadata,
+                **format_kwargs,
+            )
+            progress.update(task_id, advance=1)
     except PermissionError:
         print_error("Could not save the PDF.")
         print_warning("Close the file if it is open in a PDF viewer/browser and try again.")
