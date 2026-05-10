@@ -105,6 +105,7 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
     book_format = get_format_preset(getattr(args, "format", DEFAULT_FORMAT_NAME))
     seed = args.seed
     limit = args.limit
+    theme_manifest_path = (getattr(args, "theme_manifest_path", None) or "").strip() or None
     if args.preview:
         if seed is None:
             seed = PREVIEW_DEFAULT_SEED
@@ -121,7 +122,7 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
         clean_output=args.clean_output,
         theme_name=theme.name,
         format_name=book_format.name,
-        theme_manifest_path=(args.theme_manifest_path or "").strip() or None,
+        theme_manifest_path=theme_manifest_path,
         output_dir=(args.output_dir or "").strip() or None,
         limit=limit,
         preview=args.preview,
