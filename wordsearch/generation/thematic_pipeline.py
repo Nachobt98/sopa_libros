@@ -19,6 +19,7 @@ from wordsearch.generation.reporting import build_thematic_generation_report, wr
 from wordsearch.generation.review_summary import build_production_review_summary, write_production_review_summary
 from wordsearch.parsing.thematic import PuzzleParseError, parse_puzzle_file
 from wordsearch.rendering.pdf import generate_pdf
+from wordsearch.validation.asset_manifest import validate_asset_manifest_assets
 from wordsearch.validation.assets import validate_generation_assets
 from wordsearch.validation.kdp import build_kdp_preflight_report, write_kdp_preflight_report
 from wordsearch.validation.render_quality import build_render_quality_report
@@ -147,12 +148,9 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     if options.clean_output and not _clean_output_dir(output_dir):
         return None
 
-    optional_backgrounds = [spec.block_background for spec in specs]
+    asset_report = validate_generation_assets(output_dir=output_dir, optional_backgrounds=(spec.block_background for spec in specs))
     if asset_manifest is not None:
-        optional_backgrounds.extend(asset.path for asset in asset_manifest.assets.values())
-        for block_assets in asset_manifest.blocks.values():
-            optional_backgrounds.extend([block_assets.background, block_assets.cover_background, block_assets.motif])
-    asset_report = validate_generation_assets(output_dir=output_dir, optional_backgrounds=optional_backgrounds)
+        asset_report.extend(validate_asset_manifest_assets(asset_manifest))
     asset_report.print_summary()
     if asset_report.has_errors:
         print("\nCorrige los errores de assets anteriores y vuelve a ejecutar el generador.")
