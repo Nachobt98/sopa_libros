@@ -110,8 +110,8 @@ def print_key_value_table(title: str, rows: Sequence[tuple[str, str]]) -> None:
     console.print(table)
 
 
-def print_completion_animation(duration_seconds: float = 10.0) -> None:
-    """Show a terminal-only golden book animation below the final report table."""
+def print_completion_animation() -> None:
+    """Keep a terminal-only golden book animation alive below the final panel."""
     if not console.is_terminal:
         return
 
@@ -160,29 +160,34 @@ def print_completion_animation(duration_seconds: float = 10.0) -> None:
         ],
     ]
     frame_delay = 0.16
-    total_frames = max(1, int(duration_seconds / frame_delay))
 
-    with Live(console=console, refresh_per_second=12, transient=False) as live:
-        for index in range(total_frames):
-            frame = frames[index % len(frames)]
-            shimmer = PALETTE["primary_light"] if index % 4 in (0, 1) else PALETTE["primary"]
+    try:
+        with Live(console=console, refresh_per_second=12, transient=False) as live:
+            index = 0
+            while True:
+                frame = frames[index % len(frames)]
+                shimmer = PALETTE["primary_light"] if index % 4 in (0, 1) else PALETTE["primary"]
 
-            book = Text("\n".join(frame), style=f"bold {shimmer}")
-            thanks_shadow = Text("          T H A N K S", style=f"bold {PALETTE['primary_shadow']}")
-            thanks = Text("         T H A N K S", style=f"bold {shimmer}")
-            caption = Text("\n        Final package sealed", style=PALETTE["muted"])
+                book = Text("\n".join(frame), style=f"bold {shimmer}")
+                thanks_shadow = Text("          T H A N K S", style=f"bold {PALETTE['primary_shadow']}")
+                thanks = Text("         T H A N K S", style=f"bold {shimmer}")
+                caption = Text("\n        Press Ctrl+C to exit", style=PALETTE["muted"])
 
-            live.update(
-                Align.center(
-                    Panel(
-                        Group(book, Text(""), thanks_shadow, thanks, caption),
-                        title=Text("THANK YOU", style=f"bold {shimmer}"),
-                        border_style=shimmer,
-                        padding=(1, 4),
+                live.update(
+                    Align.center(
+                        Panel(
+                            Group(book, Text(""), thanks_shadow, thanks, caption),
+                            title=Text("THANK YOU", style=f"bold {shimmer}"),
+                            border_style=shimmer,
+                            padding=(1, 4),
+                        )
                     )
                 )
-            )
-            time.sleep(frame_delay)
+                index += 1
+                time.sleep(frame_delay)
+    except KeyboardInterrupt:
+        console.print()
+        print_success("Closing SopaLibros CLI")
 
 
 def print_completion_panel(
