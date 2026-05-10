@@ -16,7 +16,7 @@ def test_generate_local_assets_for_book_writes_manifest_prompts_and_pngs(tmp_pat
                 "[/Block]",
                 "[Puzzle]",
                 "title: Pharaohs",
-                "fact: A short fact.",
+                "fact: A short fact about Nile monuments.",
                 "words:",
                 "NILE",
                 "PYRAMID",
@@ -26,7 +26,7 @@ def test_generate_local_assets_for_book_writes_manifest_prompts_and_pngs(tmp_pat
                 "[/Block]",
                 "[Puzzle]",
                 "title: Ra",
-                "fact: Another fact.",
+                "fact: Another fact about Egyptian mythology.",
                 "words:",
                 "RA",
                 "OSIRIS",
@@ -55,6 +55,8 @@ def test_generate_local_assets_for_book_writes_manifest_prompts_and_pngs(tmp_pat
     assert manifest.style == "premium-historical"
     assert manifest.resolve_asset_path("book_default_background") == str(output_dir / "processed/default_background.png")
     assert set(manifest.blocks) == {"ancient_egypt", "gods_and_mythology"}
+    assert "Ancient Egypt" in manifest.assets["book_default_background"].prompt
+    assert "low contrast" in manifest.assets["book_default_background"].prompt.lower()
 
     for asset_path in manifest.declared_asset_paths():
         with Image.open(asset_path) as image:
@@ -63,7 +65,15 @@ def test_generate_local_assets_for_book_writes_manifest_prompts_and_pngs(tmp_pat
     prompt_payload = json.loads((output_dir / "prompts.json").read_text(encoding="utf-8"))
     assert prompt_payload["book_title"] == "Ancient Egypt Word Search"
     assert prompt_payload["style"] == "premium-historical"
+    assert prompt_payload["visual_brief"]["subject"] == "Ancient Egypt"
+    assert "readable text" in prompt_payload["assets"][0]["negative_prompt"]
+    assert "Nile" in prompt_payload["assets"][0]["prompt"] or "nile" in prompt_payload["assets"][0]["prompt"]
     assert len(prompt_payload["blocks"]) == 2
+    assert prompt_payload["blocks"][0]["slug"] == "ancient_egypt"
+    assert prompt_payload["blocks"][0]["keywords"]
+    assert "background_prompt" in prompt_payload["blocks"][0]
+    assert "cover_prompt" in prompt_payload["blocks"][0]
+    assert "negative_prompt" in prompt_payload["blocks"][0]
 
 
 def test_generate_local_assets_for_book_handles_books_without_blocks(tmp_path):
