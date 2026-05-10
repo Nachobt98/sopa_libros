@@ -23,6 +23,7 @@ class ThematicGenerationOptions:
     clean_output: bool = False
     theme_name: str = DEFAULT_THEME_NAME
     format_name: str = DEFAULT_FORMAT_NAME
+    theme_manifest_path: str | None = None
     output_dir: str | None = None
     limit: int | None = None
     preview: bool = False
