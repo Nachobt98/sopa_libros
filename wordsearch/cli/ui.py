@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from typing import TypeVar
 
 from rich.align import Align
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+from rich.table import Table
 from rich.text import Text
 
 console = Console()
@@ -85,6 +86,58 @@ def print_error_panel(title: str, details: Iterable[str]) -> None:
             title=Text(title, style=f"bold {PALETTE['error']}"),
             border_style=PALETTE["error"],
             padding=(1, 2),
+        )
+    )
+
+
+def print_key_value_table(title: str, rows: Sequence[tuple[str, str]]) -> None:
+    """Print a compact two-column summary table."""
+    table = Table(
+        title=title,
+        title_style=f"bold {PALETTE['primary']}",
+        border_style=PALETTE["muted"],
+        header_style=f"bold {PALETTE['accent']}",
+        show_lines=False,
+    )
+    table.add_column("Item", style=PALETTE["muted"], no_wrap=True)
+    table.add_column("Value", style=PALETTE["text"])
+    for key, value in rows:
+        table.add_row(key, value)
+    console.print(table)
+
+
+def print_completion_panel(
+    *,
+    title: str,
+    subtitle: str,
+    pdf_path: str,
+    report_path: str,
+    preflight_report_path: str,
+    review_summary_path: str,
+    recommendation: str,
+) -> None:
+    """Print a polished final run summary panel."""
+    body = Text()
+    body.append(subtitle, style=f"bold {PALETTE['success']}")
+    body.append("\n\n")
+    body.append("PDF", style=f"bold {PALETTE['primary']}")
+    body.append(f"  {pdf_path}\n")
+    body.append("Report", style=f"bold {PALETTE['primary']}")
+    body.append(f"  {report_path}\n")
+    body.append("Preflight", style=f"bold {PALETTE['primary']}")
+    body.append(f"  {preflight_report_path}\n")
+    body.append("Review", style=f"bold {PALETTE['primary']}")
+    body.append(f"  {review_summary_path}\n\n")
+    body.append("Recommendation: ", style=f"bold {PALETTE['accent']}")
+    body.append(recommendation)
+
+    console.print()
+    console.print(
+        Panel(
+            Align.center(body),
+            title=Text(title, style=f"bold {PALETTE['success']}"),
+            border_style=PALETTE["success"],
+            padding=(1, 4),
         )
     )
 
