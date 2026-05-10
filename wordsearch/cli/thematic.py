@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 
 from wordsearch.cli.grid_size_prompts import ask_grid_size
+from wordsearch.cli.ui import print_app_header, print_error, print_info, print_success
 from wordsearch.config.design import DEFAULT_THEME_NAME, get_theme, theme_names
 from wordsearch.config.formats import DEFAULT_FORMAT_NAME, format_names, get_format_preset
 from wordsearch.config.paths import DEFAULT_THEMATIC_WORDLIST
@@ -122,14 +123,35 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
     )
 
 
+def _print_options_summary(options: ThematicGenerationOptions) -> None:
+    print_info(f"Book title: {options.book_title}")
+    print_info(f"Input file: {options.puzzles_txt_path}")
+    print_info(f"Difficulty: {options.difficulty.value.upper()}")
+    print_info(f"Grid size: {options.grid_size}")
+    print_info(f"Theme: {options.theme_name}")
+    print_info(f"Format: {options.format_name}")
+    if options.seed is not None:
+        print_info(f"Seed: {options.seed}")
+    if options.limit is not None:
+        print_info(f"Limit: {options.limit}")
+    if options.validate_only:
+        print_info("Mode: validate only")
+    if options.clean_output:
+        print_info("Clean output: enabled")
+
+
 def main() -> None:
-    print("=== Generador TEMÁTICO de Wordsearch para KDP ===")
+    print_app_header("Thematic KDP word search book generator")
     try:
         options = _resolve_options(_parse_args())
     except ValueError as exc:
-        print(f"ERROR: {exc}")
+        print_error(str(exc))
         return
+
+    _print_options_summary(options)
+    print_info("Starting thematic generation pipeline...")
     generate_thematic_book(options)
+    print_success("Thematic generation finished")
 
 
 if __name__ == "__main__":
