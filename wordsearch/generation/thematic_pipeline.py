@@ -7,8 +7,10 @@ from pathlib import Path
 
 from wordsearch.cli.ui import (
     create_progress,
+    print_completion_panel,
     print_error,
     print_info,
+    print_key_value_table,
     print_section,
     print_success,
     print_warning,
@@ -100,6 +102,40 @@ def _clean_output_dir(output_dir: str) -> bool:
         return False
     print_success(f"Clean output: removed output folder: {output_path}")
     return True
+
+
+def _print_preflight_report_summary(preflight_report) -> None:
+    status = "PASSED" if preflight_report.passed else "FAILED"
+    print_key_value_table(
+        "Preflight summary",
+        [
+            ("Status", status),
+            ("Format", preflight_report.format_name),
+            ("Trim", f"{preflight_report.trim_width_in}x{preflight_report.trim_height_in} in @ {preflight_report.dpi} DPI"),
+            ("Pages", f"{preflight_report.actual_page_count or '?'} / expected {preflight_report.expected_page_count}"),
+            ("Errors", str(len(preflight_report.errors))),
+            ("Warnings", str(len(preflight_report.warnings))),
+        ],
+    )
+    if preflight_report.errors:
+        for issue in preflight_report.errors:
+            print_error(issue.format())
+    if preflight_report.warnings:
+        for issue in preflight_report.warnings:
+            print_warning(issue.format())
+    if not preflight_report.issues:
+        print_success("No basic KDP preflight issues detected")
+
+
+def _print_report_paths(*, report_path: str, preflight_report_path: str, review_summary_path: str, visual_regression_report_path: str | None) -> None:
+    rows = [
+        ("Generation report", report_path),
+        ("Preflight report", preflight_report_path),
+        ("Production review", review_summary_path),
+    ]
+    if visual_regression_report_path:
+        rows.append(("Visual regression", visual_regression_report_path))
+    print_key_value_table("Generated reports", rows)
 
 
 def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
@@ -231,44 +267,59 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     print_success(f"PDF generated: {pdf_final}")
 
     print_section("Preflight and reports")
-    preflight_report = build_kdp_preflight_report(
-        pdf_path=pdf_final,
-        output_dir=output_dir,
-        content_image_paths=rendered_images.content_imgs,
-        solution_image_paths=rendered_images.solution_imgs,
-        expected_pdf_metadata=pdf_metadata,
-        **format_kwargs,
-    )
-    preflight_report.print_summary()
-    preflight_report_path = write_kdp_preflight_report(preflight_report, output_dir=output_dir)
+    with create_progress() as progress:
+        task_id = progress.add_task("Running preflight and writing reports", total=4)
+        preflight_report = build_kdp_preflight_report(
+            pdf_path=pdf_final,
+            output_dir=output_dir,
+            content_image_paths=rendered_images.content_imgs,
+            solution_image_paths=rendered_images.solution_imgs,
+            expected_pdf_metadata=pdf_metadata,
+            **format_kwargs,
+        )
+        progress.update(task_id, advance=1)
+        preflight_report_path = write_kdp_preflight_report(preflight_report, output_dir=output_dir)
+        progress.update(task_id, advance=1)
 
-    report = build_thematic_generation_report(
-        options=options,
-        output_dir=output_dir,
-        pdf_path=pdf_final,
-        page_plan=page_plan,
-        rendered_images=rendered_images,
-        puzzle_count=len(generated_puzzles),
-        render_quality_report=render_quality_report,
-    )
-    report_path = write_generation_report(report, output_dir=output_dir)
+        report = build_thematic_generation_report(
+            options=options,
+            output_dir=output_dir,
+            pdf_path=pdf_final,
+            page_plan=page_plan,
+            rendered_images=rendered_images,
+            puzzle_count=len(generated_puzzles),
+            render_quality_report=render_quality_report,
+        )
+        report_path = write_generation_report(report, output_dir=output_dir)
+        progress.update(task_id, advance=1)
 
-    review_summary = build_production_review_summary(
-        book_title=options.book_title,
-        pdf_path=pdf_final,
-        generation_report_path=report_path,
+        review_summary = build_production_review_summary(
+            book_title=options.book_title,
+            pdf_path=pdf_final,
+            generation_report_path=report_path,
+            preflight_report_path=preflight_report_path,
+            preflight_report=preflight_report,
+            render_quality_report=render_quality_report,
+            puzzle_count=len(generated_puzzles),
+            visual_regression_report_path=visual_regression_report_path,
+        )
+        review_summary_path = write_production_review_summary(review_summary, output_dir=output_dir)
+        progress.update(task_id, advance=1)
+
+    _print_preflight_report_summary(preflight_report)
+    _print_report_paths(
+        report_path=report_path,
         preflight_report_path=preflight_report_path,
-        preflight_report=preflight_report,
-        render_quality_report=render_quality_report,
-        puzzle_count=len(generated_puzzles),
+        review_summary_path=review_summary_path,
         visual_regression_report_path=visual_regression_report_path,
     )
-    review_summary.print_summary()
-    review_summary_path = write_production_review_summary(review_summary, output_dir=output_dir)
-
-    print_success(f"Generation report: {report_path}")
-    print_success(f"Preflight report: {preflight_report_path}")
-    print_success(f"Production review: {review_summary_path}")
-    if visual_regression_report_path:
-        print_success(f"Visual regression report: {visual_regression_report_path}")
+    print_completion_panel(
+        title="GENERATION COMPLETE",
+        subtitle="All core production artifacts were created successfully.",
+        pdf_path=pdf_final,
+        report_path=report_path,
+        preflight_report_path=preflight_report_path,
+        review_summary_path=review_summary_path,
+        recommendation=review_summary.recommendation,
+    )
     return pdf_final
