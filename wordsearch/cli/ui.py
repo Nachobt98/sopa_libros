@@ -7,7 +7,8 @@ from collections.abc import Iterable, Iterator, Sequence
 from typing import TypeVar
 
 from rich.align import Align
-from rich.console import Console
+from rich.console import Console, Group
+from rich.live import Live
 from rich.panel import Panel
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
@@ -112,15 +113,35 @@ def print_completion_animation() -> None:
     if not console.is_terminal:
         return
 
-    steps = [
-        "Checking production artifacts",
-        "Sealing the final book package",
+    track_width = 26
+    frames = [*range(0, track_width + 1, 2), *range(track_width - 2, 8, -2)]
+    messages = [
+        "Binding final pages",
+        "Sealing production reports",
         "Preparing review handoff",
+        "Book package ready",
     ]
-    with console.status(f"[bold {PALETTE['accent']}]{steps[0]}...[/bold {PALETTE['accent']}]") as status:
-        for step in steps:
-            status.update(f"[bold {PALETTE['accent']}]{step}...[/bold {PALETTE['accent']}]")
-            time.sleep(0.35)
+
+    with Live(console=console, refresh_per_second=12, transient=True) as live:
+        for index, position in enumerate(frames):
+            track = ["─"] * (track_width + 1)
+            track[position] = "◆"
+            marker = "".join(track)
+            message = messages[min(index * len(messages) // len(frames), len(messages) - 1)]
+            figure = Text()
+            figure.append("  ╭────╮\n", style=PALETTE["primary"])
+            figure.append(f"  │ {marker} │\n", style=PALETTE["accent"])
+            figure.append("  ╰────╯\n", style=PALETTE["primary"])
+            figure.append(f"\n{message}...", style=f"bold {PALETTE['muted']}")
+            live.update(
+                Panel(
+                    Align.center(Group(figure)),
+                    title=Text("FINALIZING", style=f"bold {PALETTE['primary']}"),
+                    border_style=PALETTE["primary"],
+                    padding=(1, 4),
+                )
+            )
+            time.sleep(0.08)
     print_success("Production package ready")
 
 
