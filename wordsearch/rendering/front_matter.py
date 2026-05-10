@@ -218,8 +218,8 @@ def _draw_instruction_card(
         fill=theme.fact_header_text,
     )
 
-    text_left = badge_left + badge_size + int(30 * scale)
-    max_width = right - text_left - int(30 * scale)
+    text_left = badge_left + badge_size + int(24 * scale)
+    max_width = right - text_left - int(24 * scale)
     body_lines = wrap_text(draw, body, body_font, max_width)
     title_h = text_size(draw, title, title_font)[1]
     title_gap = int(12 * scale)
@@ -420,12 +420,12 @@ def render_instructions_page(
         ("Use solutions wisely", "If you get stuck, check the solutions section at the back of the book."),
     ]
 
-    content_left = panel_left + int(64 * scale)
-    content_right = panel_right - int(64 * scale)
-    badge_reserved = int(58 * scale) + int(30 * scale) + int(56 * scale)
+    content_left = panel_left + int(42 * scale)
+    content_right = panel_right - int(42 * scale)
+    badge_reserved = int(58 * scale) + int(24 * scale) + int(44 * scale)
     max_text_width = content_right - content_left - badge_reserved
-    card_height = int(150 * visual_scale * scale)
-    row_gap = int(26 * visual_scale * scale)
+    card_height = int(148 * visual_scale * scale)
+    row_gap = int(24 * visual_scale * scale)
     block_height = _measure_instruction_block_height(
         draw,
         instructions,
