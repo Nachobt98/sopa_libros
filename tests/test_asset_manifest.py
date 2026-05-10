@@ -33,8 +33,16 @@ def test_asset_manifest_round_trips_json(tmp_path):
     assert loaded.book_title == "Ancient Egypt Word Search"
     assert loaded.theme_id == "ancient_egypt_generated"
     assert loaded.style == "premium-historical"
-    assert loaded.resolve_asset_path("book_default_background") == "assets/generated/egypt/default.png"
+    assert loaded.resolve_asset_path("book_default_background") == str(tmp_path / "assets/generated/egypt/default.png")
     assert loaded.assets_for_block("Gods and Mythology").motif == "assets/generated/egypt/gods_motif.png"
+    assert loaded.background_for_block("Gods and Mythology") == str(tmp_path / "assets/generated/egypt/gods_bg.png")
+    assert loaded.cover_background_for_block("Gods and Mythology") == str(tmp_path / "assets/generated/egypt/gods_cover.png")
+    assert loaded.declared_asset_paths() == [
+        str(tmp_path / "assets/generated/egypt/default.png"),
+        str(tmp_path / "assets/generated/egypt/gods_bg.png"),
+        str(tmp_path / "assets/generated/egypt/gods_cover.png"),
+        str(tmp_path / "assets/generated/egypt/gods_motif.png"),
+    ]
     assert loaded.warnings == ["manual review recommended"]
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert payload["assets"]["book_default_background"]["provider"] == "mock"
