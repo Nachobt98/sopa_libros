@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import inspect
 import shutil
 import time
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from wordsearch.cli.ui import (
     create_progress,
@@ -81,6 +84,46 @@ def _apply_preview_limit(specs: list[PuzzleSpec], limit: int | None) -> list[Puz
 
 def _format_kwargs(options: ThematicGenerationOptions, layout) -> dict:
     return {"layout": layout} if options.format_name != DEFAULT_FORMAT_NAME else {}
+
+
+def _accepts_keyword(func: Callable[..., Any], keyword: str) -> bool:
+    """Return whether a callable accepts the given keyword argument."""
+    try:
+        signature = inspect.signature(func)
+    except (TypeError, ValueError):
+        return True
+    return any(
+        parameter.kind == inspect.Parameter.VAR_KEYWORD or name == keyword
+        for name, parameter in signature.parameters.items()
+    )
+
+
+def _generate_thematic_grids_with_optional_progress(
+    specs: list[PuzzleSpec],
+    options: ThematicGenerationOptions,
+    *,
+    progress_callback: Callable[[], None],
+):
+    kwargs: dict[str, Any] = {"seed": options.seed}
+    if _accepts_keyword(generate_thematic_grids, "progress_callback"):
+        kwargs["progress_callback"] = progress_callback
+    return generate_thematic_grids(
+        specs,
+        options.difficulty,
+        options.grid_size,
+        **kwargs,
+    )
+
+
+def _render_thematic_book_images_with_optional_progress(
+    render_kwargs: dict[str, Any],
+    *,
+    progress_callback: Callable[[], None],
+):
+    kwargs = dict(render_kwargs)
+    if _accepts_keyword(render_thematic_book_images, "progress_callback"):
+        kwargs["progress_callback"] = progress_callback
+    return render_thematic_book_images(**kwargs)
 
 
 def _print_grid_failures(failures: list[str]) -> None:
@@ -186,13 +229,12 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     print_section("Grid generation")
     with create_progress() as progress:
         task_id = progress.add_task("Generating grids", total=len(specs))
-        grid_batch = generate_thematic_grids(
+        grid_batch = _generate_thematic_grids_with_optional_progress(
             specs,
-            options.difficulty,
-            options.grid_size,
-            seed=options.seed,
+            options,
             progress_callback=lambda: progress.update(task_id, advance=1),
         )
+        progress.update(task_id, completed=len(specs))
     if grid_batch.has_failures:
         _print_grid_failures(grid_batch.failures)
         return None
@@ -213,10 +255,11 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     render_kwargs.update(format_kwargs)
     with create_progress() as progress:
         task_id = progress.add_task("Rendering puzzle and solution pages", total=len(generated_puzzles))
-        rendered_images = render_thematic_book_images(
-            **render_kwargs,
+        rendered_images = _render_thematic_book_images_with_optional_progress(
+            render_kwargs,
             progress_callback=lambda: progress.update(task_id, advance=1),
         )
+        progress.update(task_id, completed=len(generated_puzzles))
     if not rendered_images.is_complete:
         print_error("Not enough images were generated to create the PDF.")
         return None
@@ -301,7 +344,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         progress.update(task_id, advance=1)
 
         elapsed = time.monotonic() - preflight_start
-        if elapsed < MIN_PREFLIGHT_PROGRESS_SECONDS:
+        if progress.console.is_terminal and elapsed < MIN_PREFLIGHT_PROGRESS_SECONDS:
             time.sleep(MIN_PREFLIGHT_PROGRESS_SECONDS - elapsed)
 
     _print_preflight_report_summary(preflight_report)
