@@ -7,6 +7,7 @@ from pathlib import Path
 
 from wordsearch.cli.ui import (
     create_progress,
+    print_completion_animation,
     print_completion_panel,
     print_error,
     print_info,
@@ -313,6 +314,7 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         review_summary_path=review_summary_path,
         visual_regression_report_path=visual_regression_report_path,
     )
+    print_completion_animation()
     print_completion_panel(
         title="GENERATION COMPLETE",
         subtitle="All core production artifacts were created successfully.",
