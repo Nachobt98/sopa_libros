@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import List, Tuple
 
@@ -66,6 +67,7 @@ def render_thematic_book_images(
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
     asset_manifest: AssetManifest | None = None,
+    progress_callback: Callable[[], None] | None = None,
 ) -> RenderedBookImages:
     """Render all PNG page assets for the thematic book."""
     rendered = RenderedBookImages()
@@ -106,12 +108,9 @@ def render_thematic_book_images(
 
     current_block_name = ""
     block_index = 0
-    total_puzzles = len(generated_puzzles)
 
     for generated in generated_puzzles:
         spec = generated.spec
-        print(f"Renderizando puzzle {spec.index + 1}/{total_puzzles}: {spec.title}")
-
         block_name = getattr(spec, "block_name", "") or ""
         declared_bg_path = getattr(spec, "block_background", None)
         bg_path = _block_background(asset_manifest, block_name, declared_bg_path)
@@ -166,5 +165,7 @@ def render_thematic_book_images(
                 **layout_kwargs,
             )
         )
+        if progress_callback is not None:
+            progress_callback()
 
     return rendered
