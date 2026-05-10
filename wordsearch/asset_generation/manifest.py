@@ -119,9 +119,18 @@ class AssetManifest:
         )
         return str(manifest_path)
 
+    def resolve_path(self, raw_path: str | None) -> str | None:
+        """Resolve relative manifest paths from the manifest directory when known."""
+        if not raw_path:
+            return None
+        path = Path(raw_path)
+        if path.is_absolute() or self.manifest_path is None:
+            return str(path)
+        return str(Path(self.manifest_path).parent / path)
+
     def resolve_asset_path(self, asset_id: str) -> str | None:
         asset = self.assets.get(asset_id)
-        return asset.path if asset else None
+        return self.resolve_path(asset.path) if asset else None
 
     def assets_for_block(self, block_name: str | None) -> BlockAssetSet:
         if not block_name:
@@ -130,11 +139,31 @@ class AssetManifest:
 
     def background_for_block(self, block_name: str | None, fallback: str | None = None) -> str | None:
         block_assets = self.assets_for_block(block_name)
-        return block_assets.background or self.resolve_asset_path("book_default_background") or fallback
+        return self.resolve_path(block_assets.background) or self.resolve_asset_path("book_default_background") or fallback
 
     def cover_background_for_block(self, block_name: str | None, fallback: str | None = None) -> str | None:
         block_assets = self.assets_for_block(block_name)
-        return block_assets.cover_background or block_assets.background or self.resolve_asset_path("book_default_background") or fallback
+        return (
+            self.resolve_path(block_assets.cover_background)
+            or self.resolve_path(block_assets.background)
+            or self.resolve_asset_path("book_default_background")
+            or fallback
+        )
+
+    def declared_asset_paths(self) -> list[str]:
+        """Return unique resolved local paths declared by the manifest."""
+        paths: list[str] = []
+        seen: set[str] = set()
+        raw_paths = [asset.path for asset in self.assets.values()]
+        for block_assets in self.blocks.values():
+            raw_paths.extend([block_assets.background, block_assets.cover_background, block_assets.motif])
+        for raw_path in raw_paths:
+            resolved_path = self.resolve_path(raw_path)
+            if not resolved_path or resolved_path in seen:
+                continue
+            seen.add(resolved_path)
+            paths.append(resolved_path)
+        return paths
 
     def to_report_dict(self) -> dict[str, Any]:
         return {
