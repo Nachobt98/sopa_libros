@@ -424,7 +424,7 @@ def render_instructions_page(
     content_right = panel_right - int(42 * scale)
     badge_reserved = int(58 * scale) + int(24 * scale) + int(44 * scale)
     max_text_width = content_right - content_left - badge_reserved
-    card_height = int(148 * visual_scale * scale)
+    card_height = int(165 * visual_scale * scale)
     row_gap = int(24 * visual_scale * scale)
     block_height = _measure_instruction_block_height(
         draw,
