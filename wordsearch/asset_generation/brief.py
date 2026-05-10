@@ -61,6 +61,47 @@ _GENERIC_STOPWORDS = {
     "words",
 }
 
+_LAYOUT_TEST_STOPWORDS = {
+    "answer",
+    "baseline",
+    "balance",
+    "canvas",
+    "checks",
+    "column",
+    "columns",
+    "default",
+    "dense",
+    "design",
+    "fixture",
+    "grid",
+    "includes",
+    "keeping",
+    "layout",
+    "lengths",
+    "letters",
+    "list",
+    "longer",
+    "margin",
+    "mixed",
+    "normalized",
+    "output",
+    "panel",
+    "phrases",
+    "preflight",
+    "preview",
+    "print",
+    "readable",
+    "regressions",
+    "renderer",
+    "solution",
+    "spacing",
+    "stressing",
+    "typography",
+    "visible",
+    "without",
+    "wrapping",
+}
+
 _STYLE_HINTS = {
     "premium-historical": [
         "premium historical editorial style",
@@ -127,6 +168,8 @@ def build_book_visual_brief(
     style: str,
 ) -> BookVisualBrief:
     """Build a deterministic visual brief from book title, block titles, facts and words."""
+    subject = _derive_subject(book_title, [])
+    subject_keywords = _subject_keywords(subject)
     blocks = _group_specs_by_block(specs)
     all_text_parts = [book_title]
     for spec in specs:
@@ -134,9 +177,9 @@ def build_book_visual_brief(
         if spec.block_name:
             all_text_parts.append(spec.block_name)
 
-    keywords = _rank_keywords(all_text_parts, limit=MAX_KEYWORDS)
+    content_keywords = _rank_keywords(all_text_parts, limit=MAX_KEYWORDS, suppress_layout_terms=True)
+    keywords = _merge_keywords(subject_keywords, content_keywords, limit=MAX_KEYWORDS)
     style_hints = _STYLE_HINTS.get(style, _STYLE_HINTS["mock-editorial"])
-    subject = _derive_subject(book_title, keywords)
     tone = _derive_tone(style)
 
     block_briefs: list[BlockVisualBrief] = []
@@ -144,7 +187,12 @@ def build_book_visual_brief(
         block_text_parts = [block_name]
         for spec in block_specs:
             block_text_parts.extend([spec.title, spec.fact, *spec.words])
-        block_keywords = _rank_keywords(block_text_parts, limit=MAX_BLOCK_KEYWORDS)
+        block_content_keywords = _rank_keywords(
+            block_text_parts,
+            limit=MAX_BLOCK_KEYWORDS,
+            suppress_layout_terms=True,
+        )
+        block_keywords = _merge_keywords(subject_keywords, block_content_keywords, limit=MAX_BLOCK_KEYWORDS)
         block_briefs.append(
             BlockVisualBrief(
                 slug=slugify(block_name),
@@ -194,13 +242,14 @@ def _group_specs_by_block(specs: list[PuzzleSpec]) -> list[tuple[str, list[Puzzl
     return grouped
 
 
-def _rank_keywords(text_parts: Iterable[str], *, limit: int) -> list[str]:
+def _rank_keywords(text_parts: Iterable[str], *, limit: int, suppress_layout_terms: bool = False) -> list[str]:
     counter: Counter[str] = Counter()
     first_seen: dict[str, int] = {}
     order = 0
+    ignored = _GENERIC_STOPWORDS | (_LAYOUT_TEST_STOPWORDS if suppress_layout_terms else set())
     for part in text_parts:
         for token in _tokenize(part):
-            if token in _GENERIC_STOPWORDS or len(token) < 3:
+            if token in ignored or len(token) < 3:
                 continue
             counter[token] += 1
             first_seen.setdefault(token, order)
@@ -219,6 +268,23 @@ def _derive_subject(book_title: str, keywords: list[str]) -> str:
     if clean_title:
         return clean_title
     return " ".join(keywords[:3]) or "general knowledge"
+
+
+def _subject_keywords(subject: str) -> list[str]:
+    return _rank_keywords([subject], limit=6, suppress_layout_terms=False)
+
+
+def _merge_keywords(primary: list[str], secondary: list[str], *, limit: int) -> list[str]:
+    merged: list[str] = []
+    seen: set[str] = set()
+    for keyword in [*primary, *secondary]:
+        if keyword in seen:
+            continue
+        seen.add(keyword)
+        merged.append(keyword)
+        if len(merged) >= limit:
+            break
+    return merged
 
 
 def _derive_tone(style: str) -> str:
