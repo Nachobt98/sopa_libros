@@ -1,5 +1,6 @@
 import json
 
+from wordsearch.asset_generation.manifest import AssetManifest, ManifestAsset
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.page_plan import PagePlan
 from wordsearch.generation.book_assembly import RenderedBookImages
@@ -23,6 +24,7 @@ def make_options() -> ThematicGenerationOptions:
         clean_output=True,
         preview=True,
         limit=5,
+        theme_manifest_path="assets/generated/report_test/asset_manifest.json",
         output_dir="custom_output/report_test",
     )
 
@@ -48,6 +50,16 @@ def make_render_quality_report() -> RenderQualityReport:
     )
 
 
+def make_asset_manifest() -> AssetManifest:
+    return AssetManifest(
+        book_title="Report Test Book",
+        theme_id="report-test-generated",
+        style="premium-neutral",
+        assets={"book_default_background": ManifestAsset(type="background", path="background.png")},
+        manifest_path="assets/generated/report_test/asset_manifest.json",
+    )
+
+
 def test_build_thematic_generation_report_contains_expected_metadata(tmp_path):
     options = make_options()
     page_plan = PagePlan(
@@ -69,6 +81,7 @@ def test_build_thematic_generation_report_contains_expected_metadata(tmp_path):
         rendered_images=rendered_images,
         puzzle_count=3,
         render_quality_report=make_render_quality_report(),
+        asset_manifest=make_asset_manifest(),
     )
 
     assert report.schema_version == REPORT_SCHEMA_VERSION
@@ -81,6 +94,7 @@ def test_build_thematic_generation_report_contains_expected_metadata(tmp_path):
     assert report.preview is True
     assert report.limit == 5
     assert report.requested_output_dir == "custom_output/report_test"
+    assert report.theme_manifest_path == "assets/generated/report_test/asset_manifest.json"
     assert report.puzzle_count == 3
     assert report.block_count == 2
     assert report.content_image_count == 3
@@ -92,6 +106,9 @@ def test_build_thematic_generation_report_contains_expected_metadata(tmp_path):
     assert report.render_quality["warning_count"] == 1
     assert report.render_quality["by_code"] == {"FACT_TRUNCATED": 1}
     assert report.render_quality["warnings"][0]["code"] == "FACT_TRUNCATED"
+    assert report.asset_manifest is not None
+    assert report.asset_manifest["theme_id"] == "report-test-generated"
+    assert report.asset_manifest["asset_count"] == 1
 
 
 def test_build_thematic_generation_report_defaults_to_empty_render_quality(tmp_path):
@@ -119,6 +136,7 @@ def test_build_thematic_generation_report_defaults_to_empty_render_quality(tmp_p
         "by_code": {},
         "warnings": [],
     }
+    assert report.asset_manifest is None
 
 
 def test_write_generation_report_writes_json_file(tmp_path):
@@ -138,6 +156,7 @@ def test_write_generation_report_writes_json_file(tmp_path):
         ),
         puzzle_count=1,
         render_quality_report=make_render_quality_report(),
+        asset_manifest=make_asset_manifest(),
     )
 
     report_path = write_generation_report(report, output_dir=str(tmp_path))
@@ -150,4 +169,6 @@ def test_write_generation_report_writes_json_file(tmp_path):
     assert payload["preview"] is True
     assert payload["limit"] == 5
     assert payload["requested_output_dir"] == "custom_output/report_test"
+    assert payload["theme_manifest_path"] == "assets/generated/report_test/asset_manifest.json"
     assert payload["render_quality"]["warning_count"] == 1
+    assert payload["asset_manifest"]["theme_id"] == "report-test-generated"

@@ -18,6 +18,7 @@ dependencies = [
 [project.scripts]
 sopa-libros = "wordsearch.cli.simple:main"
 sopa-libros-thematic = "wordsearch.cli.thematic:main"
+sopa-libros-assets = "wordsearch.cli.assets:main"
 
 [project.optional-dependencies]
 dev = [

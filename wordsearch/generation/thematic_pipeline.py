@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import inspect
+import json
 import shutil
 import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from wordsearch.asset_generation.manifest import AssetManifest
 from wordsearch.cli.ui import (
     create_progress,
     print_completion_animation,
@@ -32,6 +34,7 @@ from wordsearch.generation.reporting import build_thematic_generation_report, wr
 from wordsearch.generation.review_summary import build_production_review_summary, write_production_review_summary
 from wordsearch.parsing.thematic import PuzzleParseError, parse_puzzle_file
 from wordsearch.rendering.pdf import generate_pdf
+from wordsearch.validation.asset_manifest import validate_asset_manifest_assets
 from wordsearch.validation.assets import validate_generation_assets
 from wordsearch.validation.kdp import build_kdp_preflight_report, write_kdp_preflight_report
 from wordsearch.validation.render_quality import build_render_quality_report
@@ -50,6 +53,8 @@ def print_run_summary(options: ThematicGenerationOptions) -> None:
     print_info(f"Grid: {options.grid_size}x{options.grid_size}")
     print_info(f"Theme: {options.theme_name}")
     print_info(f"Format: {options.format_name}")
+    if options.theme_manifest_path:
+        print_info(f"Theme manifest: {options.theme_manifest_path}")
     if options.seed is not None:
         print_info(f"Seed: {options.seed}")
     if options.output_dir:
@@ -84,6 +89,19 @@ def _apply_preview_limit(specs: list[PuzzleSpec], limit: int | None) -> list[Puz
 
 def _format_kwargs(options: ThematicGenerationOptions, layout) -> dict:
     return {"layout": layout} if options.format_name != DEFAULT_FORMAT_NAME else {}
+
+
+def _load_asset_manifest(path: str | None) -> AssetManifest | None:
+    if not path:
+        return None
+    try:
+        return AssetManifest.load(path)
+    except FileNotFoundError:
+        print_error(f"Theme manifest not found: {path}")
+        return None
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        print_error(f"Could not read theme manifest ({exc}): {path}")
+        return None
 
 
 def _accepts_keyword(func: Callable[..., Any], keyword: str) -> bool:
@@ -189,6 +207,9 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     theme = get_theme(options.theme_name)
     layout = get_format_preset(options.format_name).to_layout_config()
     format_kwargs = _format_kwargs(options, layout)
+    asset_manifest = _load_asset_manifest(options.theme_manifest_path)
+    if options.theme_manifest_path and asset_manifest is None:
+        return None
 
     print_section("Parsing")
     try:
@@ -220,6 +241,8 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
 
     print_section("Validation")
     asset_report = validate_generation_assets(output_dir=output_dir, optional_backgrounds=(spec.block_background for spec in specs))
+    if asset_manifest is not None:
+        asset_report.extend(validate_asset_manifest_assets(asset_manifest))
     asset_report.print_summary()
     if asset_report.has_errors:
         print_error("Fix the asset errors above and run the generator again.")
@@ -260,6 +283,8 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         "page_plan": page_plan,
         "output_dir": output_dir,
     }
+    if asset_manifest is not None:
+        render_kwargs["asset_manifest"] = asset_manifest
     if options.theme_name != DEFAULT_THEME_NAME:
         render_kwargs["theme"] = theme
     render_kwargs.update(format_kwargs)
@@ -328,15 +353,18 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         preflight_report_path = write_kdp_preflight_report(preflight_report, output_dir=output_dir)
         progress.update(task_id, advance=1)
 
-        report = build_thematic_generation_report(
-            options=options,
-            output_dir=output_dir,
-            pdf_path=pdf_final,
-            page_plan=page_plan,
-            rendered_images=rendered_images,
-            puzzle_count=len(generated_puzzles),
-            render_quality_report=render_quality_report,
-        )
+        report_kwargs = {
+            "options": options,
+            "output_dir": output_dir,
+            "pdf_path": pdf_final,
+            "page_plan": page_plan,
+            "rendered_images": rendered_images,
+            "puzzle_count": len(generated_puzzles),
+            "render_quality_report": render_quality_report,
+        }
+        if asset_manifest is not None:
+            report_kwargs["asset_manifest"] = asset_manifest
+        report = build_thematic_generation_report(**report_kwargs)
         report_path = write_generation_report(report, output_dir=output_dir)
         progress.update(task_id, advance=1)
 
