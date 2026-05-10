@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 
 from wordsearch.cli.grid_size_prompts import ask_grid_size
+from wordsearch.cli.ui import print_app_header, print_error, print_success
 from wordsearch.config.design import DEFAULT_THEME_NAME, get_theme, theme_names
 from wordsearch.config.formats import DEFAULT_FORMAT_NAME, format_names, get_format_preset
 from wordsearch.config.paths import DEFAULT_THEMATIC_WORDLIST
@@ -123,13 +124,15 @@ def _resolve_options(args: argparse.Namespace) -> ThematicGenerationOptions:
 
 
 def main() -> None:
-    print("=== Generador TEMÁTICO de Wordsearch para KDP ===")
+    print_app_header("Thematic KDP word search book generator")
     try:
         options = _resolve_options(_parse_args())
     except ValueError as exc:
-        print(f"ERROR: {exc}")
+        print_error(str(exc))
         return
+
     generate_thematic_book(options)
+    print_success("Thematic generation finished")
 
 
 if __name__ == "__main__":

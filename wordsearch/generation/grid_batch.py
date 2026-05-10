@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import List, Sequence
 
@@ -32,6 +33,7 @@ def generate_thematic_grids(
     grid_size: int,
     *,
     seed: int | None = None,
+    progress_callback: Callable[[], None] | None = None,
 ) -> GridBatchResult:
     """
     Generate every puzzle grid before rendering anything.
@@ -58,6 +60,8 @@ def generate_thematic_grids(
                 f"{len(words_for_grid)} palabra(s) en un grid {grid_size}x{grid_size}. "
                 f"{grid_result.reason}"
             )
+            if progress_callback is not None:
+                progress_callback()
             continue
 
         result.generated_puzzles.append(
@@ -68,5 +72,7 @@ def generate_thematic_grids(
                 placed_words=grid_result.placed_words,
             )
         )
+        if progress_callback is not None:
+            progress_callback()
 
     return result
