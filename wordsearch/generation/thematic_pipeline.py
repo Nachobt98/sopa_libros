@@ -5,6 +5,14 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+from wordsearch.cli.ui import (
+    create_progress,
+    print_error,
+    print_info,
+    print_section,
+    print_success,
+    print_warning,
+)
 from wordsearch.config.design import DEFAULT_THEME_NAME, get_theme
 from wordsearch.config.formats import DEFAULT_FORMAT_NAME, get_format_preset
 from wordsearch.config.paths import BASE_OUTPUT_DIR, build_book_output_dir, build_output_file
@@ -26,25 +34,25 @@ from wordsearch.utils.slug import slugify
 
 
 def print_run_summary(options: ThematicGenerationOptions) -> None:
-    print("\n=== Parametros de generacion ===")
-    print(f"Titulo: {options.book_title}")
-    print(f"Archivo: {options.puzzles_txt_path}")
-    print(f"Dificultad: {options.difficulty.name}")
-    print(f"Grid: {options.grid_size}x{options.grid_size}")
-    print(f"Tema: {options.theme_name}")
-    print(f"Formato: {options.format_name}")
+    print_section("Generation parameters")
+    print_info(f"Title: {options.book_title}")
+    print_info(f"Input file: {options.puzzles_txt_path}")
+    print_info(f"Difficulty: {options.difficulty.name}")
+    print_info(f"Grid: {options.grid_size}x{options.grid_size}")
+    print_info(f"Theme: {options.theme_name}")
+    print_info(f"Format: {options.format_name}")
     if options.seed is not None:
-        print(f"Seed: {options.seed}")
+        print_info(f"Seed: {options.seed}")
     if options.output_dir:
-        print(f"Output dir: {options.output_dir}")
+        print_info(f"Output dir: {options.output_dir}")
     if options.limit is not None:
-        print(f"Limite de puzzles: {options.limit}")
+        print_info(f"Puzzle limit: {options.limit}")
     if options.preview:
-        print("Modo: preview")
+        print_info("Mode: preview")
     if options.validate_only:
-        print("Modo: validate-only")
+        print_info("Mode: validate-only")
     if options.clean_output:
-        print("Modo: clean-output")
+        print_info("Clean output: enabled")
 
 
 def build_pdf_metadata(options: ThematicGenerationOptions) -> dict[str, str]:
@@ -70,27 +78,27 @@ def _format_kwargs(options: ThematicGenerationOptions, layout) -> dict:
 
 
 def _print_grid_failures(failures: list[str]) -> None:
-    print("\nERROR: uno o mas puzzles no se pudieron generar.")
-    print("No se generara el PDF para evitar indice y soluciones con paginas incorrectas.\n")
+    print_error("One or more puzzles could not be generated.")
+    print_warning("PDF creation was stopped to avoid incorrect TOC or solution page numbers.")
     for failure in failures:
-        print(f"- {failure}")
-    print("\nPrueba a aumentar el grid, subir la dificultad o reducir palabras en esos puzzles.")
+        print_error(failure)
+    print_info("Try increasing the grid size, using a harder difficulty, or reducing words in those puzzles.")
 
 
 def _clean_output_dir(output_dir: str) -> bool:
     output_path = Path(output_dir)
     if not output_path.exists():
-        print(f"\nClean output: no existe la carpeta de salida, no hay nada que limpiar: {output_path}")
+        print_info(f"Clean output: output folder does not exist yet: {output_path}")
         return True
     if not output_path.is_dir():
-        print(f"\nERROR: la ruta de salida existe pero no es un directorio: {output_path}")
+        print_error(f"Output path exists but is not a directory: {output_path}")
         return False
     try:
         shutil.rmtree(output_path)
     except OSError as exc:
-        print(f"\nERROR: no se pudo limpiar la carpeta de salida ({exc}): {output_path}")
+        print_error(f"Could not clean output folder ({exc}): {output_path}")
         return False
-    print(f"\nClean output: carpeta de salida eliminada: {output_path}")
+    print_success(f"Clean output: removed output folder: {output_path}")
     return True
 
 
@@ -100,26 +108,27 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     layout = get_format_preset(options.format_name).to_layout_config()
     format_kwargs = _format_kwargs(options, layout)
 
+    print_section("Parsing")
     try:
         specs = parse_puzzle_file(options.puzzles_txt_path)
     except FileNotFoundError:
-        print(f"ERROR: No se encuentra el fichero: {options.puzzles_txt_path}")
+        print_error(f"Input file not found: {options.puzzles_txt_path}")
         return None
     except PuzzleParseError as exc:
-        print(f"ERROR de parseo: {exc}")
+        print_error(f"Parse error: {exc}")
         return None
 
     if not specs:
-        print("No se ha encontrado ningun bloque [Puzzle] en el fichero.")
+        print_error("No [Puzzle] blocks were found in the input file.")
         return None
 
     parsed_count = len(specs)
     specs = _apply_preview_limit(specs, options.limit)
-    print(f"\nSe han cargado {parsed_count} puzzles del fichero.")
+    print_success(f"Loaded {parsed_count} puzzles from input file")
     if options.limit is not None:
-        print(f"Preview/limit activo: se generaran {len(specs)} puzzles.")
+        print_info(f"Preview/limit active: {len(specs)} puzzles will be generated")
     if not specs:
-        print("No queda ningun puzzle despues de aplicar el limite de generacion.")
+        print_error("No puzzles remain after applying the generation limit.")
         return None
 
     book_slug = slugify(options.book_title)
@@ -127,38 +136,62 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     if options.clean_output and not _clean_output_dir(output_dir):
         return None
 
+    print_section("Validation")
     asset_report = validate_generation_assets(output_dir=output_dir, optional_backgrounds=(spec.block_background for spec in specs))
     asset_report.print_summary()
     if asset_report.has_errors:
-        print("\nCorrige los errores de assets anteriores y vuelve a ejecutar el generador.")
+        print_error("Fix the asset errors above and run the generator again.")
         return None
+    print_success("Assets validated")
 
     validation_report = validate_thematic_specs(specs, options.grid_size, check_background_files=False)
     validation_report.print_summary()
     if validation_report.has_errors:
-        print("\nCorrige los errores anteriores y vuelve a ejecutar el generador.")
+        print_error("Fix the validation errors above and run the generator again.")
         return None
+    print_success("Puzzle specs validated")
     if options.validate_only:
-        print("\nOK: validacion completada. No se generaron grids, imagenes ni PDF.")
+        print_success("Validation completed. No grids, images or PDF were generated.")
         return None
 
-    print("\n=== Generando grids ===")
-    grid_batch = generate_thematic_grids(specs, options.difficulty, options.grid_size, seed=options.seed)
+    print_section("Grid generation")
+    with create_progress() as progress:
+        task_id = progress.add_task("Generating grids", total=len(specs))
+        grid_batch = generate_thematic_grids(
+            specs,
+            options.difficulty,
+            options.grid_size,
+            seed=options.seed,
+            progress_callback=lambda: progress.update(task_id, advance=1),
+        )
     if grid_batch.has_failures:
         _print_grid_failures(grid_batch.failures)
         return None
 
     generated_puzzles = grid_batch.generated_puzzles
-    print(f"OK: {len(generated_puzzles)} grids generados correctamente.")
+    print_success(f"Generated {len(generated_puzzles)} grids")
+
+    print_section("Rendering")
     page_plan = build_page_plan(generated_puzzles)
-    render_kwargs = {"book_title": options.book_title, "generated_puzzles": generated_puzzles, "page_plan": page_plan, "output_dir": output_dir}
+    render_kwargs = {
+        "book_title": options.book_title,
+        "generated_puzzles": generated_puzzles,
+        "page_plan": page_plan,
+        "output_dir": output_dir,
+    }
     if options.theme_name != DEFAULT_THEME_NAME:
         render_kwargs["theme"] = theme
     render_kwargs.update(format_kwargs)
-    rendered_images = render_thematic_book_images(**render_kwargs)
+    with create_progress() as progress:
+        task_id = progress.add_task("Rendering puzzle and solution pages", total=len(generated_puzzles))
+        rendered_images = render_thematic_book_images(
+            **render_kwargs,
+            progress_callback=lambda: progress.update(task_id, advance=1),
+        )
     if not rendered_images.is_complete:
-        print("No se han generado imagenes suficientes como para crear el PDF.")
+        print_error("Not enough images were generated to create the PDF.")
         return None
+    print_success(f"Rendered {len(rendered_images.content_imgs) + len(rendered_images.solution_imgs)} images")
 
     render_quality_report = build_render_quality_report(
         book_title=options.book_title,
@@ -171,19 +204,30 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
 
     visual_regression_report_path = None
     if options.preview:
+        print_section("Visual regression")
         visual_report = build_visual_regression_report([*rendered_images.content_imgs, *rendered_images.solution_imgs])
         visual_regression_report_path = write_visual_regression_report(visual_report, output_dir=output_dir)
+        print_success(f"Visual regression report generated: {visual_regression_report_path}")
 
+    print_section("PDF assembly")
     pdf_path = build_output_file(output_dir, f"{book_slug}.pdf")
     pdf_metadata = build_pdf_metadata(options)
     try:
-        pdf_final = generate_pdf(rendered_images.content_imgs, rendered_images.solution_imgs, outname=pdf_path, metadata=pdf_metadata, **format_kwargs)
+        pdf_final = generate_pdf(
+            rendered_images.content_imgs,
+            rendered_images.solution_imgs,
+            outname=pdf_path,
+            metadata=pdf_metadata,
+            **format_kwargs,
+        )
     except PermissionError:
-        print("\nERROR: No se pudo guardar el PDF.")
-        print("Cierra el archivo si esta abierto en un visor PDF/navegador y vuelve a intentarlo.")
-        print(f"Ruta bloqueada: {pdf_path}")
+        print_error("Could not save the PDF.")
+        print_warning("Close the file if it is open in a PDF viewer/browser and try again.")
+        print_info(f"Blocked path: {pdf_path}")
         return None
+    print_success(f"PDF generated: {pdf_final}")
 
+    print_section("Preflight and reports")
     preflight_report = build_kdp_preflight_report(
         pdf_path=pdf_final,
         output_dir=output_dir,
@@ -219,10 +263,9 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     review_summary.print_summary()
     review_summary_path = write_production_review_summary(review_summary, output_dir=output_dir)
 
-    print("\nPDF generado:", pdf_final)
-    print("Reporte generado:", report_path)
-    print("Preflight generado:", preflight_report_path)
-    print("Production review generado:", review_summary_path)
+    print_success(f"Generation report: {report_path}")
+    print_success(f"Preflight report: {preflight_report_path}")
+    print_success(f"Production review: {review_summary_path}")
     if visual_regression_report_path:
-        print("Visual regression generado:", visual_regression_report_path)
+        print_success(f"Visual regression report: {visual_regression_report_path}")
     return pdf_final
