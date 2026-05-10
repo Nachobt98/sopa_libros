@@ -21,6 +21,8 @@ APP_SUBTITLE = "Automated KDP puzzle book generator"
 
 PALETTE = {
     "primary": "#D6B36A",
+    "primary_light": "#F6D98B",
+    "primary_shadow": "#8C6A2F",
     "accent": "#7FB3D5",
     "success": "#7DCEA0",
     "warning": "#F5B041",
@@ -108,41 +110,79 @@ def print_key_value_table(title: str, rows: Sequence[tuple[str, str]]) -> None:
     console.print(table)
 
 
-def print_completion_animation() -> None:
-    """Show a short terminal-only completion animation before the final panel."""
+def print_completion_animation(duration_seconds: float = 10.0) -> None:
+    """Show a terminal-only golden book animation below the final report table."""
     if not console.is_terminal:
         return
 
-    track_width = 26
-    frames = [*range(0, track_width + 1, 2), *range(track_width - 2, 8, -2)]
-    messages = [
-        "Binding final pages",
-        "Sealing production reports",
-        "Preparing review handoff",
-        "Book package ready",
+    frames = [
+        [
+            "        ╭────────────╮        ",
+            "        │            │        ",
+            "        │ SOPALIBROS │        ",
+            "        │            │        ",
+            "        ╰────────────╯        ",
+        ],
+        [
+            "      ╭──────╮╭──────╮      ",
+            "      │      ││      │      ",
+            "      │ SOPA ││LIBROS│      ",
+            "      │      ││      │      ",
+            "      ╰──────╯╰──────╯      ",
+        ],
+        [
+            "    ╭──────╮    ╭──────╮    ",
+            "    │      │    │      │    ",
+            "    │ SOPA │ ╱╲ │LIBROS│    ",
+            "    │      │ ╲╱ │      │    ",
+            "    ╰──────╯    ╰──────╯    ",
+        ],
+        [
+            "  ╭──────╮        ╭──────╮  ",
+            "  │      │        │      │  ",
+            "  │ SOPA │  ╱──╲  │LIBROS│  ",
+            "  │      │  ╲──╱  │      │  ",
+            "  ╰──────╯        ╰──────╯  ",
+        ],
+        [
+            "    ╭──────╮    ╭──────╮    ",
+            "    │      │    │      │    ",
+            "    │ SOPA │ ╲╱ │LIBROS│    ",
+            "    │      │ ╱╲ │      │    ",
+            "    ╰──────╯    ╰──────╯    ",
+        ],
+        [
+            "      ╭──────╮╭──────╮      ",
+            "      │      ││      │      ",
+            "      │ SOPA ││LIBROS│      ",
+            "      │      ││      │      ",
+            "      ╰──────╯╰──────╯      ",
+        ],
     ]
+    frame_delay = 0.16
+    total_frames = max(1, int(duration_seconds / frame_delay))
 
-    with Live(console=console, refresh_per_second=12, transient=True) as live:
-        for index, position in enumerate(frames):
-            track = ["─"] * (track_width + 1)
-            track[position] = "◆"
-            marker = "".join(track)
-            message = messages[min(index * len(messages) // len(frames), len(messages) - 1)]
-            figure = Text()
-            figure.append("  ╭────╮\n", style=PALETTE["primary"])
-            figure.append(f"  │ {marker} │\n", style=PALETTE["accent"])
-            figure.append("  ╰────╯\n", style=PALETTE["primary"])
-            figure.append(f"\n{message}...", style=f"bold {PALETTE['muted']}")
+    with Live(console=console, refresh_per_second=12, transient=False) as live:
+        for index in range(total_frames):
+            frame = frames[index % len(frames)]
+            shimmer = PALETTE["primary_light"] if index % 4 in (0, 1) else PALETTE["primary"]
+
+            book = Text("\n".join(frame), style=f"bold {shimmer}")
+            thanks_shadow = Text("          T H A N K S", style=f"bold {PALETTE['primary_shadow']}")
+            thanks = Text("         T H A N K S", style=f"bold {shimmer}")
+            caption = Text("\n        Final package sealed", style=PALETTE["muted"])
+
             live.update(
-                Panel(
-                    Align.center(Group(figure)),
-                    title=Text("FINALIZING", style=f"bold {PALETTE['primary']}"),
-                    border_style=PALETTE["primary"],
-                    padding=(1, 4),
+                Align.center(
+                    Panel(
+                        Group(book, Text(""), thanks_shadow, thanks, caption),
+                        title=Text("THANK YOU", style=f"bold {shimmer}"),
+                        border_style=shimmer,
+                        padding=(1, 4),
+                    )
                 )
             )
-            time.sleep(0.08)
-    print_success("Production package ready")
+            time.sleep(frame_delay)
 
 
 def print_completion_panel(
