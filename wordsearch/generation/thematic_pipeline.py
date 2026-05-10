@@ -131,17 +131,6 @@ def _print_preflight_report_summary(preflight_report) -> None:
         print_success("No basic KDP preflight issues detected")
 
 
-def _print_report_paths(*, report_path: str, preflight_report_path: str, review_summary_path: str, visual_regression_report_path: str | None) -> None:
-    rows = [
-        ("Generation report", report_path),
-        ("Preflight report", preflight_report_path),
-        ("Production review", review_summary_path),
-    ]
-    if visual_regression_report_path:
-        rows.append(("Visual regression", visual_regression_report_path))
-    print_key_value_table("Generated reports", rows)
-
-
 def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     print_run_summary(options)
     theme = get_theme(options.theme_name)
@@ -316,12 +305,6 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
             time.sleep(MIN_PREFLIGHT_PROGRESS_SECONDS - elapsed)
 
     _print_preflight_report_summary(preflight_report)
-    _print_report_paths(
-        report_path=report_path,
-        preflight_report_path=preflight_report_path,
-        review_summary_path=review_summary_path,
-        visual_regression_report_path=visual_regression_report_path,
-    )
     print_completion_animation()
     print_completion_panel(
         title="GENERATION COMPLETE",
