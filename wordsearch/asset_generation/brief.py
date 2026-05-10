@@ -73,17 +73,26 @@ _LAYOUT_TEST_STOPWORDS = {
     "default",
     "dense",
     "design",
+    "deliberately",
+    "enough",
     "fixture",
+    "fun",
     "grid",
+    "included",
     "includes",
     "keeping",
+    "keeps",
     "layout",
     "lengths",
     "letters",
+    "lines",
     "list",
     "longer",
     "margin",
+    "medium",
     "mixed",
+    "multiple",
+    "needs",
     "normalized",
     "output",
     "panel",
@@ -95,13 +104,17 @@ _LAYOUT_TEST_STOPWORDS = {
     "regression",
     "regressions",
     "renderer",
+    "rhythm",
+    "run",
     "solution",
     "spacing",
     "stressing",
     "test",
     "testing",
+    "text",
     "typography",
     "validation",
+    "vertical",
     "verifies",
     "verify",
     "visible",
@@ -184,7 +197,11 @@ def build_book_visual_brief(
         if spec.block_name:
             all_text_parts.append(spec.block_name)
 
-    content_keywords = _rank_keywords(all_text_parts, limit=MAX_KEYWORDS, suppress_layout_terms=True)
+    content_keywords = [] if _looks_like_qa_fixture(all_text_parts) else _rank_keywords(
+        all_text_parts,
+        limit=MAX_KEYWORDS,
+        suppress_layout_terms=True,
+    )
     keywords = _merge_keywords(subject_keywords, content_keywords, limit=MAX_KEYWORDS)
     style_hints = _STYLE_HINTS.get(style, _STYLE_HINTS["mock-editorial"])
     tone = _derive_tone(style)
@@ -194,7 +211,7 @@ def build_book_visual_brief(
         block_text_parts = [block_name]
         for spec in block_specs:
             block_text_parts.extend([spec.title, spec.fact, *spec.words])
-        block_content_keywords = _rank_keywords(
+        block_content_keywords = [] if _looks_like_qa_fixture(block_text_parts) else _rank_keywords(
             block_text_parts,
             limit=MAX_BLOCK_KEYWORDS,
             suppress_layout_terms=True,
@@ -263,6 +280,14 @@ def _rank_keywords(text_parts: Iterable[str], *, limit: int, suppress_layout_ter
             order += 1
     ranked = sorted(counter, key=lambda token: (-counter[token], first_seen[token], token))
     return ranked[:limit]
+
+
+def _looks_like_qa_fixture(text_parts: Iterable[str]) -> bool:
+    tokens = _tokenize(" ".join(text_parts))
+    if not tokens:
+        return False
+    qa_hits = sum(1 for token in tokens if token in _LAYOUT_TEST_STOPWORDS)
+    return qa_hits >= 3
 
 
 def _tokenize(text: str) -> list[str]:
