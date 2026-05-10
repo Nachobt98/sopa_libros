@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Tuple
 
+from wordsearch.asset_generation.manifest import AssetManifest
 from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
 from wordsearch.config.paths import build_output_file
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
@@ -44,6 +45,18 @@ def _layout_kwargs(layout: LayoutConfig) -> dict:
     return {"layout": layout} if layout != DEFAULT_LAYOUT else {}
 
 
+def _global_background(asset_manifest: AssetManifest | None) -> str | None:
+    return asset_manifest.resolve_asset_path("book_default_background") if asset_manifest else None
+
+
+def _block_background(asset_manifest: AssetManifest | None, block_name: str, fallback: str | None) -> str | None:
+    return asset_manifest.background_for_block(block_name, fallback=fallback) if asset_manifest else fallback
+
+
+def _block_cover_background(asset_manifest: AssetManifest | None, block_name: str, fallback: str | None) -> str | None:
+    return asset_manifest.cover_background_for_block(block_name, fallback=fallback) if asset_manifest else fallback
+
+
 def render_thematic_book_images(
     *,
     book_title: str,
@@ -52,17 +65,19 @@ def render_thematic_book_images(
     output_dir: str,
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
+    asset_manifest: AssetManifest | None = None,
 ) -> RenderedBookImages:
     """Render all PNG page assets for the thematic book."""
     rendered = RenderedBookImages()
     layout_kwargs = _layout_kwargs(layout)
+    global_background = _global_background(asset_manifest)
 
     title_page_filename = build_output_file(output_dir, "00_title_page.png")
     rendered.content_imgs.append(
         render_title_page(
             book_title,
             filename=title_page_filename,
-            background_path=None,
+            background_path=global_background,
             theme=theme,
             **layout_kwargs,
         )
@@ -72,7 +87,7 @@ def render_thematic_book_images(
         render_table_of_contents(
             build_toc_entries(page_plan),
             output_dir=output_dir,
-            background_path=None,
+            background_path=global_background,
             theme=theme,
             **layout_kwargs,
         )
@@ -83,7 +98,7 @@ def render_thematic_book_images(
         render_instructions_page(
             book_title,
             filename=instr_filename,
-            background_path=None,
+            background_path=global_background,
             theme=theme,
             **layout_kwargs,
         )
@@ -98,7 +113,8 @@ def render_thematic_book_images(
         print(f"Renderizando puzzle {spec.index + 1}/{total_puzzles}: {spec.title}")
 
         block_name = getattr(spec, "block_name", "") or ""
-        bg_path = getattr(spec, "block_background", None)
+        declared_bg_path = getattr(spec, "block_background", None)
+        bg_path = _block_background(asset_manifest, block_name, declared_bg_path)
 
         if block_name and block_name != current_block_name:
             current_block_name = block_name
@@ -112,7 +128,7 @@ def render_thematic_book_images(
                     block_name=block_name,
                     block_index=block_index,
                     filename=block_cover_filename,
-                    background_path=bg_path,
+                    background_path=_block_cover_background(asset_manifest, block_name, declared_bg_path),
                     theme=theme,
                     **layout_kwargs,
                 )
