@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from secrets import SystemRandom
 
+from wordsearch.cli.ui import print_error, print_info, print_section, print_success, print_warning, track_progress
 from wordsearch.config.paths import BASE_OUTPUT_DIR, build_book_output_dir, build_output_file
 from wordsearch.domain.book import SimpleGenerationOptions
 from wordsearch.domain.grid import GridGenerationFailure
@@ -20,24 +21,23 @@ _WORD_SHUFFLER = SystemRandom()
 
 
 def _print_validation_errors(problems: list[dict], grid_size: int) -> None:
-    print("\n[ERROR] Se han encontrado palabras que no caben en el grid seleccionado.")
-    print(f"Tamaño del grid: {grid_size}x{grid_size}")
-    print("Revisa y corrige estas palabras en tus listas (o aumenta el tamaño de grid):\n")
+    print_error("Words were found that do not fit in the selected grid.")
+    print_info(f"Grid size: {grid_size}x{grid_size}")
+    print_info("Review these words in your lists, or increase the grid size:")
 
     by_list = {}
     for problem in problems:
         by_list.setdefault(problem["list_index"], []).append(problem)
 
     for list_index, items in by_list.items():
-        print(f"  - Lista #{list_index + 1}:")
+        print_warning(f"List #{list_index + 1}")
         for problem in items:
-            print(
-                f"      - '{problem['word']}' (limpia: '{problem['clean_word']}') "
-                f"tiene longitud {problem['length']} > {grid_size}"
+            print_error(
+                f"'{problem['word']}' (clean: '{problem['clean_word']}') "
+                f"has length {problem['length']} > {grid_size}"
             )
-        print()
 
-    print("Corrige el archivo de palabras (o el tamaño de grid) y vuelve a ejecutar el script.")
+    print_info("Fix the word source or grid size and run the script again.")
 
 
 def generate_simple_book(options: SimpleGenerationOptions) -> str | None:
@@ -49,13 +49,16 @@ def generate_simple_book(options: SimpleGenerationOptions) -> str | None:
     """
     slug = slugify(options.book_title)
     output_dir = build_book_output_dir(slug, BASE_OUTPUT_DIR)
-    print(f"\nLos archivos se guardarán en: {output_dir}")
+    print_section("Output")
+    print_info(f"Files will be saved in: {output_dir}")
 
+    print_section("Validation")
     asset_report = validate_generation_assets(output_dir=output_dir)
     asset_report.print_summary()
     if asset_report.has_errors:
-        print("\nCorrige los errores de assets anteriores y vuelve a ejecutar el generador.")
+        print_error("Fix the asset errors above and run the generator again.")
         return None
+    print_success("Assets validated")
 
     problems = validate_wordlists_for_grid(
         options.wordlists,
@@ -65,11 +68,17 @@ def generate_simple_book(options: SimpleGenerationOptions) -> str | None:
     if problems:
         _print_validation_errors(problems, options.grid_size)
         return None
+    print_success("Word lists validated")
 
     puzzles = []
     solutions = []
 
-    for puzzle_number in range(1, options.total_puzzles + 1):
+    print_section("Puzzle generation")
+    for puzzle_number in track_progress(
+        range(1, options.total_puzzles + 1),
+        description="Generating puzzle and solution pages",
+        total=options.total_puzzles,
+    ):
         words = list(options.wordlists[(puzzle_number - 1) % len(options.wordlists)])
         _WORD_SHUFFLER.shuffle(words)
 
@@ -80,12 +89,12 @@ def generate_simple_book(options: SimpleGenerationOptions) -> str | None:
             max_attempts=DEFAULT_MAX_GRID_ATTEMPTS,
         )
         if isinstance(grid_result, GridGenerationFailure):
-            print(
-                f"[Aviso] Puzzle #{puzzle_number}: no se ha podido generar un grid válido "
-                f"tras {DEFAULT_MAX_GRID_ATTEMPTS} intentos."
+            print_warning(
+                f"Puzzle #{puzzle_number}: no valid grid could be generated "
+                f"after {DEFAULT_MAX_GRID_ATTEMPTS} attempts."
             )
-            print("Probablemente hay demasiadas palabras o la lista es muy densa para este tamaño de grid.")
-            print("Ajusta manualmente la lista o el tamaño y vuelve a intentarlo.")
+            print_info("The word list is probably too dense for this grid size.")
+            print_info("Adjust the list or grid size and try again.")
             return None
 
         puzzle_img = render_page(
@@ -103,15 +112,17 @@ def generate_simple_book(options: SimpleGenerationOptions) -> str | None:
         )
         puzzles.append(puzzle_img)
         solutions.append(solution_img)
+    print_success(f"Generated {len(puzzles)} puzzles and {len(solutions)} solution pages")
 
+    print_section("PDF assembly")
     pdf_path = build_output_file(output_dir, f"{slug}.pdf")
     try:
         pdf_final = generate_pdf(puzzles, solutions, outname=pdf_path)
     except PermissionError:
-        print("\nERROR: No se pudo guardar el PDF.")
-        print("Cierra el archivo si está abierto en un visor PDF/navegador y vuelve a intentarlo.")
-        print(f"Ruta bloqueada: {pdf_path}")
+        print_error("Could not save the PDF.")
+        print_warning("Close the file if it is open in a PDF viewer/browser and try again.")
+        print_info(f"Blocked path: {pdf_path}")
         return None
 
-    print("\nPDF generado:", pdf_final)
+    print_success(f"PDF generated: {pdf_final}")
     return pdf_final

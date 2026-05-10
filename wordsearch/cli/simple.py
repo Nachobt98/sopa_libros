@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from wordsearch.cli.grid_size_prompts import ask_grid_size
+from wordsearch.cli.ui import print_app_header, print_info, print_success
 from wordsearch.cli.wordlist_prompts import prompt_wordlists
 from wordsearch.domain.book import SimpleGenerationOptions
 from wordsearch.generation.difficulty import DifficultyLevel, difficulty_settings
@@ -46,6 +47,8 @@ def _ask_total_puzzles(source_type: str, wordlist_count: int) -> int:
 
 
 def main() -> None:
+    print_app_header("Simple word search book generator")
+
     book_title = _ask_book_title()
     difficulty = _ask_difficulty()
     grid_size = ask_grid_size(difficulty_settings[difficulty])
@@ -57,6 +60,12 @@ def main() -> None:
     wordlists, source_type = prompt_wordlists(predefined_wordlists)
     total_puzzles = _ask_total_puzzles(source_type, len(wordlists))
 
+    print_info(f"Book title: {book_title}")
+    print_info(f"Difficulty: {difficulty.value.upper()}")
+    print_info(f"Grid size: {grid_size}")
+    print_info(f"Total puzzles: {total_puzzles}")
+    print_info("Starting simple generation pipeline...")
+
     generate_simple_book(
         SimpleGenerationOptions(
             book_title=book_title,
@@ -66,3 +75,4 @@ def main() -> None:
             total_puzzles=total_puzzles,
         )
     )
+    print_success("Simple generation finished")
