@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from wordsearch.asset_generation.manifest import AssetManifest
 from wordsearch.config.paths import build_output_file
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.page_plan import PagePlan
@@ -15,7 +16,7 @@ from wordsearch.generation.book_assembly import RenderedBookImages
 from wordsearch.validation.render_quality import RenderQualityReport
 
 REPORT_FILENAME = "generation_report.json"
-REPORT_SCHEMA_VERSION = 4
+REPORT_SCHEMA_VERSION = 5
 
 
 @dataclass(frozen=True)
@@ -35,6 +36,7 @@ class ThematicGenerationReport:
     requested_output_dir: str | None
     theme_name: str
     format_name: str
+    theme_manifest_path: str | None
     puzzle_count: int
     block_count: int
     content_image_count: int
@@ -43,6 +45,7 @@ class ThematicGenerationReport:
     output_dir: str
     pdf_path: str
     render_quality: dict[str, Any]
+    asset_manifest: dict[str, Any] | None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -57,6 +60,7 @@ def build_thematic_generation_report(
     rendered_images: RenderedBookImages,
     puzzle_count: int,
     render_quality_report: RenderQualityReport | None = None,
+    asset_manifest: AssetManifest | None = None,
 ) -> ThematicGenerationReport:
     """Build a serializable report for a successful thematic generation run."""
     render_quality = (
@@ -84,6 +88,7 @@ def build_thematic_generation_report(
         requested_output_dir=options.output_dir,
         theme_name=options.theme_name,
         format_name=options.format_name,
+        theme_manifest_path=options.theme_manifest_path,
         puzzle_count=puzzle_count,
         block_count=len(page_plan.blocks_in_order),
         content_image_count=len(rendered_images.content_imgs),
@@ -92,6 +97,7 @@ def build_thematic_generation_report(
         output_dir=output_dir,
         pdf_path=pdf_path,
         render_quality=render_quality,
+        asset_manifest=asset_manifest.to_report_dict() if asset_manifest is not None else None,
     )
 
 
