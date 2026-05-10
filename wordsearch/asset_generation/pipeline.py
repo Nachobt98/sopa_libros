@@ -1,8 +1,8 @@
 """Local asset generation pipeline used to bootstrap theme manifests.
 
-This is intentionally deterministic and provider-free. It creates valid,
-print-sized placeholder PNGs and an asset manifest with the same contract that a
-future AI provider will write after generating and normalizing images.
+This is intentionally deterministic and provider-free by default. It creates raw
+provider images, normalizes them into renderer-ready PNGs and writes an asset
+manifest with the same contract that a future AI provider will satisfy.
 """
 
 from __future__ import annotations
@@ -10,10 +10,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageDraw
-
 from wordsearch.asset_generation.brief import BlockVisualBrief, BookVisualBrief, build_book_visual_brief
 from wordsearch.asset_generation.manifest import AssetManifest, BlockAssetSet, ManifestAsset
+from wordsearch.asset_generation.normalizer import normalize_generated_asset
+from wordsearch.asset_generation.providers import LOCAL_PLACEHOLDER_PROVIDER, ImageProvider, get_image_provider
+from wordsearch.asset_generation.requests import GeneratedImage, ImageGenerationRequest
 from wordsearch.config.design import DEFAULT_LAYOUT
 from wordsearch.parsing.thematic import parse_puzzle_file
 from wordsearch.utils.slug import slugify
@@ -45,46 +46,107 @@ def generate_local_assets_for_book(
     output_dir: str | Path | None = None,
     style: str = DEFAULT_ASSET_STYLE,
     page_size: tuple[int, int] | None = None,
+    provider_name: str = LOCAL_PLACEHOLDER_PROVIDER,
+    provider: ImageProvider | None = None,
 ) -> GeneratedAssetSet:
-    """Generate placeholder image assets and an asset manifest for a thematic book."""
+    """Generate image assets and an asset manifest for a thematic book."""
     specs = parse_puzzle_file(input_path)
     visual_brief = build_book_visual_brief(book_title=title, specs=specs, style=style)
     target_dir = Path(output_dir) if output_dir else build_default_asset_output_dir(title)
+    raw_dir = target_dir / "raw"
     processed_dir = target_dir / "processed"
+    raw_dir.mkdir(parents=True, exist_ok=True)
     processed_dir.mkdir(parents=True, exist_ok=True)
 
     page_size = page_size or (DEFAULT_LAYOUT.page_width_px, DEFAULT_LAYOUT.page_height_px)
+    image_provider = provider or get_image_provider(provider_name)
     blocks = visual_brief.blocks
 
-    default_background = processed_dir / "default_background.png"
-    _write_editorial_background(default_background, page_size, label="book", variant=0)
-
     default_prompt = _book_background_prompt(visual_brief)
+    default_request = ImageGenerationRequest(
+        asset_id="book_default_background",
+        asset_type="background",
+        prompt=default_prompt,
+        negative_prompt=_negative_prompt(visual_brief),
+        output_size=page_size,
+        metadata={"label": "book", "variant": "0"},
+    )
+    default_raw = _generate_raw_asset(
+        provider=image_provider,
+        request=default_request,
+        raw_path=raw_dir / "book_default_background.png",
+    )
+    default_background = normalize_generated_asset(
+        default_raw.path,
+        processed_dir / "default_background.png",
+        page_size,
+    )
+
     block_manifest: dict[str, BlockAssetSet] = {}
+    raw_assets: list[dict] = [default_raw.to_dict()]
     prompt_plan = {
         "book_title": title,
         "style": style,
+        "provider": image_provider.name,
         "visual_brief": visual_brief.to_dict(),
         "assets": [
             {
-                "id": "book_default_background",
-                "type": "background",
+                "id": default_request.asset_id,
+                "type": default_request.asset_type,
                 "target": "book",
-                "prompt": default_prompt,
-                "negative_prompt": _negative_prompt(visual_brief),
+                "prompt": default_request.prompt,
+                "negative_prompt": default_request.negative_prompt,
+                "raw_path": str(Path(default_raw.path).relative_to(target_dir)),
+                "processed_path": str(Path(default_background).relative_to(target_dir)),
             }
         ],
         "blocks": [],
+        "raw_assets": raw_assets,
     }
 
     for index, block_brief in enumerate(blocks, start=1):
-        block_background = processed_dir / f"block_{index:02d}_{block_brief.slug}_background.png"
-        block_cover = processed_dir / f"block_{index:02d}_{block_brief.slug}_cover.png"
-        _write_editorial_background(block_background, page_size, label=block_brief.name, variant=index)
-        _write_editorial_background(block_cover, page_size, label=f"cover {block_brief.name}", variant=index + 100)
+        background_request = ImageGenerationRequest(
+            asset_id=f"block_{index:02d}_{block_brief.slug}_background",
+            asset_type="background",
+            prompt=_block_background_prompt(visual_brief, block_brief),
+            negative_prompt=_negative_prompt(visual_brief),
+            output_size=page_size,
+            metadata={"label": block_brief.name, "variant": str(index)},
+        )
+        cover_request = ImageGenerationRequest(
+            asset_id=f"block_{index:02d}_{block_brief.slug}_cover",
+            asset_type="cover_background",
+            prompt=_block_cover_prompt(visual_brief, block_brief),
+            negative_prompt=_negative_prompt(visual_brief),
+            output_size=page_size,
+            metadata={"label": f"cover {block_brief.name}", "variant": str(index + 100)},
+        )
+
+        background_raw = _generate_raw_asset(
+            provider=image_provider,
+            request=background_request,
+            raw_path=raw_dir / f"{background_request.asset_id}.png",
+        )
+        cover_raw = _generate_raw_asset(
+            provider=image_provider,
+            request=cover_request,
+            raw_path=raw_dir / f"{cover_request.asset_id}.png",
+        )
+        raw_assets.extend([background_raw.to_dict(), cover_raw.to_dict()])
+
+        block_background = normalize_generated_asset(
+            background_raw.path,
+            processed_dir / f"block_{index:02d}_{block_brief.slug}_background.png",
+            page_size,
+        )
+        block_cover = normalize_generated_asset(
+            cover_raw.path,
+            processed_dir / f"block_{index:02d}_{block_brief.slug}_cover.png",
+            page_size,
+        )
         block_manifest[block_brief.slug] = BlockAssetSet(
-            background=str(block_background.relative_to(target_dir)),
-            cover_background=str(block_cover.relative_to(target_dir)),
+            background=str(Path(block_background).relative_to(target_dir)),
+            cover_background=str(Path(block_cover).relative_to(target_dir)),
         )
         prompt_plan["blocks"].append(
             {
@@ -93,9 +155,13 @@ def generate_local_assets_for_book(
                 "keywords": block_brief.keywords,
                 "sample_titles": block_brief.sample_titles,
                 "visual_direction": block_brief.visual_direction,
-                "background_prompt": _block_background_prompt(visual_brief, block_brief),
-                "cover_prompt": _block_cover_prompt(visual_brief, block_brief),
-                "negative_prompt": _negative_prompt(visual_brief),
+                "background_prompt": background_request.prompt,
+                "cover_prompt": cover_request.prompt,
+                "negative_prompt": background_request.negative_prompt,
+                "background_raw_path": str(Path(background_raw.path).relative_to(target_dir)),
+                "background_processed_path": str(Path(block_background).relative_to(target_dir)),
+                "cover_raw_path": str(Path(cover_raw.path).relative_to(target_dir)),
+                "cover_processed_path": str(Path(block_cover).relative_to(target_dir)),
             }
         )
 
@@ -106,14 +172,14 @@ def generate_local_assets_for_book(
         assets={
             "book_default_background": ManifestAsset(
                 type="background",
-                path=str(default_background.relative_to(target_dir)),
+                path=str(Path(default_background).relative_to(target_dir)),
                 prompt=default_prompt,
-                provider="local-placeholder",
-                notes="Deterministic placeholder asset. Replace with normalized AI output later.",
+                provider=image_provider.name,
+                notes="Generated raw asset normalized into processed PNG for renderer consumption.",
             )
         },
         blocks=block_manifest,
-        warnings=["Local placeholder assets generated; review/replace before production publishing."],
+        warnings=["Generated assets should be reviewed before production publishing."],
     )
 
     manifest_path = manifest.save(target_dir / "asset_manifest.json")
@@ -129,50 +195,13 @@ def generate_local_assets_for_book(
     )
 
 
-def _write_editorial_background(path: Path, size: tuple[int, int], *, label: str, variant: int) -> None:
-    """Write a subtle valid PNG suitable for testing manifest-based rendering."""
-    width, height = size
-    base = _variant_color(variant)
-    image = Image.new("RGB", size, base)
-    draw = ImageDraw.Draw(image)
-
-    line_color = tuple(max(channel - 18, 0) for channel in base)
-    step = max(width // 16, 80)
-    for x in range(-height, width + height, step):
-        draw.line((x, 0, x + height, height), fill=line_color, width=3)
-
-    border_color = tuple(max(channel - 42, 0) for channel in base)
-    margin = _safe_margin_for_size(width, height)
-    draw.rounded_rectangle(
-        (margin, margin, width - margin, height - margin),
-        outline=border_color,
-        width=max(1, min(6, margin // 2)),
-        radius=min(36, margin),
-    )
-
-    label_color = tuple(max(channel - 72, 0) for channel in base)
-    label_y = max(margin, height - margin - 42)
-    draw.text((margin + 8, label_y), label[:80], fill=label_color)
-    image.save(path)
-
-
-def _safe_margin_for_size(width: int, height: int) -> int:
-    """Return a margin that cannot invert the drawable rectangle on tiny fixtures."""
-    shortest_side = max(1, min(width, height))
-    preferred_margin = max(shortest_side // 18, 8)
-    max_margin = max(1, (shortest_side - 2) // 2)
-    return min(preferred_margin, max_margin)
-
-
-def _variant_color(variant: int) -> tuple[int, int, int]:
-    palettes = [
-        (245, 239, 225),
-        (238, 232, 218),
-        (242, 236, 224),
-        (235, 230, 218),
-        (246, 241, 231),
-    ]
-    return palettes[variant % len(palettes)]
+def _generate_raw_asset(
+    *,
+    provider: ImageProvider,
+    request: ImageGenerationRequest,
+    raw_path: Path,
+) -> GeneratedImage:
+    return provider.generate(request, raw_path)
 
 
 def _book_background_prompt(visual_brief: BookVisualBrief) -> str:

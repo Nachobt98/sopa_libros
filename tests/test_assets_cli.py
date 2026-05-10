@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from wordsearch.asset_generation.pipeline import GeneratedAssetSet
+from wordsearch.asset_generation.providers import LOCAL_PLACEHOLDER_PROVIDER
 from wordsearch.cli import assets
 from wordsearch.parsing.thematic import PuzzleParseError
 
@@ -20,6 +21,8 @@ def test_parse_args_accepts_assets_cli_options(monkeypatch):
             "assets/generated/egypt",
             "--style",
             "premium-historical",
+            "--provider",
+            LOCAL_PLACEHOLDER_PROVIDER,
         ],
     )
 
@@ -29,6 +32,7 @@ def test_parse_args_accepts_assets_cli_options(monkeypatch):
     assert args.input_path == "wordlists/egypt.txt"
     assert args.output_dir == "assets/generated/egypt"
     assert args.style == "premium-historical"
+    assert args.provider == LOCAL_PLACEHOLDER_PROVIDER
 
 
 def test_main_prints_generated_asset_summary(monkeypatch, capsys):
@@ -40,6 +44,7 @@ def test_main_prints_generated_asset_summary(monkeypatch, capsys):
             input_path="wordlists/book.txt",
             output_dir="assets/generated/book",
             style="mock-editorial",
+            provider=LOCAL_PLACEHOLDER_PROVIDER,
         ),
     )
 
@@ -49,6 +54,7 @@ def test_main_prints_generated_asset_summary(monkeypatch, capsys):
             "input_path": "wordlists/book.txt",
             "output_dir": "assets/generated/book",
             "style": "mock-editorial",
+            "provider_name": LOCAL_PLACEHOLDER_PROVIDER,
         }
         return GeneratedAssetSet(
             output_dir="assets/generated/book",
@@ -77,6 +83,7 @@ def test_main_handles_missing_input_file(monkeypatch, capsys):
             input_path="missing.txt",
             output_dir=None,
             style="mock-editorial",
+            provider=LOCAL_PLACEHOLDER_PROVIDER,
         ),
     )
     monkeypatch.setattr(
@@ -100,6 +107,7 @@ def test_main_handles_parse_errors(monkeypatch, capsys):
             input_path="bad.txt",
             output_dir=None,
             style="mock-editorial",
+            provider=LOCAL_PLACEHOLDER_PROVIDER,
         ),
     )
     monkeypatch.setattr(
