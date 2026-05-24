@@ -151,6 +151,31 @@ button {
   line-height: 1.15;
 }
 
+.document-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.document-state {
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: var(--surface);
+  font-weight: 750;
+}
+
+.document-state.is-dirty {
+  color: var(--warn);
+}
+
+.document-state.is-saved {
+  color: var(--accent-strong);
+}
+
 .topbar-actions,
 .run-toolbar {
   display: flex;

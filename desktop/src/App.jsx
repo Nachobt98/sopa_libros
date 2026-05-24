@@ -1,26 +1,26 @@
 import { useMemo, useState } from "react";
-import { buildProjectCommands, defaultProjectPath, projectToEngineRequest } from "../app/engineBridge.js";
+import { buildProjectCommands } from "../app/engineBridge.js";
+import { DocumentStatus } from "./components/DocumentStatus.jsx";
 import { PreviewRail } from "./components/PreviewRail.jsx";
 import { ProjectPanel } from "./components/ProjectPanel.jsx";
 import { RequestPanel } from "./components/RequestPanel.jsx";
 import { RunPanel } from "./components/RunPanel.jsx";
 import { Sidebar } from "./components/Sidebar.jsx";
 import { useEngineRuntime } from "./hooks/useEngineRuntime.js";
+import { useProjectDocument } from "./hooks/useProjectDocument.js";
 import { useProjectRun } from "./hooks/useProjectRun.js";
-import { demoProject, normalizeProject } from "./model/project.js";
-import { validateProject } from "./model/projectValidation.js";
 
 export default function App() {
   const [activePanel, setActivePanel] = useState("project-panel");
-  const [project, setProject] = useState(demoProject);
   const [toast, setToast] = useState("");
+  const projectDocument = useProjectDocument();
   const { runtimeLabel } = useEngineRuntime();
   const runState = useProjectRun(showToast);
 
-  const normalizedProject = useMemo(() => normalizeProject(project), [project]);
-  const validation = useMemo(() => validateProject(project), [project]);
-  const request = useMemo(() => projectToEngineRequest(normalizedProject), [normalizedProject]);
-  const commands = useMemo(() => buildProjectCommands(normalizedProject, defaultProjectPath(normalizedProject)), [normalizedProject]);
+  const commands = useMemo(
+    () => buildProjectCommands(projectDocument.normalizedProject, projectDocument.projectPath),
+    [projectDocument.normalizedProject, projectDocument.projectPath]
+  );
 
   function showToast(message) {
     setToast(message);
@@ -29,9 +29,8 @@ export default function App() {
   }
 
   async function copyProject() {
-    const payload = JSON.stringify(normalizedProject, null, 2);
     try {
-      await navigator.clipboard.writeText(payload);
+      await navigator.clipboard.writeText(projectDocument.projectJson);
       showToast("Project JSON copied.");
     } catch {
       showToast("Clipboard unavailable in this preview.");
@@ -46,10 +45,11 @@ export default function App() {
         <header className="topbar">
           <div>
             <p className="eyebrow">Project file</p>
-            <h2 id="page-title">{normalizedProject.book_title}</h2>
+            <h2 id="page-title">{projectDocument.normalizedProject.book_title}</h2>
+            <DocumentStatus isDirty={projectDocument.isDirty} projectPath={projectDocument.projectPath} />
           </div>
           <div className="topbar-actions">
-            <button id="reset-demo" className="secondary-button" type="button" onClick={() => setProject(demoProject)}>
+            <button id="reset-demo" className="secondary-button" type="button" onClick={projectDocument.resetDemoProject}>
               Reset demo
             </button>
             <button id="copy-project" className="primary-button" type="button" onClick={copyProject}>
@@ -60,23 +60,27 @@ export default function App() {
 
         <ProjectPanel
           isVisible={activePanel === "project-panel"}
-          project={project}
-          setProject={setProject}
-          validation={validation}
+          project={projectDocument.project}
+          setProject={projectDocument.setProject}
+          validation={projectDocument.validation}
         />
-        <RequestPanel isVisible={activePanel === "request-panel"} normalizedProject={normalizedProject} request={request} />
+        <RequestPanel
+          isVisible={activePanel === "request-panel"}
+          normalizedProject={projectDocument.normalizedProject}
+          request={projectDocument.request}
+        />
         <RunPanel
           commands={commands}
           events={runState.events}
           isRunning={runState.isRunning}
           isVisible={activePanel === "run-panel"}
           onClearEvents={runState.clearEvents}
-          onSimulateRun={() => runState.simulateRun(normalizedProject)}
-          validation={validation}
+          onSimulateRun={() => runState.simulateRun(projectDocument.normalizedProject)}
+          validation={projectDocument.validation}
         />
       </main>
 
-      <PreviewRail title={normalizedProject.book_title} toast={toast} />
+      <PreviewRail title={projectDocument.normalizedProject.book_title} toast={toast} />
     </div>
   );
 }
