@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { buildProjectCommands } from "../app/engineBridge.js";
 import { AssetsPanel } from "./components/AssetsPanel.jsx";
 import { ContentPanel } from "./components/ContentPanel.jsx";
+import { DashboardPanel } from "./components/DashboardPanel.jsx";
 import { DocumentStatus } from "./components/DocumentStatus.jsx";
 import { PreviewRail } from "./components/PreviewRail.jsx";
 import { ProjectPanel } from "./components/ProjectPanel.jsx";
@@ -16,7 +17,7 @@ import { useProjectFileActions } from "./hooks/useProjectFileActions.js";
 import { useProjectRun } from "./hooks/useProjectRun.js";
 
 export default function App() {
-  const [activePanel, setActivePanel] = useState("project-panel");
+  const [activePanel, setActivePanel] = useState("home-panel");
   const [toast, setToast] = useState("");
   const projectDocument = useProjectDocument();
   const contentState = useContentFile(showToast);
@@ -52,20 +53,20 @@ export default function App() {
   async function copyProject() {
     try {
       await navigator.clipboard.writeText(projectDocument.projectJson);
-      showToast("Project JSON copied.");
+      showToast("JSON del proyecto copiado.");
     } catch {
-      showToast("Clipboard unavailable in this preview.");
+      showToast("El portapapeles no está disponible.");
     }
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${activePanel === "home-panel" ? "is-home" : ""}`}>
       <Sidebar activePanel={activePanel} runtimeLabel={runtimeLabel} setActivePanel={setActivePanel} />
 
       <main className="workspace">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Project file</p>
+            <p className="eyebrow">Proyecto actual</p>
             <h2 id="page-title">{projectDocument.normalizedProject.book_title}</h2>
             <DocumentStatus isDirty={projectDocument.isDirty} projectPath={projectDocument.projectPath} />
           </div>
@@ -87,10 +88,10 @@ export default function App() {
               onClick={fileActions.openProject}
               disabled={!fileActions.canLoad || fileActions.isLoading}
             >
-              {fileActions.isLoading ? "Opening..." : "Open"}
+              {fileActions.isLoading ? "Abriendo..." : "Abrir"}
             </button>
             <button id="reset-demo" className="secondary-button" type="button" onClick={projectDocument.resetDemoProject}>
-              Reset demo
+              Reiniciar demo
             </button>
             <button
               id="save-project"
@@ -99,14 +100,25 @@ export default function App() {
               onClick={fileActions.saveDraft}
               disabled={!fileActions.canSave || fileActions.isSaving}
             >
-              {fileActions.isSaving ? "Saving..." : "Save draft"}
+              {fileActions.isSaving ? "Guardando..." : "Guardar"}
             </button>
             <button id="copy-project" className="primary-button" type="button" onClick={copyProject}>
-              Copy project JSON
+              Copiar JSON
             </button>
           </div>
         </header>
 
+        <DashboardPanel
+          contentState={contentState}
+          fileActions={fileActions}
+          isVisible={activePanel === "home-panel"}
+          onCopyProject={copyProject}
+          onNavigate={setActivePanel}
+          project={projectDocument.normalizedProject}
+          projectDocument={projectDocument}
+          runState={runState}
+          validation={projectDocument.validation}
+        />
         <ProjectPanel
           isVisible={activePanel === "project-panel"}
           project={projectDocument.project}
@@ -147,7 +159,7 @@ export default function App() {
         />
       </main>
 
-      <PreviewRail title={projectDocument.normalizedProject.book_title} toast={toast} />
+      {activePanel === "home-panel" ? null : <PreviewRail title={projectDocument.normalizedProject.book_title} toast={toast} />}
     </div>
   );
 }

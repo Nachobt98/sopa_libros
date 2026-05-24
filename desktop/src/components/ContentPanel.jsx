@@ -11,8 +11,8 @@ export function ContentPanel({
     <section id="content-panel" className={`panel ${isVisible ? "is-visible" : ""}`} aria-labelledby="content-heading">
       <div className="section-heading">
         <div>
-          <h3 id="content-heading">Content</h3>
-          <p>Edit the thematic TXT used by validation and generation.</p>
+          <h3 id="content-heading">Contenido</h3>
+          <p>Edita el TXT temático que usa la validación y la generación.</p>
         </div>
         <div className="content-actions">
           <button
@@ -22,7 +22,7 @@ export function ContentPanel({
             onClick={() => contentState.loadContent(inputPath)}
             disabled={!canLoad}
           >
-            {contentState.isLoadingContent ? "Loading..." : "Load TXT"}
+            {contentState.isLoadingContent ? "Cargando..." : "Cargar TXT"}
           </button>
           <button
             id="save-content"
@@ -31,14 +31,14 @@ export function ContentPanel({
             onClick={() => contentState.saveContent(inputPath)}
             disabled={!canSave}
           >
-            {contentState.isSavingContent ? "Saving..." : "Save TXT"}
+            {contentState.isSavingContent ? "Guardando..." : "Guardar TXT"}
           </button>
         </div>
       </div>
 
       <div className="content-status">
-        <span>{contentState.isDirty ? "Unsaved content" : "Content saved"}</span>
-        <code>{loadedLabel}</code>
+        <span>{contentState.isDirty ? "Contenido sin guardar" : "Contenido guardado"}</span>
+        <code>{loadedLabel === "No content loaded" ? "Sin contenido cargado" : loadedLabel}</code>
       </div>
 
       <textarea
