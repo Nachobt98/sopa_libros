@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from wordsearch.asset_generation.pipeline import GeneratedAssetSet
-from wordsearch.asset_generation.providers import LOCAL_PLACEHOLDER_PROVIDER
+from wordsearch.asset_generation.providers import LOCAL_PLACEHOLDER_PROVIDER, OPENAI_PROVIDER
 from wordsearch.cli import assets
 from wordsearch.parsing.thematic import PuzzleParseError
 
@@ -22,7 +22,7 @@ def test_parse_args_accepts_assets_cli_options(monkeypatch):
             "--style",
             "premium-historical",
             "--provider",
-            LOCAL_PLACEHOLDER_PROVIDER,
+            OPENAI_PROVIDER,
         ],
     )
 
@@ -32,7 +32,7 @@ def test_parse_args_accepts_assets_cli_options(monkeypatch):
     assert args.input_path == "wordlists/egypt.txt"
     assert args.output_dir == "assets/generated/egypt"
     assert args.style == "premium-historical"
-    assert args.provider == LOCAL_PLACEHOLDER_PROVIDER
+    assert args.provider == OPENAI_PROVIDER
 
 
 def test_main_prints_generated_asset_summary(monkeypatch, capsys):
