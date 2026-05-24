@@ -81,6 +81,15 @@ const assetRunner = createTauriEngineRunner({
   },
 });
 
+const validationIssueRunner = createTauriEngineRunner({
+  invoke: async () => ({
+    ok: false,
+    status_code: 1,
+    stderr: "validation failed",
+    stdout: '{"ok":false,"issues":[{"message":"Missing input"}]}',
+  }),
+});
+
 const validationResult = await runner.validate({ book_title: "Ancient Egypt Word Search" });
 const result = await runner.generate(
   { book_title: "Ancient Egypt Word Search" },
@@ -120,5 +129,8 @@ assert.deepEqual(assetPayloads, [
   },
 ]);
 assert.equal(assetResult.assets.manifest_path, "assets/generated/egypt-user/asset_manifest.json");
+
+const validationIssueResult = await validationIssueRunner.validate({ book_title: "Book" });
+assert.deepEqual(validationIssueResult, { ok: false, issues: [{ message: "Missing input" }] });
 
 console.log("desktop tauri engine bridge tests passed");

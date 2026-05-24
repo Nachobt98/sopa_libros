@@ -130,6 +130,7 @@ export default function App() {
           isRealEngineAvailable={runState.isRealEngineAvailable}
           isRunning={runState.isRunning}
           isVisible={activePanel === "run-panel"}
+          lastResult={runState.lastResult}
           onClearEvents={runState.clearEvents}
           onGenerateProject={() => runState.generateProject(projectDocument.normalizedProject)}
           onValidateProject={() => runState.validateProject(projectDocument.normalizedProject)}
