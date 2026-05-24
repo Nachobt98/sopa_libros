@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>sopa-libros desktop scaffold</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Project navigation">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">SL</div>
+          <div>
+            <h1>sopa-libros</h1>
+            <p>KDP word search studio</p>
+          </div>
+        </div>
+
+        <nav class="nav-stack" aria-label="Workflow">
+          <button class="nav-item is-active" type="button" data-panel="project-panel">Project</button>
+          <button class="nav-item" type="button" data-panel="request-panel">Request</button>
+          <button class="nav-item" type="button" data-panel="run-panel">Run</button>
+        </nav>
+
+        <div class="status-block">
+          <span class="status-dot"></span>
+          <span>Static scaffold</span>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Project file</p>
+            <h2 id="page-title">Untitled word search project</h2>
+          </div>
+          <div class="topbar-actions">
+            <button id="reset-demo" class="secondary-button" type="button">Reset demo</button>
+            <button id="copy-project" class="primary-button" type="button">Copy project JSON</button>
+          </div>
+        </header>
+
+        <section id="project-panel" class="panel is-visible" aria-labelledby="project-heading">
+          <div class="section-heading">
+            <h3 id="project-heading">Project Settings</h3>
+            <p>These fields map to the `.sopa.json` project model.</p>
+          </div>
+
+          <form id="project-form" class="editor-grid">
+            <label>
+              <span>Book title</span>
+              <input id="book-title" name="bookTitle" type="text" autocomplete="off" />
+            </label>
+
+            <label>
+              <span>Thematic TXT input</span>
+              <input id="input-path" name="inputPath" type="text" autocomplete="off" />
+            </label>
+
+            <label>
+              <span>Theme manifest</span>
+              <input id="theme-manifest" name="themeManifestPath" type="text" autocomplete="off" />
+            </label>
+
+            <label>
+              <span>Output directory</span>
+              <input id="output-dir" name="outputDir" type="text" autocomplete="off" />
+            </label>
+
+            <fieldset class="segmented-field">
+              <legend>Difficulty</legend>
+              <div class="segmented" role="radiogroup" aria-label="Difficulty">
+                <button type="button" data-difficulty="easy">Easy</button>
+                <button type="button" data-difficulty="medium" class="is-selected">Medium</button>
+                <button type="button" data-difficulty="hard">Hard</button>
+              </div>
+            </fieldset>
+
+            <label>
+              <span>Grid size</span>
+              <input id="grid-size" name="gridSize" type="number" min="6" max="30" step="1" />
+            </label>
+
+            <label>
+              <span>Seed</span>
+              <input id="seed" name="seed" type="number" step="1" />
+            </label>
+
+            <label>
+              <span>Puzzle limit</span>
+              <input id="limit" name="limit" type="number" min="1" step="1" />
+            </label>
+
+            <label>
+              <span>Theme</span>
+              <select id="theme-name" name="themeName">
+                <option value="current-default">Current default</option>
+                <option value="premium-neutral">Premium neutral</option>
+                <option value="bold-modern">Bold modern</option>
+                <option value="kids">Kids</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Format</span>
+              <select id="format-name" name="formatName">
+                <option value="trade-6x9">Trade 6 x 9</option>
+                <option value="activity-8.5x11">Activity 8.5 x 11</option>
+                <option value="large-print-8x10">Large print 8 x 10</option>
+                <option value="square-8.5">Square 8.5</option>
+              </select>
+            </label>
+
+            <label class="toggle-row">
+              <input id="preview" name="preview" type="checkbox" />
+              <span>Preview mode</span>
+            </label>
+          </form>
+        </section>
+
+        <section id="request-panel" class="panel" aria-labelledby="request-heading">
+          <div class="section-heading">
+            <h3 id="request-heading">Engine Request</h3>
+            <p>The app will send this payload to `sopa-libros-engine`.</p>
+          </div>
+          <div class="split-grid">
+            <div>
+              <h4>Project JSON</h4>
+              <pre id="project-json" class="code-pane"></pre>
+            </div>
+            <div>
+              <h4>Request JSON</h4>
+              <pre id="request-json" class="code-pane"></pre>
+            </div>
+          </div>
+        </section>
+
+        <section id="run-panel" class="panel" aria-labelledby="run-heading">
+          <div class="section-heading">
+            <h3 id="run-heading">Run Preview</h3>
+            <p>Shows how progress will flow from JSON Lines.</p>
+          </div>
+
+          <div class="command-grid">
+            <div>
+              <h4>Validate</h4>
+              <code id="validate-command"></code>
+            </div>
+            <div>
+              <h4>Generate</h4>
+              <code id="generate-command"></code>
+            </div>
+          </div>
+
+          <div class="run-toolbar">
+            <button id="simulate-run" class="primary-button" type="button">Simulate run</button>
+            <button id="clear-events" class="secondary-button" type="button">Clear events</button>
+          </div>
+
+          <ol id="event-list" class="event-list" aria-live="polite"></ol>
+        </section>
+      </main>
+
+      <aside class="preview-rail" aria-label="Book preview">
+        <div class="book-preview">
+          <div class="page-preview">
+            <div class="page-label">Puzzle 01</div>
+            <div id="preview-title" class="preview-title">Untitled</div>
+            <div id="preview-grid" class="preview-grid" aria-hidden="true"></div>
+            <div id="preview-words" class="preview-words"></div>
+          </div>
+        </div>
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+      </aside>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
+

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "sopa-libros",
+  "version": "0.1.0",
+  "identifier": "com.sopalibros.desktop",
+  "build": {
+    "frontendDist": "../app"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "sopa-libros",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 1060,
+        "minHeight": 720
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": []
+  }
+}
