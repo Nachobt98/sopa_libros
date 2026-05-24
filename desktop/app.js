@@ -1,3 +1,10 @@
+import {
+  buildProjectCommands,
+  defaultProjectPath,
+  parseJsonLines,
+  projectToEngineRequest,
+} from "./engineBridge.js";
+
 const demoProject = {
   schema_version: 1,
   project_type: "thematic",
@@ -77,8 +84,7 @@ function toProjectFromForm() {
 }
 
 function toRequest(projectPayload) {
-  const { schema_version, project_type, ...request } = projectPayload;
-  return request;
+  return projectToEngineRequest(projectPayload);
 }
 
 function hydrateForm(nextProject) {
@@ -127,21 +133,14 @@ function renderWords() {
 function render() {
   project = toProjectFromForm();
   const request = toRequest(project);
-  const projectPath = `projects/${slugify(project.book_title)}.sopa.json`;
+  const projectPath = defaultProjectPath(project);
+  const commands = buildProjectCommands(project, projectPath);
   els.pageTitle.textContent = project.book_title;
   els.previewTitle.textContent = project.book_title;
   els.projectJson.textContent = JSON.stringify(project, null, 2);
   els.requestJson.textContent = JSON.stringify(request, null, 2);
-  els.validateCommand.textContent = `sopa-libros-engine project validate --project ${projectPath}`;
-  els.generateCommand.textContent =
-    `sopa-libros-engine project generate --project ${projectPath} --json-lines`;
-}
-
-function slugify(value) {
-  return String(value || "wordsearch_project")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
+  els.validateCommand.textContent = commands.validate;
+  els.generateCommand.textContent = commands.generate;
 }
 
 function showToast(message) {
@@ -169,13 +168,25 @@ function addEvent({ type, stage, message, current, total }) {
 
 function simulateRun() {
   els.eventList.innerHTML = "";
-  const events = [
-    { type: "stage_started", stage: "parsing", message: "Parsing thematic input." },
-    { type: "stage_completed", stage: "validation", message: "Validation completed." },
-    { type: "progress", stage: "grid_generation", message: "Generated puzzle grid.", current: 3, total: 5 },
-    { type: "progress", stage: "rendering", message: "Rendered puzzle page pair.", current: 5, total: 5 },
-    { type: "run_completed", stage: "complete", message: "Thematic generation completed." },
-  ];
+  const jsonLines = [
+    { type: "event", event: { type: "stage_started", stage: "parsing", message: "Parsing thematic input." } },
+    { type: "event", event: { type: "stage_completed", stage: "validation", message: "Validation completed." } },
+    {
+      type: "event",
+      event: { type: "progress", stage: "grid_generation", message: "Generated puzzle grid.", current: 3, total: 5 },
+    },
+    {
+      type: "event",
+      event: { type: "progress", stage: "rendering", message: "Rendered puzzle page pair.", current: 5, total: 5 },
+    },
+    { type: "event", event: { type: "run_completed", stage: "complete", message: "Thematic generation completed." } },
+    { type: "result", result: { ok: true, pdf_path: "output_puzzles_kdp/ancient_egypt/book.pdf" } },
+  ]
+    .map((record) => JSON.stringify(record))
+    .join("\n");
+  const events = parseJsonLines(jsonLines)
+    .filter((record) => record.type === "event")
+    .map((record) => record.event);
   events.forEach((event, index) => {
     window.setTimeout(() => addEvent(event), index * 180);
   });
