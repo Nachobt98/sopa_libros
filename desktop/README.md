@@ -17,6 +17,10 @@ Current scope:
 - preview the command lines the future Tauri sidecar will call;
 - simulate JSON Lines progress events.
 
+The sidecar-facing browser logic lives in `engineBridge.js`. It has no DOM
+dependencies, so it can move into a React/Tauri adapter later with minimal
+rewrite.
+
 This is not the production desktop app yet. The next step is to replace the
 static shell with a Tauri + React implementation that calls:
 
