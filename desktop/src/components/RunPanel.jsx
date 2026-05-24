@@ -6,6 +6,7 @@ export function RunPanel({
   isRealEngineAvailable,
   isRunning,
   isVisible,
+  lastResult,
   onClearEvents,
   onGenerateProject,
   onValidateProject,
@@ -45,7 +46,32 @@ export function RunPanel({
         </button>
       </div>
 
+      {lastResult ? <RunResultSummary result={lastResult} /> : null}
       <EventList events={events} />
     </section>
+  );
+}
+
+function RunResultSummary({ result }) {
+  const issues = result.issues || [];
+  return (
+    <div className={`run-result ${result.ok ? "is-ok" : "is-error"}`}>
+      <div>
+        <strong>{result.ok ? "Run completed" : "Run needs attention"}</strong>
+        <span>{result.command || "engine command"}</span>
+      </div>
+      {result.pdf_path ? (
+        <div>
+          <span>PDF</span>
+          <code>{result.pdf_path}</code>
+        </div>
+      ) : null}
+      {issues.length ? (
+        <div>
+          <span>Issues</span>
+          <strong>{issues.length}</strong>
+        </div>
+      ) : null}
+    </div>
   );
 }

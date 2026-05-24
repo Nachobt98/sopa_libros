@@ -31,7 +31,7 @@ export function createTauriEngineRunner({ invoke = getTauriInvoke() } = {}) {
       projectPath,
     });
 
-    if (!output.ok) {
+    if (!output.ok && !output.stdout) {
       throw new Error(output.stderr || output.stdout || `Engine exited with status ${output.status_code ?? "unknown"}.`);
     }
 
@@ -75,6 +75,9 @@ export function createTauriEngineRunner({ invoke = getTauriInvoke() } = {}) {
       }
 
       const result = await consumeJsonLines(output.stdout, handlers);
+      if (!output.ok && !result) {
+        throw new Error(output.stderr || `Engine exited with status ${output.status_code ?? "unknown"}.`);
+      }
       return result;
     },
 
