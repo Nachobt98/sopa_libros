@@ -275,3 +275,20 @@ request = project.to_engine_request()
 
 `to_engine_request()` returns a payload accepted by both `validate` and
 `generate`.
+
+Project CLI helpers:
+
+```bash
+sopa-libros-engine project init \
+  --title "Ancient Egypt Word Search" \
+  --input wordlists/egypt.txt \
+  --output projects/egypt.sopa.json
+
+sopa-libros-engine project request --project projects/egypt.sopa.json
+sopa-libros-engine project validate --project projects/egypt.sopa.json
+sopa-libros-engine project generate --project projects/egypt.sopa.json --json-lines
+```
+
+`project request` prints the engine request that the project resolves to.
+`project validate` and `project generate` are wrappers around the same thematic
+engine commands described above.
