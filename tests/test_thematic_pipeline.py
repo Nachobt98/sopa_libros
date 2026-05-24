@@ -13,6 +13,8 @@ from wordsearch.validation.assets import AssetValidationReport
 class StubValidationReport:
     def __init__(self, *, has_errors: bool):
         self.has_errors = has_errors
+        self.errors = ["error"] if has_errors else []
+        self.warnings = []
         self.summary_printed = False
 
     def print_summary(self) -> None:
@@ -267,6 +269,48 @@ def test_generate_thematic_book_validate_only_stops_after_successful_validation(
     assert report.summary_printed
 
 
+def test_generate_thematic_book_emits_validate_only_events(monkeypatch, tmp_path):
+    options = make_options()
+    options.validate_only = True
+    specs = [make_spec()]
+    report = StubValidationReport(has_errors=False)
+    events = []
+
+    monkeypatch.setattr(thematic_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setattr(thematic_pipeline, "parse_puzzle_file", lambda path: specs)
+    monkeypatch.setattr(
+        thematic_pipeline,
+        "validate_generation_assets",
+        lambda **kwargs: AssetValidationReport(),
+    )
+    monkeypatch.setattr(thematic_pipeline, "validate_thematic_specs", lambda *args, **kwargs: report)
+
+    result = thematic_pipeline.generate_thematic_book(
+        options,
+        event_callback=events.append,
+    )
+
+    assert result is None
+    assert [event.type for event in events] == [
+        "run_started",
+        "stage_started",
+        "stage_completed",
+        "stage_started",
+        "stage_completed",
+        "run_completed",
+    ]
+    assert [event.stage for event in events] == [
+        "setup",
+        "parsing",
+        "parsing",
+        "validation",
+        "validation",
+        "validation",
+    ]
+    assert events[2].metadata == {"parsed_puzzle_count": 1, "selected_puzzle_count": 1}
+    assert events[-1].to_dict()["message"] == "Validation-only run completed."
+
+
 def test_generate_thematic_book_stops_on_grid_failures(monkeypatch):
     report = StubValidationReport(has_errors=False)
     grid_batch = GridBatchResult(failures=["Puzzle 1 failed"])
@@ -474,6 +518,58 @@ def test_generate_thematic_book_generates_pdf_and_report_on_happy_path(monkeypat
         "render_quality_report": render_quality_report,
     }
     assert calls["report_write"] == ("report", str(expected_output_dir))
+
+
+def test_generate_thematic_book_emits_completion_event_on_happy_path(monkeypatch, tmp_path):
+    options = make_options()
+    specs = [make_spec()]
+    generated_puzzles = [make_generated()]
+    report = StubValidationReport(has_errors=False)
+    rendered_images = RenderedBookImages(content_imgs=["content.png"], solution_imgs=["solution.png"])
+    events = []
+
+    monkeypatch.setattr(thematic_pipeline, "BASE_OUTPUT_DIR", str(tmp_path))
+    monkeypatch.setattr(thematic_pipeline, "parse_puzzle_file", lambda path: specs)
+    monkeypatch.setattr(
+        thematic_pipeline,
+        "validate_generation_assets",
+        lambda **kwargs: AssetValidationReport(),
+    )
+    monkeypatch.setattr(thematic_pipeline, "validate_thematic_specs", lambda *args, **kwargs: report)
+    monkeypatch.setattr(
+        thematic_pipeline,
+        "generate_thematic_grids",
+        lambda specs, difficulty, grid_size, *, seed=None: GridBatchResult(
+            generated_puzzles=generated_puzzles
+        ),
+    )
+    monkeypatch.setattr(thematic_pipeline, "build_page_plan", lambda generated: "page-plan")
+    monkeypatch.setattr(thematic_pipeline, "render_thematic_book_images", lambda **kwargs: rendered_images)
+    monkeypatch.setattr(thematic_pipeline, "build_render_quality_report", lambda **kwargs: StubRenderQualityReport())
+    monkeypatch.setattr(thematic_pipeline, "generate_pdf", lambda *args, **kwargs: kwargs["outname"])
+    monkeypatch.setattr(thematic_pipeline, "build_kdp_preflight_report", lambda **kwargs: StubValidationReport(has_errors=False))
+    monkeypatch.setattr(thematic_pipeline, "write_kdp_preflight_report", lambda *args, **kwargs: "preflight.json")
+    monkeypatch.setattr(thematic_pipeline, "build_thematic_generation_report", lambda **kwargs: "report")
+    monkeypatch.setattr(thematic_pipeline, "write_generation_report", lambda *args, **kwargs: "generation.json")
+    monkeypatch.setattr(
+        thematic_pipeline,
+        "write_production_review_summary",
+        lambda *args, **kwargs: "review.txt",
+    )
+
+    pdf_path = thematic_pipeline.generate_thematic_book(options, event_callback=events.append)
+
+    assert pdf_path is not None
+    assert events[-1].type == "run_completed"
+    assert events[-1].stage == "complete"
+    assert events[-1].metadata == {
+        "pdf_path": pdf_path,
+        "generation_report_path": "generation.json",
+        "preflight_report_path": "preflight.json",
+        "review_summary_path": "review.txt",
+    }
+    assert "pdf_assembly" in [event.stage for event in events]
+    assert "preflight" in [event.stage for event in events]
 
 
 def test_generate_thematic_book_passes_seed_to_grid_generation(monkeypatch, tmp_path):

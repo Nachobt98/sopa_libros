@@ -110,3 +110,55 @@ This contract intentionally stops before grid generation, rendering and PDF
 assembly. Preview and full generation should be added as separate engine
 commands so a GUI can show quick validation feedback before starting heavier
 work.
+
+## Run Events
+
+Long-running generation code can emit structured `RunEvent` objects through an
+optional callback. The existing CLI output remains unchanged, but app callers can
+subscribe to these events instead of scraping terminal text.
+
+Event shape:
+
+```json
+{
+  "type": "stage_started",
+  "stage": "grid_generation",
+  "message": "Generating puzzle grids.",
+  "current": 0,
+  "total": 10,
+  "metadata": {}
+}
+```
+
+Current event types:
+
+- `run_started`;
+- `stage_started`;
+- `progress`;
+- `stage_completed`;
+- `run_completed`;
+- `run_failed`.
+
+Current thematic stages:
+
+- `setup`;
+- `parsing`;
+- `validation`;
+- `grid_generation`;
+- `rendering`;
+- `visual_regression`;
+- `pdf_assembly`;
+- `preflight`;
+- `complete`.
+
+Python callers can use:
+
+```python
+events = []
+pdf_path = generate_thematic_book(options, event_callback=events.append)
+payload = [event.to_dict() for event in events]
+```
+
+The future Tauri sidecar command should serialize these events as JSON lines or
+as a final `events` array, depending on whether the UI needs live progress or
+only a completed run summary.
