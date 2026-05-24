@@ -425,6 +425,42 @@ button:focus-visible {
   font-size: 18px;
 }
 
+.content-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.content-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.content-status code {
+  overflow-wrap: anywhere;
+  color: var(--accent-strong);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+}
+
+.content-editor {
+  width: 100%;
+  min-height: 540px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .split-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
