@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -96,7 +97,12 @@ def validate_thematic_request(payload: dict[str, Any]) -> ThematicValidationResp
     )
 
 
-def generate_thematic_request(payload: dict[str, Any]) -> ThematicRunResponse:
+def generate_thematic_request(
+    payload: dict[str, Any],
+    *,
+    event_callback: Callable[[RunEvent], None] | None = None,
+    include_events: bool = True,
+) -> ThematicRunResponse:
     """Run preview/full thematic generation and return captured events as JSON."""
     try:
         request = ThematicValidationRequest.from_dict(payload)
@@ -108,7 +114,13 @@ def generate_thematic_request(payload: dict[str, Any]) -> ThematicRunResponse:
         return _run_error_response(str(exc), code="INVALID_REQUEST")
 
     events: list[RunEvent] = []
-    pdf_path = generate_thematic_book(options, event_callback=events.append)
+
+    def capture_event(event: RunEvent) -> None:
+        events.append(event)
+        if event_callback is not None:
+            event_callback(event)
+
+    pdf_path = generate_thematic_book(options, event_callback=capture_event)
     ok = pdf_path is not None or options.validate_only and _has_completed_validation(events)
 
     issues: list[EngineIssue] = []
@@ -128,7 +140,7 @@ def generate_thematic_request(payload: dict[str, Any]) -> ThematicRunResponse:
         status="ok" if ok else "error",
         pdf_path=pdf_path,
         issues=issues,
-        events=events,
+        events=events if include_events else [],
     )
 
 

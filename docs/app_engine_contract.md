@@ -16,6 +16,7 @@ The app-facing entry point is:
 ```text
 sopa-libros-engine validate --config request.json
 sopa-libros-engine generate --config request.json
+sopa-libros-engine generate --config request.json --json-lines
 ```
 
 It writes JSON to stdout and exits with:
@@ -173,6 +174,9 @@ pipeline instead of stopping at validation:
 sopa-libros-engine generate --config request.json
 ```
 
+During `generate`, human-readable pipeline logs are written to `stderr`. `stdout`
+is reserved for machine-readable JSON.
+
 Successful full generation returns:
 
 ```json
@@ -210,3 +214,27 @@ For a validation-only run through the same command, include:
 
 When generation fails, `ok` is `false`, the process exits with `1`, and the last
 pipeline `run_failed` event is converted into a structured engine issue.
+
+### JSON Lines Streaming
+
+Use `--json-lines` when the app needs live progress:
+
+```bash
+sopa-libros-engine generate --config request.json --json-lines
+```
+
+Each emitted pipeline event is written as one compact JSON line:
+
+```json
+{"type":"event","event":{"type":"stage_started","stage":"parsing","message":"Parsing thematic input.","current":null,"total":null,"metadata":{}}}
+```
+
+The final line is the result:
+
+```json
+{"type":"result","result":{"ok":true,"command":"thematic.generate","status":"ok","pdf_path":"output_puzzles_kdp/book/book.pdf","issues":[],"events":[],"error_count":0,"warning_count":0,"event_count":0}}
+```
+
+In JSON Lines mode, the final result omits the repeated `events` array because
+the events have already been streamed. The process exit code still follows the
+same rule: `0` for success, `1` for failure.

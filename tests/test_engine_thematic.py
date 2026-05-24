@@ -276,3 +276,83 @@ def test_engine_cli_generate_writes_json(monkeypatch, tmp_path, capsys):
     assert payload["ok"] is True
     assert payload["command"] == "thematic.generate"
     assert payload["pdf_path"] == "out/book.pdf"
+
+
+def test_engine_cli_generate_redirects_human_output_to_stderr(monkeypatch, tmp_path, capsys):
+    from wordsearch.cli import engine as engine_cli
+
+    config_path = tmp_path / "request.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "book_title": "Engine Book",
+                "input_path": "wordlists/book.txt",
+                "difficulty": "medium",
+                "grid_size": 14,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def fake_generate_thematic_book(options, *, event_callback=None):
+        print("human pipeline log")
+        event_callback(RunEvent(type="run_completed", stage="complete", message="Done."))
+        return "out/book.pdf"
+
+    monkeypatch.setattr(thematic, "generate_thematic_book", fake_generate_thematic_book)
+    monkeypatch.setattr("sys.argv", ["sopa-libros-engine", "generate", "--config", str(config_path)])
+
+    try:
+        engine_cli.main()
+    except SystemExit as exc:
+        assert exc.code == 0
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert payload["ok"] is True
+    assert "human pipeline log" not in captured.out
+    assert "human pipeline log" in captured.err
+
+
+def test_engine_cli_generate_json_lines_streams_events_and_result(monkeypatch, tmp_path, capsys):
+    from wordsearch.cli import engine as engine_cli
+
+    config_path = tmp_path / "request.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "book_title": "Engine Book",
+                "input_path": "wordlists/book.txt",
+                "difficulty": "medium",
+                "grid_size": 14,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def fake_generate_thematic_book(options, *, event_callback=None):
+        print("human pipeline log")
+        event_callback(RunEvent(type="stage_started", stage="parsing", message="Parsing."))
+        event_callback(RunEvent(type="run_completed", stage="complete", message="Done."))
+        return "out/book.pdf"
+
+    monkeypatch.setattr(thematic, "generate_thematic_book", fake_generate_thematic_book)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["sopa-libros-engine", "generate", "--config", str(config_path), "--json-lines"],
+    )
+
+    try:
+        engine_cli.main()
+    except SystemExit as exc:
+        assert exc.code == 0
+
+    captured = capsys.readouterr()
+    lines = [json.loads(line) for line in captured.out.splitlines()]
+    assert [line["type"] for line in lines] == ["event", "event", "result"]
+    assert lines[0]["event"]["stage"] == "parsing"
+    assert lines[1]["event"]["type"] == "run_completed"
+    assert lines[2]["result"]["ok"] is True
+    assert lines[2]["result"]["pdf_path"] == "out/book.pdf"
+    assert lines[2]["result"]["events"] == []
+    assert "human pipeline log" in captured.err
