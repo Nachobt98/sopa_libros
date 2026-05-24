@@ -1,5 +1,7 @@
 use serde::Serialize;
 use std::env;
+use std::fs;
+use std::path::Path;
 use std::process::Command;
 
 #[derive(Serialize)]
@@ -15,6 +17,11 @@ struct EngineCommandOutput {
     status_code: Option<i32>,
     stdout: String,
     stderr: String,
+}
+
+#[derive(Serialize)]
+struct ProjectFileOutput {
+    path: String,
 }
 
 fn command_exists(command_name: &str) -> bool {
@@ -63,12 +70,33 @@ fn run_engine_project_command(mode: String, project_path: String) -> Result<Engi
     })
 }
 
+#[tauri::command]
+fn save_project_file(project_path: String, contents: String) -> Result<ProjectFileOutput, String> {
+    let path = Path::new(&project_path);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|error| format!("Failed to create project directory: {error}"))?;
+    }
+
+    fs::write(path, contents).map_err(|error| format!("Failed to write project file: {error}"))?;
+
+    Ok(ProjectFileOutput {
+        path: path.display().to_string(),
+    })
+}
+
+#[tauri::command]
+fn read_project_file(project_path: String) -> Result<String, String> {
+    fs::read_to_string(Path::new(&project_path)).map_err(|error| format!("Failed to read project file: {error}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             engine_runtime_status,
-            run_engine_project_command
+            run_engine_project_command,
+            save_project_file,
+            read_project_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running sopa-libros desktop app");

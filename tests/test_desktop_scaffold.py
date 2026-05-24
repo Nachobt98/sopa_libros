@@ -18,6 +18,7 @@ def test_desktop_scaffold_files_exist():
     assert (DESKTOP / "src" / "hooks" / "useEngineRuntime.js").exists()
     assert (DESKTOP / "src" / "hooks" / "useProjectDocument.js").exists()
     assert (DESKTOP / "src" / "hooks" / "useProjectDocument.test.mjs").exists()
+    assert (DESKTOP / "src" / "hooks" / "useProjectFileActions.js").exists()
     assert (DESKTOP / "src" / "hooks" / "useProjectRun.js").exists()
     assert (DESKTOP / "src" / "model" / "project.js").exists()
     assert (DESKTOP / "src" / "model" / "projectValidation.js").exists()
@@ -31,6 +32,8 @@ def test_desktop_scaffold_files_exist():
     assert (DESKTOP_APP / "engineRunner.test.mjs").exists()
     assert (DESKTOP_APP / "tauriEngineBridge.js").exists()
     assert (DESKTOP_APP / "tauriEngineBridge.test.mjs").exists()
+    assert (DESKTOP_APP / "projectFileBridge.js").exists()
+    assert (DESKTOP_APP / "projectFileBridge.test.mjs").exists()
     assert (DESKTOP / "README.md").exists()
     assert (DESKTOP / "package.json").exists()
     assert (DESKTOP / "src-tauri" / "tauri.conf.json").exists()
@@ -62,6 +65,7 @@ def test_desktop_app_mentions_engine_project_commands():
     bridge = (DESKTOP_APP / "engineBridge.js").read_text(encoding="utf-8")
     runner = (DESKTOP_APP / "engineRunner.js").read_text(encoding="utf-8")
     tauri_bridge = (DESKTOP_APP / "tauriEngineBridge.js").read_text(encoding="utf-8")
+    file_bridge = (DESKTOP_APP / "projectFileBridge.js").read_text(encoding="utf-8")
 
     assert "sopa-libros-engine project validate" in bridge
     assert "sopa-libros-engine project generate" in bridge
@@ -70,7 +74,12 @@ def test_desktop_app_mentions_engine_project_commands():
     assert "consumeJsonLines" in runner
     assert "engine_runtime_status" in tauri_bridge
     assert "run_engine_project_command" in tauri_bridge
+    assert "save_project_file" in file_bridge
+    assert "read_project_file" in file_bridge
     assert "Copy project JSON" in app
+    assert "Save draft" in app
+    assert "generateProject" in app
+    assert "validateProject" in app
     assert "runtimeLabel" in sidebar
 
 
@@ -92,4 +101,6 @@ def test_tauri_registers_engine_commands():
     assert "#[tauri::command]" in lib
     assert "engine_runtime_status" in lib
     assert "run_engine_project_command" in lib
+    assert "save_project_file" in lib
+    assert "read_project_file" in lib
     assert "tauri::generate_handler!" in lib
