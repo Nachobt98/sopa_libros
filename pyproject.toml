@@ -19,6 +19,7 @@ dependencies = [
 sopa-libros = "wordsearch.cli.simple:main"
 sopa-libros-thematic = "wordsearch.cli.thematic:main"
 sopa-libros-assets = "wordsearch.cli.assets:main"
+sopa-libros-engine = "wordsearch.cli.engine:main"
 
 [project.optional-dependencies]
 ai = [

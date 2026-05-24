@@ -96,8 +96,8 @@ def generate_local_assets_for_book(
                 "target": "book",
                 "prompt": default_request.prompt,
                 "negative_prompt": default_request.negative_prompt,
-                "raw_path": str(Path(default_raw.path).relative_to(target_dir)),
-                "processed_path": str(Path(default_background).relative_to(target_dir)),
+                "raw_path": _relative_posix(default_raw.path, target_dir),
+                "processed_path": _relative_posix(default_background, target_dir),
             }
         ],
         "blocks": [],
@@ -145,8 +145,8 @@ def generate_local_assets_for_book(
             page_size,
         )
         block_manifest[block_brief.slug] = BlockAssetSet(
-            background=str(Path(block_background).relative_to(target_dir)),
-            cover_background=str(Path(block_cover).relative_to(target_dir)),
+            background=_relative_posix(block_background, target_dir),
+            cover_background=_relative_posix(block_cover, target_dir),
         )
         prompt_plan["blocks"].append(
             {
@@ -158,10 +158,10 @@ def generate_local_assets_for_book(
                 "background_prompt": background_request.prompt,
                 "cover_prompt": cover_request.prompt,
                 "negative_prompt": background_request.negative_prompt,
-                "background_raw_path": str(Path(background_raw.path).relative_to(target_dir)),
-                "background_processed_path": str(Path(block_background).relative_to(target_dir)),
-                "cover_raw_path": str(Path(cover_raw.path).relative_to(target_dir)),
-                "cover_processed_path": str(Path(block_cover).relative_to(target_dir)),
+                "background_raw_path": _relative_posix(background_raw.path, target_dir),
+                "background_processed_path": _relative_posix(block_background, target_dir),
+                "cover_raw_path": _relative_posix(cover_raw.path, target_dir),
+                "cover_processed_path": _relative_posix(block_cover, target_dir),
             }
         )
 
@@ -172,7 +172,7 @@ def generate_local_assets_for_book(
         assets={
             "book_default_background": ManifestAsset(
                 type="background",
-                path=str(Path(default_background).relative_to(target_dir)),
+                path=_relative_posix(default_background, target_dir),
                 prompt=default_prompt,
                 provider=image_provider.name,
                 notes="Generated raw asset normalized into processed PNG for renderer consumption.",
@@ -202,6 +202,11 @@ def _generate_raw_asset(
     raw_path: Path,
 ) -> GeneratedImage:
     return provider.generate(request, raw_path)
+
+
+def _relative_posix(path: str | Path, root: str | Path) -> str:
+    """Return a stable manifest path independent of the host OS separator."""
+    return Path(path).relative_to(root).as_posix()
 
 
 def _book_background_prompt(visual_brief: BookVisualBrief) -> str:
