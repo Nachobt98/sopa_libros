@@ -9,7 +9,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from wordsearch.config.design import DEFAULT_THEME_NAME
+from wordsearch.config.formats import DEFAULT_FORMAT_NAME
 from wordsearch.engine.events import RunEvent
+from wordsearch.engine.project import (
+    ThematicProject,
+    build_default_project_path,
+    load_thematic_project,
+    save_thematic_project,
+)
 from wordsearch.engine.thematic import generate_thematic_request, validate_thematic_request
 
 
@@ -23,6 +31,37 @@ def _parse_args() -> argparse.Namespace:
     generate_parser = subparsers.add_parser("generate", help="Generate a thematic book from a JSON request.")
     generate_parser.add_argument("--config", required=True, help="Path to a JSON request file.")
     generate_parser.add_argument(
+        "--json-lines",
+        action="store_true",
+        help="Stream events as JSON Lines and finish with one result line.",
+    )
+
+    project_parser = subparsers.add_parser("project", help="Work with .sopa.json project files.")
+    project_subparsers = project_parser.add_subparsers(dest="project_command", required=True)
+
+    init_parser = project_subparsers.add_parser("init", help="Create a thematic .sopa.json project file.")
+    init_parser.add_argument("--title", required=True, help="Book title.")
+    init_parser.add_argument("--input", dest="input_path", required=True, help="Path to thematic TXT input.")
+    init_parser.add_argument("--output", help="Project output path. Defaults to projects/<title>.sopa.json.")
+    init_parser.add_argument("--difficulty", default="medium", choices=("easy", "medium", "hard"))
+    init_parser.add_argument("--grid-size", type=int, default=14)
+    init_parser.add_argument("--seed", type=int)
+    init_parser.add_argument("--theme", dest="theme_name")
+    init_parser.add_argument("--format", dest="format_name")
+    init_parser.add_argument("--theme-manifest", dest="theme_manifest_path")
+    init_parser.add_argument("--output-dir")
+    init_parser.add_argument("--limit", type=int)
+    init_parser.add_argument("--preview", action="store_true")
+
+    request_parser = project_subparsers.add_parser("request", help="Print the engine request for a project.")
+    request_parser.add_argument("--project", required=True, help="Path to .sopa.json project file.")
+
+    validate_project_parser = project_subparsers.add_parser("validate", help="Validate a project file.")
+    validate_project_parser.add_argument("--project", required=True, help="Path to .sopa.json project file.")
+
+    generate_project_parser = project_subparsers.add_parser("generate", help="Generate from a project file.")
+    generate_project_parser.add_argument("--project", required=True, help="Path to .sopa.json project file.")
+    generate_project_parser.add_argument(
         "--json-lines",
         action="store_true",
         help="Stream events as JSON Lines and finish with one result line.",
@@ -42,7 +81,7 @@ def _write_json_line(payload: dict[str, Any], *, stream) -> None:
 
 
 def _generate_response(args: argparse.Namespace):
-    payload = _load_json(args.config)
+    payload = _load_json(args.config) if hasattr(args, "config") else _load_project_request(args.project)
     if not args.json_lines:
         with contextlib.redirect_stdout(sys.stderr):
             return generate_thematic_request(payload)
@@ -62,6 +101,64 @@ def _generate_response(args: argparse.Namespace):
     return response
 
 
+def _load_project_request(path: str) -> dict[str, Any]:
+    return load_thematic_project(path).to_engine_request()
+
+
+def _build_project_from_args(args: argparse.Namespace) -> ThematicProject:
+    return ThematicProject(
+        book_title=args.title,
+        input_path=args.input_path,
+        difficulty=args.difficulty,
+        grid_size=args.grid_size,
+        seed=args.seed,
+        theme_name=args.theme_name or DEFAULT_THEME_NAME,
+        format_name=args.format_name or DEFAULT_FORMAT_NAME,
+        theme_manifest_path=args.theme_manifest_path,
+        output_dir=args.output_dir,
+        limit=args.limit,
+        preview=args.preview,
+    )
+
+
+def _project_response(args: argparse.Namespace):
+    if args.project_command == "init":
+        project = _build_project_from_args(args)
+        output_path = args.output or build_default_project_path(project.book_title)
+        project_path = save_thematic_project(project, output_path)
+        return {
+            "ok": True,
+            "command": "project.init",
+            "project_path": project_path,
+            "project": project.to_dict(),
+        }
+    if args.project_command == "request":
+        project = load_thematic_project(args.project)
+        return {
+            "ok": True,
+            "command": "project.request",
+            "project_path": args.project,
+            "request": project.to_engine_request(),
+        }
+    if args.project_command == "validate":
+        return validate_thematic_request(_load_project_request(args.project))
+    if args.project_command == "generate":
+        return _generate_response(args)
+    raise AssertionError(f"Unhandled project command: {args.project_command}")
+
+
+def _is_ok(response) -> bool:
+    if isinstance(response, dict):
+        return bool(response.get("ok", False))
+    return bool(response.ok)
+
+
+def _response_to_dict(response) -> dict[str, Any]:
+    if isinstance(response, dict):
+        return response
+    return response.to_dict()
+
+
 def main() -> None:
     args = _parse_args()
 
@@ -69,13 +166,18 @@ def main() -> None:
         response = validate_thematic_request(_load_json(args.config))
     elif args.command == "generate":
         response = _generate_response(args)
+    elif args.command == "project":
+        response = _project_response(args)
     else:
         raise AssertionError(f"Unhandled command: {args.command}")
 
-    if args.command != "generate" or not args.json_lines:
-        sys.stdout.write(json.dumps(response.to_dict(), ensure_ascii=False, indent=2))
+    is_json_lines = getattr(args, "json_lines", False) and (
+        args.command == "generate" or getattr(args, "project_command", None) == "generate"
+    )
+    if not is_json_lines:
+        sys.stdout.write(json.dumps(_response_to_dict(response), ensure_ascii=False, indent=2))
         sys.stdout.write("\n")
-    raise SystemExit(0 if response.ok else 1)
+    raise SystemExit(0 if _is_ok(response) else 1)
 
 
 if __name__ == "__main__":

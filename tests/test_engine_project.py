@@ -2,8 +2,11 @@ import json
 
 import pytest
 
+from wordsearch.cli import engine as engine_cli
 from wordsearch.config.design import DEFAULT_THEME_NAME
 from wordsearch.config.formats import DEFAULT_FORMAT_NAME
+from wordsearch.engine import thematic
+from wordsearch.engine.events import RunEvent
 from wordsearch.engine.project import (
     PROJECT_SCHEMA_VERSION,
     ThematicProject,
@@ -119,3 +122,133 @@ def test_load_thematic_project_rejects_unknown_type(tmp_path):
 def test_build_default_project_path_uses_project_extension():
     assert build_default_project_path("My Book") == build_default_project_path("My Book", root_dir="projects")
     assert str(build_default_project_path("My Book")).endswith("my_book.sopa.json")
+
+
+def test_engine_cli_project_init_writes_project(monkeypatch, tmp_path, capsys):
+    project_path = tmp_path / "book.sopa.json"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "sopa-libros-engine",
+            "project",
+            "init",
+            "--title",
+            "UI Book",
+            "--input",
+            "wordlists/book.txt",
+            "--output",
+            str(project_path),
+            "--grid-size",
+            "16",
+            "--preview",
+        ],
+    )
+
+    try:
+        engine_cli.main()
+    except SystemExit as exc:
+        assert exc.code == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    loaded = load_thematic_project(project_path)
+    assert payload["ok"] is True
+    assert payload["command"] == "project.init"
+    assert payload["project_path"] == str(project_path)
+    assert loaded.book_title == "UI Book"
+    assert loaded.grid_size == 16
+    assert loaded.preview is True
+
+
+def test_engine_cli_project_request_prints_engine_payload(monkeypatch, tmp_path, capsys):
+    project_path = tmp_path / "book.sopa.json"
+    save_thematic_project(
+        ThematicProject(
+            book_title="UI Book",
+            input_path="wordlists/book.txt",
+            grid_size=16,
+        ),
+        project_path,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        ["sopa-libros-engine", "project", "request", "--project", str(project_path)],
+    )
+
+    try:
+        engine_cli.main()
+    except SystemExit as exc:
+        assert exc.code == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["command"] == "project.request"
+    assert payload["request"]["book_title"] == "UI Book"
+    assert payload["request"]["input_path"] == "wordlists/book.txt"
+    assert payload["request"]["grid_size"] == 16
+    assert "schema_version" not in payload["request"]
+
+
+def test_engine_cli_project_validate_uses_project_request(monkeypatch, tmp_path, capsys):
+    project_path = tmp_path / "book.sopa.json"
+    save_thematic_project(
+        ThematicProject(book_title="UI Book", input_path="wordlists/book.txt"),
+        project_path,
+    )
+    calls = {}
+
+    def fake_validate(payload):
+        calls["payload"] = payload
+        from wordsearch.engine.contracts import ThematicValidationResponse
+
+        return ThematicValidationResponse(ok=True)
+
+    monkeypatch.setattr(engine_cli, "validate_thematic_request", fake_validate)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["sopa-libros-engine", "project", "validate", "--project", str(project_path)],
+    )
+
+    try:
+        engine_cli.main()
+    except SystemExit as exc:
+        assert exc.code == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["command"] == "thematic.validate"
+    assert calls["payload"]["book_title"] == "UI Book"
+
+
+def test_engine_cli_project_generate_streams_json_lines(monkeypatch, tmp_path, capsys):
+    project_path = tmp_path / "book.sopa.json"
+    save_thematic_project(
+        ThematicProject(book_title="UI Book", input_path="wordlists/book.txt"),
+        project_path,
+    )
+
+    def fake_generate_thematic_book(options, *, event_callback=None):
+        event_callback(RunEvent(type="run_completed", stage="complete", message="Done."))
+        return "out/book.pdf"
+
+    monkeypatch.setattr(thematic, "generate_thematic_book", fake_generate_thematic_book)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "sopa-libros-engine",
+            "project",
+            "generate",
+            "--project",
+            str(project_path),
+            "--json-lines",
+        ],
+    )
+
+    try:
+        engine_cli.main()
+    except SystemExit as exc:
+        assert exc.code == 0
+
+    lines = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert [line["type"] for line in lines] == ["event", "result"]
+    assert lines[0]["event"]["stage"] == "complete"
+    assert lines[1]["result"]["pdf_path"] == "out/book.pdf"
