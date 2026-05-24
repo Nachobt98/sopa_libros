@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { buildProjectCommands, defaultProjectPath, projectToEngineRequest } from "../app/engineBridge.js";
 import { createStaticEngineRunner } from "../app/engineRunner.js";
+import { loadEngineRuntimeStatus } from "../app/tauriEngineBridge.js";
 
 const demoProject = {
   schema_version: 1,
@@ -244,10 +245,37 @@ export default function App() {
   const [events, setEvents] = useState([]);
   const [toast, setToast] = useState("");
   const [isRunning, setIsRunning] = useState(false);
+  const [runtimeStatus, setRuntimeStatus] = useState({
+    available: false,
+    engineFound: false,
+    engineCommand: "sopa-libros-engine",
+    currentDir: "",
+  });
 
   const normalizedProject = useMemo(() => normalizeProject(project), [project]);
   const request = useMemo(() => projectToEngineRequest(normalizedProject), [normalizedProject]);
   const commands = useMemo(() => buildProjectCommands(normalizedProject, defaultProjectPath(normalizedProject)), [normalizedProject]);
+  const runtimeLabel = runtimeStatus.available
+    ? `Tauri bridge ${runtimeStatus.engineFound ? "ready" : "missing engine"}`
+    : "Browser preview";
+
+  useEffect(() => {
+    let isMounted = true;
+    loadEngineRuntimeStatus()
+      .then((status) => {
+        if (isMounted) {
+          setRuntimeStatus(status);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setRuntimeStatus((current) => ({ ...current, available: false, engineFound: false }));
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   function showToast(message) {
     setToast(message);
@@ -313,7 +341,7 @@ export default function App() {
 
         <div className="status-block">
           <span className="status-dot"></span>
-          <span>React scaffold</span>
+          <span>{runtimeLabel}</span>
         </div>
       </aside>
 

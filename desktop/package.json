@@ -8,7 +8,7 @@
     "vite:dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "tauri:build": "tauri build",
-    "check": "vite build && node app/engineBridge.test.mjs && node app/engineRunner.test.mjs"
+    "check": "vite build && node app/engineBridge.test.mjs && node app/engineRunner.test.mjs && node app/tauriEngineBridge.test.mjs"
   },
   "dependencies": {
     "react": "^18.3.0",

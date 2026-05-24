@@ -18,6 +18,8 @@ def test_desktop_scaffold_files_exist():
     assert (DESKTOP_APP / "engineBridge.test.mjs").exists()
     assert (DESKTOP_APP / "engineRunner.js").exists()
     assert (DESKTOP_APP / "engineRunner.test.mjs").exists()
+    assert (DESKTOP_APP / "tauriEngineBridge.js").exists()
+    assert (DESKTOP_APP / "tauriEngineBridge.test.mjs").exists()
     assert (DESKTOP / "README.md").exists()
     assert (DESKTOP / "package.json").exists()
     assert (DESKTOP / "src-tauri" / "tauri.conf.json").exists()
@@ -41,14 +43,17 @@ def test_desktop_app_mentions_engine_project_commands():
     app = (DESKTOP / "src" / "App.jsx").read_text(encoding="utf-8")
     bridge = (DESKTOP_APP / "engineBridge.js").read_text(encoding="utf-8")
     runner = (DESKTOP_APP / "engineRunner.js").read_text(encoding="utf-8")
+    tauri_bridge = (DESKTOP_APP / "tauriEngineBridge.js").read_text(encoding="utf-8")
 
     assert "sopa-libros-engine project validate" in bridge
     assert "sopa-libros-engine project generate" in bridge
     assert "--json-lines" in bridge
     assert "createStaticEngineRunner" in runner
     assert "consumeJsonLines" in runner
+    assert "engine_runtime_status" in tauri_bridge
+    assert "run_engine_project_command" in tauri_bridge
     assert "Copy project JSON" in app
-    assert "React scaffold" in app
+    assert "Tauri bridge" in app
 
 
 def test_tauri_config_points_to_static_app_directory():
@@ -58,5 +63,15 @@ def test_tauri_config_points_to_static_app_directory():
     assert '"beforeBuildCommand": "npm run build"' in config
     assert '"devUrl": "http://127.0.0.1:5173"' in config
     assert '"frontendDist": "../dist"' in config
+    assert '"withGlobalTauri": true' in config
     assert '"icon": ["icons/icon.ico"]' in config
     assert '"identifier": "com.sopalibros.desktop"' in config
+
+
+def test_tauri_registers_engine_commands():
+    lib = (DESKTOP / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
+
+    assert "#[tauri::command]" in lib
+    assert "engine_runtime_status" in lib
+    assert "run_engine_project_command" in lib
+    assert "tauri::generate_handler!" in lib
