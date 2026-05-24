@@ -8,6 +8,7 @@ import { RunPanel } from "./components/RunPanel.jsx";
 import { Sidebar } from "./components/Sidebar.jsx";
 import { useEngineRuntime } from "./hooks/useEngineRuntime.js";
 import { useProjectDocument } from "./hooks/useProjectDocument.js";
+import { useProjectFileActions } from "./hooks/useProjectFileActions.js";
 import { useProjectRun } from "./hooks/useProjectRun.js";
 
 export default function App() {
@@ -16,6 +17,12 @@ export default function App() {
   const projectDocument = useProjectDocument();
   const { runtimeLabel } = useEngineRuntime();
   const runState = useProjectRun(showToast);
+  const fileActions = useProjectFileActions({
+    markSaved: projectDocument.markSaved,
+    projectJson: projectDocument.projectJson,
+    projectPath: projectDocument.projectPath,
+    showToast,
+  });
 
   const commands = useMemo(
     () => buildProjectCommands(projectDocument.normalizedProject, projectDocument.projectPath),
@@ -51,6 +58,15 @@ export default function App() {
           <div className="topbar-actions">
             <button id="reset-demo" className="secondary-button" type="button" onClick={projectDocument.resetDemoProject}>
               Reset demo
+            </button>
+            <button
+              id="save-project"
+              className="secondary-button"
+              type="button"
+              onClick={fileActions.saveDraft}
+              disabled={!fileActions.canSave || fileActions.isSaving}
+            >
+              {fileActions.isSaving ? "Saving..." : "Save draft"}
             </button>
             <button id="copy-project" className="primary-button" type="button" onClick={copyProject}>
               Copy project JSON
