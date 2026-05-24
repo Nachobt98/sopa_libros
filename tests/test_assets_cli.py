@@ -3,6 +3,7 @@ import sys
 
 from wordsearch.asset_generation.pipeline import GeneratedAssetSet
 from wordsearch.asset_generation.providers import LOCAL_PLACEHOLDER_PROVIDER, OPENAI_PROVIDER
+from wordsearch.asset_generation.user_assets import UserSuppliedAssetSet
 from wordsearch.cli import assets
 from wordsearch.parsing.thematic import PuzzleParseError
 
@@ -23,6 +24,8 @@ def test_parse_args_accepts_assets_cli_options(monkeypatch):
             "premium-historical",
             "--provider",
             OPENAI_PROVIDER,
+            "--user-assets-dir",
+            "assets/user/egypt",
         ],
     )
 
@@ -33,6 +36,7 @@ def test_parse_args_accepts_assets_cli_options(monkeypatch):
     assert args.output_dir == "assets/generated/egypt"
     assert args.style == "premium-historical"
     assert args.provider == OPENAI_PROVIDER
+    assert args.user_assets_dir == "assets/user/egypt"
 
 
 def test_main_prints_generated_asset_summary(monkeypatch, capsys):
@@ -72,6 +76,48 @@ def test_main_prints_generated_asset_summary(monkeypatch, capsys):
     assert "Assets generados" in captured.out
     assert "assets/generated/book/asset_manifest.json" in captured.out
     assert "Assets PNG: 3" in captured.out
+
+
+def test_main_prints_user_supplied_asset_summary(monkeypatch, capsys):
+    monkeypatch.setattr(
+        assets,
+        "_parse_args",
+        lambda: argparse.Namespace(
+            title="Book",
+            input_path="wordlists/book.txt",
+            output_dir="assets/generated/book",
+            style="user-photo",
+            provider=LOCAL_PLACEHOLDER_PROVIDER,
+            user_assets_dir="assets/user/book",
+        ),
+    )
+
+    def fake_build_user_asset_manifest_for_book(**kwargs):
+        assert kwargs == {
+            "title": "Book",
+            "input_path": "wordlists/book.txt",
+            "user_assets_dir": "assets/user/book",
+            "output_dir": "assets/generated/book",
+            "style": "user-photo",
+        }
+        return UserSuppliedAssetSet(
+            output_dir="assets/generated/book",
+            manifest_path="assets/generated/book/asset_manifest.json",
+            source_map_path="assets/generated/book/user_asset_sources.json",
+            asset_count=4,
+            block_count=2,
+            warning_count=1,
+        )
+
+    monkeypatch.setattr(assets, "build_user_asset_manifest_for_book", fake_build_user_asset_manifest_for_book)
+
+    assets.main()
+
+    captured = capsys.readouterr()
+    assert "Assets de usuario normalizados" in captured.out
+    assert "assets/generated/book/asset_manifest.json" in captured.out
+    assert "assets/generated/book/user_asset_sources.json" in captured.out
+    assert "Assets PNG: 4" in captured.out
 
 
 def test_main_handles_missing_input_file(monkeypatch, capsys):
