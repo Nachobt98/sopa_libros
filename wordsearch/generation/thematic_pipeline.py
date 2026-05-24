@@ -28,6 +28,7 @@ from wordsearch.config.paths import BASE_OUTPUT_DIR, build_book_output_dir, buil
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.page_plan import build_page_plan
 from wordsearch.domain.puzzle import PuzzleSpec
+from wordsearch.engine.events import RunEventCallback, emit_run_event
 from wordsearch.generation.book_assembly import render_thematic_book_images
 from wordsearch.generation.grid_batch import generate_thematic_grids
 from wordsearch.generation.reporting import build_thematic_generation_report, write_generation_report
@@ -149,6 +150,11 @@ def _print_grid_failures(failures: list[str]) -> None:
     print_info("Try increasing the grid size, using a harder difficulty, or reducing words in those puzzles.")
 
 
+def _report_issue_count(report: Any, attribute: str) -> int:
+    issues = getattr(report, attribute, []) or []
+    return len(issues)
+
+
 def _clean_output_dir(output_dir: str) -> bool:
     output_path = Path(output_dir)
     if not output_path.exists():
@@ -202,27 +208,70 @@ def _print_preflight_report_summary(preflight_report) -> None:
         print_success("No basic KDP preflight issues detected")
 
 
-def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
+def generate_thematic_book(
+    options: ThematicGenerationOptions,
+    *,
+    event_callback: RunEventCallback | None = None,
+) -> str | None:
+    emit_run_event(
+        event_callback,
+        "run_started",
+        "setup",
+        "Thematic generation started.",
+        metadata={
+            "book_title": options.book_title,
+            "input_path": options.puzzles_txt_path,
+            "difficulty": options.difficulty.name,
+            "grid_size": options.grid_size,
+            "theme_name": options.theme_name,
+            "format_name": options.format_name,
+            "preview": options.preview,
+            "validate_only": options.validate_only,
+        },
+    )
     print_run_summary(options)
     theme = get_theme(options.theme_name)
     layout = get_format_preset(options.format_name).to_layout_config()
     format_kwargs = _format_kwargs(options, layout)
     asset_manifest = _load_asset_manifest(options.theme_manifest_path)
     if options.theme_manifest_path and asset_manifest is None:
+        emit_run_event(
+            event_callback,
+            "run_failed",
+            "setup",
+            "Theme manifest could not be loaded.",
+            metadata={"theme_manifest_path": options.theme_manifest_path},
+        )
         return None
 
     print_section("Parsing")
+    emit_run_event(event_callback, "stage_started", "parsing", "Parsing thematic input.")
     try:
         specs = parse_puzzle_file(options.puzzles_txt_path)
     except FileNotFoundError:
         print_error(f"Input file not found: {options.puzzles_txt_path}")
+        emit_run_event(
+            event_callback,
+            "run_failed",
+            "parsing",
+            "Input file not found.",
+            metadata={"input_path": options.puzzles_txt_path},
+        )
         return None
     except PuzzleParseError as exc:
         print_error(f"Parse error: {exc}")
+        emit_run_event(
+            event_callback,
+            "run_failed",
+            "parsing",
+            "Thematic input could not be parsed.",
+            metadata={"error": str(exc), "input_path": options.puzzles_txt_path},
+        )
         return None
 
     if not specs:
         print_error("No [Puzzle] blocks were found in the input file.")
+        emit_run_event(event_callback, "run_failed", "parsing", "No puzzle blocks were found.")
         return None
 
     parsed_count = len(specs)
@@ -232,20 +281,45 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         print_info(f"Preview/limit active: {len(specs)} puzzles will be generated")
     if not specs:
         print_error("No puzzles remain after applying the generation limit.")
+        emit_run_event(event_callback, "run_failed", "parsing", "No puzzles remain after applying the limit.")
         return None
+    emit_run_event(
+        event_callback,
+        "stage_completed",
+        "parsing",
+        "Thematic input parsed.",
+        current=len(specs),
+        total=parsed_count,
+        metadata={"parsed_puzzle_count": parsed_count, "selected_puzzle_count": len(specs)},
+    )
 
     book_slug = slugify(options.book_title)
     output_dir = _resolve_output_dir(options, book_slug)
     if options.clean_output and not _clean_output_dir(output_dir):
+        emit_run_event(
+            event_callback,
+            "run_failed",
+            "setup",
+            "Output directory could not be cleaned.",
+            metadata={"output_dir": output_dir},
+        )
         return None
 
     print_section("Validation")
+    emit_run_event(event_callback, "stage_started", "validation", "Validating assets and puzzle specs.")
     asset_report = validate_generation_assets(output_dir=output_dir, optional_backgrounds=(spec.block_background for spec in specs))
     if asset_manifest is not None:
         asset_report.extend(validate_asset_manifest_assets(asset_manifest))
     asset_report.print_summary()
     if asset_report.has_errors:
         print_error("Fix the asset errors above and run the generator again.")
+        emit_run_event(
+            event_callback,
+            "run_failed",
+            "validation",
+            "Asset validation failed.",
+            metadata={"error_count": len(asset_report.errors), "warning_count": len(asset_report.warnings)},
+        )
         return None
     print_success("Assets validated")
 
@@ -253,29 +327,95 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     validation_report.print_summary()
     if validation_report.has_errors:
         print_error("Fix the validation errors above and run the generator again.")
+        emit_run_event(
+            event_callback,
+            "run_failed",
+            "validation",
+            "Puzzle spec validation failed.",
+            metadata={
+                "error_count": _report_issue_count(validation_report, "errors"),
+                "warning_count": _report_issue_count(validation_report, "warnings"),
+            },
+        )
         return None
     print_success("Puzzle specs validated")
+    emit_run_event(
+        event_callback,
+        "stage_completed",
+        "validation",
+        "Validation completed.",
+        metadata={
+            "asset_warning_count": len(asset_report.warnings),
+            "content_warning_count": _report_issue_count(validation_report, "warnings"),
+        },
+    )
     if options.validate_only:
         print_success("Validation completed. No grids, images or PDF were generated.")
+        emit_run_event(event_callback, "run_completed", "validation", "Validation-only run completed.")
         return None
 
     print_section("Grid generation")
+    emit_run_event(
+        event_callback,
+        "stage_started",
+        "grid_generation",
+        "Generating puzzle grids.",
+        current=0,
+        total=len(specs),
+    )
+
+    grid_progress = {"completed": 0}
+
+    def on_grid_progress() -> None:
+        grid_progress["completed"] += 1
+        emit_run_event(
+            event_callback,
+            "progress",
+            "grid_generation",
+            "Generated puzzle grid.",
+            current=grid_progress["completed"],
+            total=len(specs),
+        )
+
     with create_progress() as progress:
         task_id = progress.add_task("Generating grids", total=len(specs))
         grid_batch = _generate_thematic_grids_with_optional_progress(
             specs,
             options,
-            progress_callback=lambda: progress.update(task_id, advance=1),
+            progress_callback=lambda: (progress.update(task_id, advance=1), on_grid_progress()),
         )
         progress.update(task_id, completed=len(specs))
     if grid_batch.has_failures:
         _print_grid_failures(grid_batch.failures)
+        emit_run_event(
+            event_callback,
+            "run_failed",
+            "grid_generation",
+            "One or more puzzle grids could not be generated.",
+            metadata={"failures": grid_batch.failures},
+        )
         return None
 
     generated_puzzles = grid_batch.generated_puzzles
     print_success(f"Generated {len(generated_puzzles)} grids")
+    emit_run_event(
+        event_callback,
+        "stage_completed",
+        "grid_generation",
+        "Grid generation completed.",
+        current=len(generated_puzzles),
+        total=len(specs),
+    )
 
     print_section("Rendering")
+    emit_run_event(
+        event_callback,
+        "stage_started",
+        "rendering",
+        "Rendering book page images.",
+        current=0,
+        total=len(generated_puzzles),
+    )
     page_plan = build_page_plan(generated_puzzles)
     render_kwargs = {
         "book_title": options.book_title,
@@ -288,17 +428,42 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     if options.theme_name != DEFAULT_THEME_NAME:
         render_kwargs["theme"] = theme
     render_kwargs.update(format_kwargs)
+    render_progress = {"completed": 0}
+
+    def on_render_progress() -> None:
+        render_progress["completed"] += 1
+        emit_run_event(
+            event_callback,
+            "progress",
+            "rendering",
+            "Rendered puzzle page pair.",
+            current=render_progress["completed"],
+            total=len(generated_puzzles),
+        )
+
     with create_progress() as progress:
         task_id = progress.add_task("Rendering puzzle and solution pages", total=len(generated_puzzles))
         rendered_images = _render_thematic_book_images_with_optional_progress(
             render_kwargs,
-            progress_callback=lambda: progress.update(task_id, advance=1),
+            progress_callback=lambda: (progress.update(task_id, advance=1), on_render_progress()),
         )
         progress.update(task_id, completed=len(generated_puzzles))
     if not rendered_images.is_complete:
         print_error("Not enough images were generated to create the PDF.")
+        emit_run_event(event_callback, "run_failed", "rendering", "Not enough images were rendered.")
         return None
     print_success(f"Rendered {len(rendered_images.content_imgs) + len(rendered_images.solution_imgs)} images")
+    emit_run_event(
+        event_callback,
+        "stage_completed",
+        "rendering",
+        "Rendering completed.",
+        current=len(rendered_images.content_imgs) + len(rendered_images.solution_imgs),
+        metadata={
+            "content_image_count": len(rendered_images.content_imgs),
+            "solution_image_count": len(rendered_images.solution_imgs),
+        },
+    )
 
     render_quality_report = build_render_quality_report(
         book_title=options.book_title,
@@ -312,11 +477,20 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
     visual_regression_report_path = None
     if options.preview:
         print_section("Visual regression")
+        emit_run_event(event_callback, "stage_started", "visual_regression", "Building visual regression report.")
         visual_report = build_visual_regression_report([*rendered_images.content_imgs, *rendered_images.solution_imgs])
         visual_regression_report_path = write_visual_regression_report(visual_report, output_dir=output_dir)
         print_success(f"Visual regression report generated: {visual_regression_report_path}")
+        emit_run_event(
+            event_callback,
+            "stage_completed",
+            "visual_regression",
+            "Visual regression report generated.",
+            metadata={"visual_regression_report_path": visual_regression_report_path},
+        )
 
     print_section("PDF assembly")
+    emit_run_event(event_callback, "stage_started", "pdf_assembly", "Building final PDF.", current=0, total=1)
     pdf_path = build_output_file(output_dir, f"{book_slug}.pdf")
     pdf_metadata = build_pdf_metadata(options)
     try:
@@ -334,10 +508,34 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         print_error("Could not save the PDF.")
         print_warning("Close the file if it is open in a PDF viewer/browser and try again.")
         print_info(f"Blocked path: {pdf_path}")
+        emit_run_event(
+            event_callback,
+            "run_failed",
+            "pdf_assembly",
+            "PDF could not be saved.",
+            metadata={"pdf_path": pdf_path},
+        )
         return None
     print_success(f"PDF generated: {pdf_final}")
+    emit_run_event(
+        event_callback,
+        "stage_completed",
+        "pdf_assembly",
+        "Final PDF generated.",
+        current=1,
+        total=1,
+        metadata={"pdf_path": pdf_final},
+    )
 
     print_section("Preflight and reports")
+    emit_run_event(
+        event_callback,
+        "stage_started",
+        "preflight",
+        "Running preflight and writing reports.",
+        current=0,
+        total=4,
+    )
     with create_progress() as progress:
         preflight_start = time.monotonic()
         task_id = progress.add_task("Running preflight and writing reports", total=4)
@@ -385,6 +583,19 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         if progress.console.is_terminal and elapsed < MIN_PREFLIGHT_PROGRESS_SECONDS:
             time.sleep(MIN_PREFLIGHT_PROGRESS_SECONDS - elapsed)
 
+    emit_run_event(
+        event_callback,
+        "stage_completed",
+        "preflight",
+        "Preflight and reports completed.",
+        current=4,
+        total=4,
+        metadata={
+            "preflight_report_path": preflight_report_path,
+            "generation_report_path": report_path,
+            "review_summary_path": review_summary_path,
+        },
+    )
     _print_preflight_report_summary(preflight_report)
     print_completion_panel(
         title="GENERATION COMPLETE",
@@ -396,4 +607,16 @@ def generate_thematic_book(options: ThematicGenerationOptions) -> str | None:
         recommendation=review_summary.recommendation,
     )
     print_completion_animation()
+    emit_run_event(
+        event_callback,
+        "run_completed",
+        "complete",
+        "Thematic generation completed.",
+        metadata={
+            "pdf_path": pdf_final,
+            "generation_report_path": report_path,
+            "preflight_report_path": preflight_report_path,
+            "review_summary_path": review_summary_path,
+        },
+    )
     return pdf_final
