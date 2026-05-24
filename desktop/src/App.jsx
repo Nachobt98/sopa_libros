@@ -8,6 +8,7 @@ import { Sidebar } from "./components/Sidebar.jsx";
 import { useEngineRuntime } from "./hooks/useEngineRuntime.js";
 import { useProjectRun } from "./hooks/useProjectRun.js";
 import { demoProject, normalizeProject } from "./model/project.js";
+import { validateProject } from "./model/projectValidation.js";
 
 export default function App() {
   const [activePanel, setActivePanel] = useState("project-panel");
@@ -17,6 +18,7 @@ export default function App() {
   const runState = useProjectRun(showToast);
 
   const normalizedProject = useMemo(() => normalizeProject(project), [project]);
+  const validation = useMemo(() => validateProject(project), [project]);
   const request = useMemo(() => projectToEngineRequest(normalizedProject), [normalizedProject]);
   const commands = useMemo(() => buildProjectCommands(normalizedProject, defaultProjectPath(normalizedProject)), [normalizedProject]);
 
@@ -56,7 +58,12 @@ export default function App() {
           </div>
         </header>
 
-        <ProjectPanel isVisible={activePanel === "project-panel"} project={project} setProject={setProject} />
+        <ProjectPanel
+          isVisible={activePanel === "project-panel"}
+          project={project}
+          setProject={setProject}
+          validation={validation}
+        />
         <RequestPanel isVisible={activePanel === "request-panel"} normalizedProject={normalizedProject} request={request} />
         <RunPanel
           commands={commands}
@@ -65,6 +72,7 @@ export default function App() {
           isVisible={activePanel === "run-panel"}
           onClearEvents={runState.clearEvents}
           onSimulateRun={() => runState.simulateRun(normalizedProject)}
+          validation={validation}
         />
       </main>
 

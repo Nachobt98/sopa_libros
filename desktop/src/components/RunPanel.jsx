@@ -1,6 +1,8 @@
 import { EventList } from "./EventList.jsx";
 
-export function RunPanel({ commands, events, isRunning, isVisible, onClearEvents, onSimulateRun }) {
+export function RunPanel({ commands, events, isRunning, isVisible, onClearEvents, onSimulateRun, validation }) {
+  const canRun = validation.ok && !isRunning;
+
   return (
     <section id="run-panel" className={`panel ${isVisible ? "is-visible" : ""}`} aria-labelledby="run-heading">
       <div className="section-heading">
@@ -20,7 +22,7 @@ export function RunPanel({ commands, events, isRunning, isVisible, onClearEvents
       </div>
 
       <div className="run-toolbar">
-        <button id="simulate-run" className="primary-button" type="button" onClick={onSimulateRun} disabled={isRunning}>
+        <button id="simulate-run" className="primary-button" type="button" onClick={onSimulateRun} disabled={!canRun}>
           {isRunning ? "Running..." : "Simulate run"}
         </button>
         <button id="clear-events" className="secondary-button" type="button" onClick={onClearEvents}>

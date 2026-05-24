@@ -208,6 +208,40 @@ button {
   gap: 16px;
 }
 
+.validation-summary {
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.validation-summary.is-valid {
+  border-left: 4px solid var(--accent);
+  color: var(--accent-strong);
+  font-weight: 750;
+}
+
+.validation-summary.is-invalid {
+  border-left: 4px solid var(--rose);
+  color: var(--ink);
+}
+
+.validation-summary strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--rose);
+}
+
+.validation-summary ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+}
+
 label,
 .segmented-field {
   display: grid;

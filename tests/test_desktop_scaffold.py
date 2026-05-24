@@ -13,9 +13,12 @@ def test_desktop_scaffold_files_exist():
     assert (DESKTOP / "src" / "App.jsx").exists()
     assert (DESKTOP / "src" / "components" / "ProjectForm.jsx").exists()
     assert (DESKTOP / "src" / "components" / "RunPanel.jsx").exists()
+    assert (DESKTOP / "src" / "components" / "ValidationSummary.jsx").exists()
     assert (DESKTOP / "src" / "hooks" / "useEngineRuntime.js").exists()
     assert (DESKTOP / "src" / "hooks" / "useProjectRun.js").exists()
     assert (DESKTOP / "src" / "model" / "project.js").exists()
+    assert (DESKTOP / "src" / "model" / "projectValidation.js").exists()
+    assert (DESKTOP / "src" / "model" / "projectValidation.test.mjs").exists()
     assert (DESKTOP_APP / "index.html").exists()
     assert (DESKTOP_APP / "styles.css").exists()
     assert (DESKTOP_APP / "app.js").exists()
@@ -37,6 +40,7 @@ def test_desktop_index_references_local_assets():
     project_form = (DESKTOP / "src" / "components" / "ProjectForm.jsx").read_text(encoding="utf-8")
     request_panel = (DESKTOP / "src" / "components" / "RequestPanel.jsx").read_text(encoding="utf-8")
     event_list = (DESKTOP / "src" / "components" / "EventList.jsx").read_text(encoding="utf-8")
+    validation_summary = (DESKTOP / "src" / "components" / "ValidationSummary.jsx").read_text(encoding="utf-8")
 
     assert '<div id="root"></div>' in html
     assert '<script type="module" src="/src/main.jsx"></script>' in html
@@ -44,6 +48,7 @@ def test_desktop_index_references_local_assets():
     assert 'id="project-form"' in project_form
     assert 'id="request-json"' in request_panel
     assert 'id="event-list"' in event_list
+    assert 'id="validation-summary"' in validation_summary
 
 
 def test_desktop_app_mentions_engine_project_commands():
