@@ -10,9 +10,15 @@ export function useProjectFileActions({ markSaved, projectJson, projectPath, sho
     try {
       const output = await projectFileBridge.saveProject(projectPath, projectJson);
       markSaved();
-      showToast(`Saved ${output.path}`);
+      if (showToast) {
+        showToast(`Saved ${output.path}`);
+      }
+      return output;
     } catch (error) {
-      showToast(error.message || "Project save failed.");
+      if (showToast) {
+        showToast(error.message || "Project save failed.");
+      }
+      throw error;
     } finally {
       setIsSaving(false);
     }

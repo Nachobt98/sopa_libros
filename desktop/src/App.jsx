@@ -16,14 +16,16 @@ export default function App() {
   const [toast, setToast] = useState("");
   const projectDocument = useProjectDocument();
   const { runtimeLabel } = useEngineRuntime();
-  const runState = useProjectRun(showToast);
   const fileActions = useProjectFileActions({
     markSaved: projectDocument.markSaved,
     projectJson: projectDocument.projectJson,
     projectPath: projectDocument.projectPath,
     showToast,
   });
-
+  const runState = useProjectRun(showToast, {
+    projectPath: projectDocument.projectPath,
+    saveDraft: fileActions.saveDraft,
+  });
   const commands = useMemo(
     () => buildProjectCommands(projectDocument.normalizedProject, projectDocument.projectPath),
     [projectDocument.normalizedProject, projectDocument.projectPath]
@@ -88,10 +90,13 @@ export default function App() {
         <RunPanel
           commands={commands}
           events={runState.events}
+          isRealEngineAvailable={runState.isRealEngineAvailable}
           isRunning={runState.isRunning}
           isVisible={activePanel === "run-panel"}
           onClearEvents={runState.clearEvents}
-          onSimulateRun={() => runState.simulateRun(projectDocument.normalizedProject)}
+          onGenerateProject={() => runState.generateProject(projectDocument.normalizedProject)}
+          onValidateProject={() => runState.validateProject(projectDocument.normalizedProject)}
+          runningAction={runState.runningAction}
           validation={projectDocument.validation}
         />
       </main>
