@@ -25,9 +25,40 @@ export async function loadEngineRuntimeStatus({ invoke = getTauriInvoke() } = {}
 }
 
 export function createTauriEngineRunner({ invoke = getTauriInvoke() } = {}) {
+  async function runProjectCommand(mode, projectPath) {
+    const output = await invoke("run_engine_project_command", {
+      mode,
+      projectPath,
+    });
+
+    if (!output.ok) {
+      throw new Error(output.stderr || output.stdout || `Engine exited with status ${output.status_code ?? "unknown"}.`);
+    }
+
+    return output;
+  }
+
   return {
     isAvailable() {
       return Boolean(invoke);
+    },
+
+    async validate(project, handlers = {}) {
+      if (!invoke) {
+        throw new Error("Tauri invoke API is unavailable.");
+      }
+
+      const projectPath = handlers.projectPath || defaultProjectPath(project);
+      handlers.onCommand?.(`sopa-libros-engine project validate --project ${projectPath}`);
+      const output = await runProjectCommand("validate", projectPath);
+
+      if (output.stderr) {
+        handlers.onStderr?.(output.stderr);
+      }
+
+      const result = JSON.parse(output.stdout || "{}");
+      handlers.onResult?.(result);
+      return result;
     },
 
     async generate(project, handlers = {}) {
@@ -37,21 +68,13 @@ export function createTauriEngineRunner({ invoke = getTauriInvoke() } = {}) {
 
       const projectPath = handlers.projectPath || defaultProjectPath(project);
       handlers.onCommand?.(`sopa-libros-engine project generate --project ${projectPath} --json-lines`);
-
-      const output = await invoke("run_engine_project_command", {
-        mode: "generate",
-        projectPath,
-      });
+      const output = await runProjectCommand("generate", projectPath);
 
       if (output.stderr) {
         handlers.onStderr?.(output.stderr);
       }
 
       const result = await consumeJsonLines(output.stdout, handlers);
-      if (!output.ok) {
-        throw new Error(output.stderr || `Engine exited with status ${output.status_code ?? "unknown"}.`);
-      }
-
       return result;
     },
   };

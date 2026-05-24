@@ -31,11 +31,19 @@ assert.deepEqual(availableStatus, {
 });
 
 const runnerEvents = [];
-let invokedPayload = null;
+const invokedPayloads = [];
 const runner = createTauriEngineRunner({
   invoke: async (command, payload) => {
     assert.equal(command, "run_engine_project_command");
-    invokedPayload = payload;
+    invokedPayloads.push(payload);
+    if (payload.mode === "validate") {
+      return {
+        ok: true,
+        status_code: 0,
+        stderr: "",
+        stdout: '{"ok":true,"issues":[]}',
+      };
+    }
     return {
       ok: true,
       status_code: 0,
@@ -48,16 +56,24 @@ const runner = createTauriEngineRunner({
   },
 });
 
+const validationResult = await runner.validate({ book_title: "Ancient Egypt Word Search" });
 const result = await runner.generate(
   { book_title: "Ancient Egypt Word Search" },
   { onEvent: (event) => runnerEvents.push(event) }
 );
 
 assert.equal(runner.isAvailable(), true);
-assert.deepEqual(invokedPayload, {
-  mode: "generate",
-  projectPath: "projects/ancient_egypt_word_search.sopa.json",
-});
+assert.deepEqual(validationResult, { ok: true, issues: [] });
+assert.deepEqual(invokedPayloads, [
+  {
+    mode: "validate",
+    projectPath: "projects/ancient_egypt_word_search.sopa.json",
+  },
+  {
+    mode: "generate",
+    projectPath: "projects/ancient_egypt_word_search.sopa.json",
+  },
+]);
 assert.equal(runnerEvents.length, 1);
 assert.deepEqual(result, { ok: true, pdf_path: "out/book.pdf" });
 

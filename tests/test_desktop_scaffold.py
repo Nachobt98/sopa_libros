@@ -78,6 +78,8 @@ def test_desktop_app_mentions_engine_project_commands():
     assert "read_project_file" in file_bridge
     assert "Copy project JSON" in app
     assert "Save draft" in app
+    assert "generateProject" in app
+    assert "validateProject" in app
     assert "runtimeLabel" in sidebar
 
 
