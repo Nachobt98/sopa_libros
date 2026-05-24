@@ -9,6 +9,7 @@ from wordsearch.config.design import DEFAULT_THEME_NAME
 from wordsearch.config.formats import DEFAULT_FORMAT_NAME
 from wordsearch.domain.book import ThematicGenerationOptions
 from wordsearch.domain.puzzle import PuzzleSpec
+from wordsearch.engine.events import RunEvent
 from wordsearch.generation.difficulty import DifficultyLevel
 
 
@@ -81,14 +82,14 @@ class ThematicValidationRequest:
             preview=bool(payload.get("preview", False)),
         )
 
-    def to_generation_options(self) -> ThematicGenerationOptions:
+    def to_generation_options(self, *, validate_only: bool = True) -> ThematicGenerationOptions:
         return ThematicGenerationOptions(
             book_title=self.book_title or "Wordsearch Thematic Book",
             puzzles_txt_path=self.input_path,
             difficulty=parse_difficulty(self.difficulty),
             grid_size=self.grid_size,
             seed=self.seed,
-            validate_only=True,
+            validate_only=validate_only,
             theme_name=self.theme_name or DEFAULT_THEME_NAME,
             format_name=self.format_name or DEFAULT_FORMAT_NAME,
             theme_manifest_path=self.theme_manifest_path,
@@ -123,6 +124,33 @@ class ThematicValidationResponse:
         payload = asdict(self)
         payload["error_count"] = len(self.errors)
         payload["warning_count"] = len(self.warnings)
+        return payload
+
+
+@dataclass
+class ThematicRunResponse:
+    """Output payload returned by preview/full thematic engine generation."""
+
+    ok: bool
+    command: str = "thematic.generate"
+    status: str = "ok"
+    pdf_path: str | None = None
+    issues: list[EngineIssue] = field(default_factory=list)
+    events: list[RunEvent] = field(default_factory=list)
+
+    @property
+    def errors(self) -> list[EngineIssue]:
+        return [issue for issue in self.issues if issue.severity == "error"]
+
+    @property
+    def warnings(self) -> list[EngineIssue]:
+        return [issue for issue in self.issues if issue.severity == "warning"]
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["error_count"] = len(self.errors)
+        payload["warning_count"] = len(self.warnings)
+        payload["event_count"] = len(self.events)
         return payload
 
 

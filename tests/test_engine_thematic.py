@@ -2,7 +2,8 @@ import json
 
 from wordsearch.domain.puzzle import PuzzleSpec
 from wordsearch.engine import thematic
-from wordsearch.engine.thematic import validate_thematic_request
+from wordsearch.engine.events import RunEvent
+from wordsearch.engine.thematic import generate_thematic_request, validate_thematic_request
 from wordsearch.validation.assets import AssetValidationReport
 
 
@@ -162,3 +163,116 @@ def test_engine_cli_validate_writes_json(monkeypatch, tmp_path, capsys):
     assert payload["ok"] is True
     assert payload["command"] == "thematic.validate"
     assert payload["selected_puzzle_count"] == 1
+
+
+def test_generate_thematic_request_returns_pdf_path_and_events(monkeypatch):
+    def fake_generate_thematic_book(options, *, event_callback=None):
+        assert options.validate_only is False
+        assert options.book_title == "Engine Book"
+        assert options.puzzles_txt_path == "wordlists/book.txt"
+        event_callback(
+            RunEvent(
+                type="run_completed",
+                stage="complete",
+                message="Done.",
+                metadata={"pdf_path": "out/book.pdf"},
+            )
+        )
+        return "out/book.pdf"
+
+    monkeypatch.setattr(thematic, "generate_thematic_book", fake_generate_thematic_book)
+
+    response = generate_thematic_request(
+        {
+            "book_title": "Engine Book",
+            "input_path": "wordlists/book.txt",
+            "difficulty": "medium",
+            "grid_size": 14,
+        }
+    )
+
+    payload = response.to_dict()
+
+    assert response.ok is True
+    assert payload["command"] == "thematic.generate"
+    assert payload["pdf_path"] == "out/book.pdf"
+    assert payload["event_count"] == 1
+    assert payload["events"][0]["type"] == "run_completed"
+
+
+def test_generate_thematic_request_supports_validate_only(monkeypatch):
+    def fake_generate_thematic_book(options, *, event_callback=None):
+        assert options.validate_only is True
+        event_callback(RunEvent(type="run_completed", stage="validation", message="Validated."))
+        return None
+
+    monkeypatch.setattr(thematic, "generate_thematic_book", fake_generate_thematic_book)
+
+    response = generate_thematic_request(
+        {
+            "book_title": "Engine Book",
+            "input_path": "wordlists/book.txt",
+            "difficulty": "medium",
+            "grid_size": 14,
+            "validate_only": True,
+        }
+    )
+
+    assert response.ok is True
+    assert response.pdf_path is None
+    assert response.events[0].stage == "validation"
+
+
+def test_generate_thematic_request_returns_issue_when_pipeline_fails(monkeypatch):
+    def fake_generate_thematic_book(options, *, event_callback=None):
+        event_callback(RunEvent(type="run_failed", stage="grid_generation", message="Grid failed."))
+        return None
+
+    monkeypatch.setattr(thematic, "generate_thematic_book", fake_generate_thematic_book)
+
+    response = generate_thematic_request(
+        {
+            "book_title": "Engine Book",
+            "input_path": "wordlists/book.txt",
+            "difficulty": "medium",
+            "grid_size": 14,
+        }
+    )
+
+    assert response.ok is False
+    assert response.issues[0].code == "GRID_GENERATION_FAILED"
+    assert response.issues[0].message == "Grid failed."
+
+
+def test_engine_cli_generate_writes_json(monkeypatch, tmp_path, capsys):
+    from wordsearch.cli import engine as engine_cli
+
+    config_path = tmp_path / "request.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "book_title": "Engine Book",
+                "input_path": "wordlists/book.txt",
+                "difficulty": "medium",
+                "grid_size": 14,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def fake_generate_thematic_book(options, *, event_callback=None):
+        event_callback(RunEvent(type="run_completed", stage="complete", message="Done."))
+        return "out/book.pdf"
+
+    monkeypatch.setattr(thematic, "generate_thematic_book", fake_generate_thematic_book)
+    monkeypatch.setattr("sys.argv", ["sopa-libros-engine", "generate", "--config", str(config_path)])
+
+    try:
+        engine_cli.main()
+    except SystemExit as exc:
+        assert exc.code == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["command"] == "thematic.generate"
+    assert payload["pdf_path"] == "out/book.pdf"

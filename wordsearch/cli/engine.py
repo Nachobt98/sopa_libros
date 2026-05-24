@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from wordsearch.engine.thematic import validate_thematic_request
+from wordsearch.engine.thematic import generate_thematic_request, validate_thematic_request
 
 
 def _parse_args() -> argparse.Namespace:
@@ -17,6 +17,9 @@ def _parse_args() -> argparse.Namespace:
 
     validate_parser = subparsers.add_parser("validate", help="Validate a thematic book request.")
     validate_parser.add_argument("--config", required=True, help="Path to a JSON request file.")
+
+    generate_parser = subparsers.add_parser("generate", help="Generate a thematic book from a JSON request.")
+    generate_parser.add_argument("--config", required=True, help="Path to a JSON request file.")
 
     return parser.parse_args()
 
@@ -30,6 +33,8 @@ def main() -> None:
 
     if args.command == "validate":
         response = validate_thematic_request(_load_json(args.config))
+    elif args.command == "generate":
+        response = generate_thematic_request(_load_json(args.config))
     else:
         raise AssertionError(f"Unhandled command: {args.command}")
 

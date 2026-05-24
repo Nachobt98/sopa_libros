@@ -15,6 +15,7 @@ The app-facing entry point is:
 
 ```text
 sopa-libros-engine validate --config request.json
+sopa-libros-engine generate --config request.json
 ```
 
 It writes JSON to stdout and exits with:
@@ -162,3 +163,50 @@ payload = [event.to_dict() for event in events]
 The future Tauri sidecar command should serialize these events as JSON lines or
 as a final `events` array, depending on whether the UI needs live progress or
 only a completed run summary.
+
+## Generate Command
+
+`generate` uses the same request shape as `validate`, but runs the thematic
+pipeline instead of stopping at validation:
+
+```bash
+sopa-libros-engine generate --config request.json
+```
+
+Successful full generation returns:
+
+```json
+{
+  "ok": true,
+  "command": "thematic.generate",
+  "status": "ok",
+  "pdf_path": "output_puzzles_kdp/book/book.pdf",
+  "issues": [],
+  "events": [
+    {
+      "type": "run_completed",
+      "stage": "complete",
+      "message": "Thematic generation completed.",
+      "current": null,
+      "total": null,
+      "metadata": {
+        "pdf_path": "output_puzzles_kdp/book/book.pdf"
+      }
+    }
+  ],
+  "error_count": 0,
+  "warning_count": 0,
+  "event_count": 1
+}
+```
+
+For a validation-only run through the same command, include:
+
+```json
+{
+  "validate_only": true
+}
+```
+
+When generation fails, `ok` is `false`, the process exits with `1`, and the last
+pipeline `run_failed` event is converted into a structured engine issue.
