@@ -252,3 +252,62 @@ def test_engine_cli_project_generate_streams_json_lines(monkeypatch, tmp_path, c
     assert [line["type"] for line in lines] == ["event", "result"]
     assert lines[0]["event"]["stage"] == "complete"
     assert lines[1]["result"]["pdf_path"] == "out/book.pdf"
+
+
+def test_engine_cli_project_assets_builds_manifest_and_updates_project(monkeypatch, tmp_path, capsys):
+    project_path = tmp_path / "book.sopa.json"
+    save_thematic_project(
+        ThematicProject(book_title="UI Book", input_path="wordlists/book.txt"),
+        project_path,
+    )
+    calls = {}
+
+    class FakeAssetResult:
+        output_dir = "assets/generated/ui-book"
+        manifest_path = "assets/generated/ui-book/asset_manifest.json"
+        source_map_path = "assets/generated/ui-book/user_asset_sources.json"
+        asset_count = 3
+        block_count = 1
+        warning_count = 1
+
+    def fake_build_user_asset_manifest_for_book(**kwargs):
+        calls["kwargs"] = kwargs
+        return FakeAssetResult()
+
+    monkeypatch.setattr(engine_cli, "build_user_asset_manifest_for_book", fake_build_user_asset_manifest_for_book)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "sopa-libros-engine",
+            "project",
+            "assets",
+            "--project",
+            str(project_path),
+            "--user-assets-dir",
+            "assets/user/book",
+            "--output",
+            "assets/generated/ui-book",
+            "--style",
+            "reviewed-user-assets",
+        ],
+    )
+
+    try:
+        engine_cli.main()
+    except SystemExit as exc:
+        assert exc.code == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    updated = load_thematic_project(project_path)
+    assert payload["ok"] is True
+    assert payload["command"] == "project.assets"
+    assert payload["assets"]["manifest_path"] == "assets/generated/ui-book/asset_manifest.json"
+    assert payload["project"]["theme_manifest_path"] == "assets/generated/ui-book/asset_manifest.json"
+    assert updated.theme_manifest_path == "assets/generated/ui-book/asset_manifest.json"
+    assert calls["kwargs"] == {
+        "title": "UI Book",
+        "input_path": "wordlists/book.txt",
+        "user_assets_dir": "assets/user/book",
+        "output_dir": "assets/generated/ui-book",
+        "style": "reviewed-user-assets",
+    }

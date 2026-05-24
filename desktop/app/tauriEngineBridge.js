@@ -77,5 +77,32 @@ export function createTauriEngineRunner({ invoke = getTauriInvoke() } = {}) {
       const result = await consumeJsonLines(output.stdout, handlers);
       return result;
     },
+
+    async buildUserAssets(project, options = {}, handlers = {}) {
+      if (!invoke) {
+        throw new Error("Tauri invoke API is unavailable.");
+      }
+
+      const projectPath = handlers.projectPath || defaultProjectPath(project);
+      handlers.onCommand?.(`sopa-libros-engine project assets --project ${projectPath} --user-assets-dir ${options.userAssetsDir}`);
+      const output = await invoke("run_engine_project_assets_command", {
+        projectPath,
+        userAssetsDir: options.userAssetsDir,
+        outputDir: options.outputDir || null,
+        style: options.style || null,
+      });
+
+      if (!output.ok) {
+        throw new Error(output.stderr || output.stdout || `Engine exited with status ${output.status_code ?? "unknown"}.`);
+      }
+
+      if (output.stderr) {
+        handlers.onStderr?.(output.stderr);
+      }
+
+      const result = JSON.parse(output.stdout || "{}");
+      handlers.onResult?.(result);
+      return result;
+    },
   };
 }

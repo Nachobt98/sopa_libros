@@ -19,8 +19,8 @@ export function useProjectDocument(initialProject = demoProject) {
     setSavedProjectJson(JSON.stringify(normalizeProject(demoProject)));
   }
 
-  function markSaved() {
-    setSavedProjectJson(JSON.stringify(normalizedProject));
+  function markSaved(projectOverride = normalizedProject) {
+    setSavedProjectJson(JSON.stringify(normalizeProject(projectOverride)));
   }
 
   return {

@@ -56,6 +56,31 @@ const runner = createTauriEngineRunner({
   },
 });
 
+const assetPayloads = [];
+const assetRunner = createTauriEngineRunner({
+  invoke: async (command, payload) => {
+    assert.equal(command, "run_engine_project_assets_command");
+    assetPayloads.push(payload);
+    return {
+      ok: true,
+      status_code: 0,
+      stderr: "",
+      stdout: JSON.stringify({
+        ok: true,
+        command: "project.assets",
+        project: {
+          book_title: "Ancient Egypt Word Search",
+          theme_manifest_path: "assets/generated/egypt-user/asset_manifest.json",
+        },
+        assets: {
+          manifest_path: "assets/generated/egypt-user/asset_manifest.json",
+          asset_count: 3,
+        },
+      }),
+    };
+  },
+});
+
 const validationResult = await runner.validate({ book_title: "Ancient Egypt Word Search" });
 const result = await runner.generate(
   { book_title: "Ancient Egypt Word Search" },
@@ -76,5 +101,24 @@ assert.deepEqual(invokedPayloads, [
 ]);
 assert.equal(runnerEvents.length, 1);
 assert.deepEqual(result, { ok: true, pdf_path: "out/book.pdf" });
+
+const assetResult = await assetRunner.buildUserAssets(
+  { book_title: "Ancient Egypt Word Search" },
+  {
+    userAssetsDir: "assets/user/egypt",
+    outputDir: "assets/generated/egypt-user",
+    style: "reviewed-user-assets",
+  }
+);
+
+assert.deepEqual(assetPayloads, [
+  {
+    projectPath: "projects/ancient_egypt_word_search.sopa.json",
+    userAssetsDir: "assets/user/egypt",
+    outputDir: "assets/generated/egypt-user",
+    style: "reviewed-user-assets",
+  },
+]);
+assert.equal(assetResult.assets.manifest_path, "assets/generated/egypt-user/asset_manifest.json");
 
 console.log("desktop tauri engine bridge tests passed");
