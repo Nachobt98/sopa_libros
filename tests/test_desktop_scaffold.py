@@ -11,6 +11,11 @@ def test_desktop_scaffold_files_exist():
     assert (DESKTOP / "vite.config.js").exists()
     assert (DESKTOP / "src" / "main.jsx").exists()
     assert (DESKTOP / "src" / "App.jsx").exists()
+    assert (DESKTOP / "src" / "components" / "ProjectForm.jsx").exists()
+    assert (DESKTOP / "src" / "components" / "RunPanel.jsx").exists()
+    assert (DESKTOP / "src" / "hooks" / "useEngineRuntime.js").exists()
+    assert (DESKTOP / "src" / "hooks" / "useProjectRun.js").exists()
+    assert (DESKTOP / "src" / "model" / "project.js").exists()
     assert (DESKTOP_APP / "index.html").exists()
     assert (DESKTOP_APP / "styles.css").exists()
     assert (DESKTOP_APP / "app.js").exists()
@@ -29,18 +34,21 @@ def test_desktop_scaffold_files_exist():
 def test_desktop_index_references_local_assets():
     html = (DESKTOP / "index.html").read_text(encoding="utf-8")
     legacy_html = (DESKTOP_APP / "index.html").read_text(encoding="utf-8")
-    app = (DESKTOP / "src" / "App.jsx").read_text(encoding="utf-8")
+    project_form = (DESKTOP / "src" / "components" / "ProjectForm.jsx").read_text(encoding="utf-8")
+    request_panel = (DESKTOP / "src" / "components" / "RequestPanel.jsx").read_text(encoding="utf-8")
+    event_list = (DESKTOP / "src" / "components" / "EventList.jsx").read_text(encoding="utf-8")
 
     assert '<div id="root"></div>' in html
     assert '<script type="module" src="/src/main.jsx"></script>' in html
     assert '<script type="module" src="./app.js"></script>' in legacy_html
-    assert 'id="project-form"' in app
-    assert 'id="request-json"' in app
-    assert 'id="event-list"' in app
+    assert 'id="project-form"' in project_form
+    assert 'id="request-json"' in request_panel
+    assert 'id="event-list"' in event_list
 
 
 def test_desktop_app_mentions_engine_project_commands():
     app = (DESKTOP / "src" / "App.jsx").read_text(encoding="utf-8")
+    sidebar = (DESKTOP / "src" / "components" / "Sidebar.jsx").read_text(encoding="utf-8")
     bridge = (DESKTOP_APP / "engineBridge.js").read_text(encoding="utf-8")
     runner = (DESKTOP_APP / "engineRunner.js").read_text(encoding="utf-8")
     tauri_bridge = (DESKTOP_APP / "tauriEngineBridge.js").read_text(encoding="utf-8")
@@ -53,7 +61,7 @@ def test_desktop_app_mentions_engine_project_commands():
     assert "engine_runtime_status" in tauri_bridge
     assert "run_engine_project_command" in tauri_bridge
     assert "Copy project JSON" in app
-    assert "Tauri bridge" in app
+    assert "runtimeLabel" in sidebar
 
 
 def test_tauri_config_points_to_static_app_directory():
