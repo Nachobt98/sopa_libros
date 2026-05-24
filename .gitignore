@@ -183,6 +183,7 @@ cython_debug/
 # --- KDP Wordsearch Project ---
 output_puzzles_kdp/
 desktop/node_modules/
+desktop/src-tauri/gen/
 *.png
 *.jpg
 *.jpeg

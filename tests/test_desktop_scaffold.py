@@ -21,6 +21,7 @@ def test_desktop_scaffold_files_exist():
     assert (DESKTOP / "README.md").exists()
     assert (DESKTOP / "package.json").exists()
     assert (DESKTOP / "src-tauri" / "tauri.conf.json").exists()
+    assert (DESKTOP / "src-tauri" / "icons" / "icon.ico").exists()
 
 
 def test_desktop_index_references_local_assets():
@@ -57,4 +58,5 @@ def test_tauri_config_points_to_static_app_directory():
     assert '"beforeBuildCommand": "npm run build"' in config
     assert '"devUrl": "http://127.0.0.1:5173"' in config
     assert '"frontendDist": "../dist"' in config
+    assert '"icon": ["icons/icon.ico"]' in config
     assert '"identifier": "com.sopalibros.desktop"' in config
