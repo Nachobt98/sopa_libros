@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "identifier": "com.sopalibros.desktop",
   "build": {
-    "frontendDist": "../app"
+    "beforeDevCommand": "npm run vite:dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://127.0.0.1:5173",
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
@@ -23,6 +26,6 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": []
+    "icon": ["icons/icon.ico"]
   }
 }

@@ -5,11 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "tauri dev",
-    "build": "tauri build",
-    "check": "node --check app/app.js && node app/engineBridge.test.mjs"
+    "vite:dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "tauri:build": "tauri build",
+    "check": "vite build && node app/engineBridge.test.mjs && node app/engineRunner.test.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.0.0"
+    "@tauri-apps/cli": "^2.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^5.4.0"
   }
 }
 

@@ -1,13 +1,14 @@
-# sopa-libros desktop scaffold
+# sopa-libros desktop app
 
-This folder contains the first static UI scaffold for the future desktop app.
-It is intentionally dependency-free so the workflow and project contract can be
-reviewed before introducing Tauri, React and packaging.
+This folder contains the React/Vite frontend and Tauri shell for the future
+desktop app.
 
-Open locally without Tauri:
+Run the frontend in a browser:
 
-```text
-desktop/index.html
+```powershell
+cd desktop
+npm install
+npm run vite:dev
 ```
 
 Current scope:
@@ -17,12 +18,12 @@ Current scope:
 - preview the command lines the future Tauri sidecar will call;
 - simulate JSON Lines progress events.
 
-The sidecar-facing browser logic lives in `engineBridge.js`. It has no DOM
-dependencies, so it can move into a React/Tauri adapter later with minimal
-rewrite.
+The app-facing engine helpers still live in `desktop/app/engineBridge.js` and
+`desktop/app/engineRunner.js` while the UI migrates to React. They have no DOM
+dependencies and are covered by Node tests.
 
-The static app assets live in `desktop/app/`. The root `desktop/index.html`
-redirects there so older local links continue to work.
+The React entry point is `desktop/src/main.jsx`. Vite builds the frontend into
+`desktop/dist/`, and Tauri is configured to serve that build.
 
 Run as a Tauri shell after installing the Tauri toolchain and npm dependencies:
 
@@ -33,7 +34,7 @@ npm run dev
 ```
 
 This is not the production desktop app yet. The next step is to replace the
-static shell with a React implementation that calls:
+static runner with a Tauri-backed implementation that calls:
 
 ```text
 sopa-libros-engine project validate --project <path>
