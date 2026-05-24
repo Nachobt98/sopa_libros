@@ -14,9 +14,12 @@ from wordsearch.domain.puzzle import PuzzleSpec
 from wordsearch.engine.contracts import (
     EngineIssue,
     PuzzleSummary,
+    ThematicRunResponse,
     ThematicValidationRequest,
     ThematicValidationResponse,
 )
+from wordsearch.engine.events import RunEvent
+from wordsearch.generation.thematic_pipeline import generate_thematic_book
 from wordsearch.parsing.thematic import PuzzleParseError, parse_puzzle_file
 from wordsearch.validation.asset_manifest import validate_asset_manifest_assets
 from wordsearch.validation.assets import AssetValidationIssue, validate_generation_assets
@@ -93,6 +96,42 @@ def validate_thematic_request(payload: dict[str, Any]) -> ThematicValidationResp
     )
 
 
+def generate_thematic_request(payload: dict[str, Any]) -> ThematicRunResponse:
+    """Run preview/full thematic generation and return captured events as JSON."""
+    try:
+        request = ThematicValidationRequest.from_dict(payload)
+        options = request.to_generation_options(validate_only=bool(payload.get("validate_only", False)))
+        get_theme(options.theme_name)
+        get_format_preset(options.format_name)
+        _validate_request_shape(request)
+    except (TypeError, ValueError) as exc:
+        return _run_error_response(str(exc), code="INVALID_REQUEST")
+
+    events: list[RunEvent] = []
+    pdf_path = generate_thematic_book(options, event_callback=events.append)
+    ok = pdf_path is not None or options.validate_only and _has_completed_validation(events)
+
+    issues: list[EngineIssue] = []
+    if not ok:
+        failure = next((event for event in reversed(events) if event.type == "run_failed"), None)
+        issues.append(
+            EngineIssue(
+                severity="error",
+                message=failure.message if failure else "Thematic generation failed.",
+                code=_failure_code(failure.stage if failure else None),
+                source="engine",
+            )
+        )
+
+    return ThematicRunResponse(
+        ok=ok,
+        status="ok" if ok else "error",
+        pdf_path=pdf_path,
+        issues=issues,
+        events=events,
+    )
+
+
 def _validate_request_shape(request: ThematicValidationRequest) -> None:
     if not request.input_path:
         raise ValueError("input_path is required.")
@@ -155,6 +194,16 @@ def _content_issue_to_engine(issue: ValidationIssue) -> EngineIssue:
     )
 
 
+def _has_completed_validation(events: list[RunEvent]) -> bool:
+    return any(event.type == "run_completed" and event.stage == "validation" for event in events)
+
+
+def _failure_code(stage: str | None) -> str:
+    if not stage:
+        return "GENERATION_FAILED"
+    return f"{stage.upper()}_FAILED"
+
+
 def _error_response(message: str, *, code: str, path: str | None = None) -> ThematicValidationResponse:
     return ThematicValidationResponse(
         ok=False,
@@ -166,6 +215,21 @@ def _error_response(message: str, *, code: str, path: str | None = None) -> Them
                 code=code,
                 source="engine",
                 path=path,
+            )
+        ],
+    )
+
+
+def _run_error_response(message: str, *, code: str) -> ThematicRunResponse:
+    return ThematicRunResponse(
+        ok=False,
+        status="error",
+        issues=[
+            EngineIssue(
+                severity="error",
+                message=message,
+                code=code,
+                source="engine",
             )
         ],
     )
