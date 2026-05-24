@@ -182,6 +182,19 @@ button {
   gap: 10px;
 }
 
+.topbar-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.project-path-field {
+  width: min(440px, 100%);
+}
+
+.project-path-field input {
+  min-height: 38px;
+}
+
 .primary-button,
 .secondary-button {
   min-height: 38px;

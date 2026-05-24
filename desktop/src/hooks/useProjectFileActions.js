@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { createProjectFileBridge } from "../../app/projectFileBridge.js";
 
-export function useProjectFileActions({ markSaved, projectJson, projectPath, showToast }) {
+export function useProjectFileActions({ loadProject, markSaved, projectJson, projectPath, showToast }) {
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const projectFileBridge = useMemo(() => createProjectFileBridge(), []);
 
@@ -24,9 +25,31 @@ export function useProjectFileActions({ markSaved, projectJson, projectPath, sho
     }
   }
 
+  async function openProject() {
+    setIsLoading(true);
+    try {
+      const project = await projectFileBridge.readProject(projectPath);
+      loadProject(project, projectPath);
+      if (showToast) {
+        showToast(`Opened ${projectPath}`);
+      }
+      return project;
+    } catch (error) {
+      if (showToast) {
+        showToast(error.message || "Project open failed.");
+      }
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return {
+    canLoad: projectFileBridge.isAvailable(),
     canSave: projectFileBridge.isAvailable(),
+    isLoading,
     isSaving,
+    openProject,
     saveDraft,
   };
 }
