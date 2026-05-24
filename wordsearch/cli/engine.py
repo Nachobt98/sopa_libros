@@ -11,6 +11,7 @@ from typing import Any
 
 from wordsearch.config.design import DEFAULT_THEME_NAME
 from wordsearch.config.formats import DEFAULT_FORMAT_NAME
+from wordsearch.asset_generation.user_assets import USER_SUPPLIED_PROVIDER, build_user_asset_manifest_for_book
 from wordsearch.engine.events import RunEvent
 from wordsearch.engine.project import (
     ThematicProject,
@@ -66,6 +67,15 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Stream events as JSON Lines and finish with one result line.",
     )
+
+    assets_project_parser = project_subparsers.add_parser(
+        "assets",
+        help="Build a reviewed asset_manifest.json for a project.",
+    )
+    assets_project_parser.add_argument("--project", required=True, help="Path to .sopa.json project file.")
+    assets_project_parser.add_argument("--user-assets-dir", required=True, help="Directory with user-supplied images.")
+    assets_project_parser.add_argument("--output", dest="output_dir", help="Asset output directory.")
+    assets_project_parser.add_argument("--style", default=USER_SUPPLIED_PROVIDER, help="Style label for the manifest.")
 
     return parser.parse_args()
 
@@ -144,6 +154,31 @@ def _project_response(args: argparse.Namespace):
         return validate_thematic_request(_load_project_request(args.project))
     if args.project_command == "generate":
         return _generate_response(args)
+    if args.project_command == "assets":
+        project = load_thematic_project(args.project)
+        result = build_user_asset_manifest_for_book(
+            title=project.book_title,
+            input_path=project.input_path,
+            user_assets_dir=args.user_assets_dir,
+            output_dir=args.output_dir,
+            style=args.style,
+        )
+        project.theme_manifest_path = result.manifest_path
+        save_thematic_project(project, args.project)
+        return {
+            "ok": True,
+            "command": "project.assets",
+            "project_path": args.project,
+            "project": project.to_dict(),
+            "assets": {
+                "output_dir": result.output_dir,
+                "manifest_path": result.manifest_path,
+                "source_map_path": result.source_map_path,
+                "asset_count": result.asset_count,
+                "block_count": result.block_count,
+                "warning_count": result.warning_count,
+            },
+        }
     raise AssertionError(f"Unhandled project command: {args.project_command}")
 
 

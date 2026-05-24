@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { buildProjectCommands } from "../app/engineBridge.js";
+import { AssetsPanel } from "./components/AssetsPanel.jsx";
 import { DocumentStatus } from "./components/DocumentStatus.jsx";
 import { PreviewRail } from "./components/PreviewRail.jsx";
 import { ProjectPanel } from "./components/ProjectPanel.jsx";
@@ -7,6 +8,7 @@ import { RequestPanel } from "./components/RequestPanel.jsx";
 import { RunPanel } from "./components/RunPanel.jsx";
 import { Sidebar } from "./components/Sidebar.jsx";
 import { useEngineRuntime } from "./hooks/useEngineRuntime.js";
+import { useProjectAssets } from "./hooks/useProjectAssets.js";
 import { useProjectDocument } from "./hooks/useProjectDocument.js";
 import { useProjectFileActions } from "./hooks/useProjectFileActions.js";
 import { useProjectRun } from "./hooks/useProjectRun.js";
@@ -25,6 +27,12 @@ export default function App() {
   const runState = useProjectRun(showToast, {
     projectPath: projectDocument.projectPath,
     saveDraft: fileActions.saveDraft,
+  });
+  const assetState = useProjectAssets(showToast, {
+    markSaved: projectDocument.markSaved,
+    projectPath: projectDocument.projectPath,
+    saveDraft: fileActions.saveDraft,
+    setProject: projectDocument.setProject,
   });
   const commands = useMemo(
     () => buildProjectCommands(projectDocument.normalizedProject, projectDocument.projectPath),
@@ -86,6 +94,15 @@ export default function App() {
           isVisible={activePanel === "request-panel"}
           normalizedProject={projectDocument.normalizedProject}
           request={projectDocument.request}
+        />
+        <AssetsPanel
+          assetResult={assetState.assetResult}
+          isBuildingAssets={assetState.isBuildingAssets}
+          isRealEngineAvailable={assetState.isRealEngineAvailable}
+          isVisible={activePanel === "assets-panel"}
+          onBuildUserAssets={(options) => assetState.buildUserAssets(projectDocument.normalizedProject, options)}
+          project={projectDocument.normalizedProject}
+          validation={projectDocument.validation}
         />
         <RunPanel
           commands={commands}

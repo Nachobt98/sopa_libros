@@ -344,6 +344,74 @@ button:focus-visible {
   min-height: 18px;
 }
 
+.asset-status,
+.asset-form,
+.asset-result {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface);
+}
+
+.asset-status {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.asset-status code,
+.asset-result code {
+  overflow-wrap: anywhere;
+  color: var(--accent-strong);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+}
+
+.asset-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.asset-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  color: var(--warn);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.asset-result {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.asset-result > div:not(.asset-metrics) {
+  display: grid;
+  gap: 5px;
+}
+
+.asset-result span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.asset-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, max-content);
+  gap: 6px 10px;
+  align-items: baseline;
+}
+
+.asset-metrics strong {
+  color: var(--accent-strong);
+  font-size: 18px;
+}
+
 .split-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -519,6 +587,7 @@ button:focus-visible {
 @media (max-width: 760px) {
   .app-shell,
   .editor-grid,
+  .asset-form,
   .split-grid,
   .command-grid {
     grid-template-columns: 1fr;

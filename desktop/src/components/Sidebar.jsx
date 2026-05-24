@@ -1,6 +1,7 @@
 const panels = [
   ["project-panel", "Project"],
   ["request-panel", "Request"],
+  ["assets-panel", "Assets"],
   ["run-panel", "Run"],
 ];
 
