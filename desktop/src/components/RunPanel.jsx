@@ -14,35 +14,35 @@ export function RunPanel({
   validation,
 }) {
   const canRun = validation.ok && !isRunning;
-  const generateLabel = isRealEngineAvailable ? "Generate PDF" : "Simulate generate";
+  const generateLabel = isRealEngineAvailable ? "Generar PDF" : "Simular generación";
 
   return (
     <section id="run-panel" className={`panel ${isVisible ? "is-visible" : ""}`} aria-labelledby="run-heading">
       <div className="section-heading">
-        <h3 id="run-heading">Run Preview</h3>
-        <p>Shows how progress will flow from JSON Lines.</p>
+        <h3 id="run-heading">Validar y exportar</h3>
+        <p>Ejecuta el engine real y revisa el resultado.</p>
       </div>
 
       <div className="command-grid">
         <div>
-          <h4>Validate</h4>
+          <h4>Validar</h4>
           <code id="validate-command">{commands.validate}</code>
         </div>
         <div>
-          <h4>Generate</h4>
+          <h4>Generar</h4>
           <code id="generate-command">{commands.generate}</code>
         </div>
       </div>
 
       <div className="run-toolbar">
         <button id="validate-project" className="secondary-button" type="button" onClick={onValidateProject} disabled={!canRun}>
-          {runningAction === "validate" ? "Validating..." : "Validate project"}
+          {runningAction === "validate" ? "Validando..." : "Validar proyecto"}
         </button>
         <button id="generate-project" className="primary-button" type="button" onClick={onGenerateProject} disabled={!canRun}>
-          {runningAction === "generate" ? "Running..." : generateLabel}
+          {runningAction === "generate" ? "Ejecutando..." : generateLabel}
         </button>
         <button id="clear-events" className="secondary-button" type="button" onClick={onClearEvents}>
-          Clear events
+          Limpiar eventos
         </button>
       </div>
 
@@ -57,7 +57,7 @@ function RunResultSummary({ result }) {
   return (
     <div className={`run-result ${result.ok ? "is-ok" : "is-error"}`}>
       <div>
-        <strong>{result.ok ? "Run completed" : "Run needs attention"}</strong>
+        <strong>{result.ok ? "Ejecución completada" : "Revisar ejecución"}</strong>
         <span>{result.command || "engine command"}</span>
       </div>
       {result.pdf_path ? (
@@ -68,7 +68,7 @@ function RunResultSummary({ result }) {
       ) : null}
       {issues.length ? (
         <div>
-          <span>Issues</span>
+          <span>Incidencias</span>
           <strong>{issues.length}</strong>
         </div>
       ) : null}

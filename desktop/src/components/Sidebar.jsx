@@ -1,9 +1,10 @@
 const panels = [
-  ["project-panel", "Project"],
-  ["content-panel", "Content"],
-  ["request-panel", "Request"],
+  ["home-panel", "Inicio"],
+  ["project-panel", "Proyecto"],
+  ["content-panel", "Contenido"],
   ["assets-panel", "Assets"],
-  ["run-panel", "Run"],
+  ["run-panel", "Validar y exportar"],
+  ["request-panel", "Técnico"],
 ];
 
 export function Sidebar({ activePanel, runtimeLabel, setActivePanel }) {
@@ -11,13 +12,18 @@ export function Sidebar({ activePanel, runtimeLabel, setActivePanel }) {
     <aside className="sidebar" aria-label="Project navigation">
       <div className="brand">
         <div className="brand-mark" aria-hidden="true">
-          SL
+          PF
         </div>
         <div>
-          <h1>sopa-libros</h1>
-          <p>KDP word search studio</p>
+          <h1>PuzzleForge Studio</h1>
+          <p>Crea. Diseña. Publica.</p>
         </div>
       </div>
+
+      <button className="new-project-button" type="button" onClick={() => setActivePanel("project-panel")}>
+        <span aria-hidden="true">+</span>
+        Nuevo proyecto
+      </button>
 
       <nav className="nav-stack" aria-label="Workflow">
         {panels.map(([panel, label]) => (

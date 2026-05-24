@@ -2,7 +2,7 @@ export function ValidationSummary({ validation }) {
   if (validation.ok) {
     return (
       <div id="validation-summary" className="validation-summary is-valid" role="status">
-        Project settings are ready for validation.
+        El proyecto está listo para validar.
       </div>
     );
   }

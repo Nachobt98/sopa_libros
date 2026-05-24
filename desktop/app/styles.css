@@ -1,18 +1,20 @@
 :root {
   color-scheme: light;
-  --bg: #eef1f4;
+  --bg: #f5f6fb;
   --surface: #ffffff;
-  --surface-muted: #f7f8fa;
-  --line: #d9dde3;
-  --ink: #1c2430;
-  --muted: #667182;
-  --accent: #176c73;
-  --accent-strong: #0f555b;
-  --accent-soft: #d9eef0;
-  --warn: #9a5b16;
-  --blue: #285f9f;
-  --rose: #9b3b55;
-  --shadow: 0 18px 48px rgba(20, 28, 38, 0.12);
+  --surface-muted: #f8fafc;
+  --line: #e4e7ee;
+  --ink: #111827;
+  --muted: #687386;
+  --accent: #6d3ee8;
+  --accent-strong: #5528c9;
+  --accent-soft: #ede7ff;
+  --warn: #b26b16;
+  --blue: #2f6fdd;
+  --green: #24885a;
+  --rose: #b23b5a;
+  --sidebar: #080d18;
+  --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -41,16 +43,22 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 248px minmax(560px, 1fr) 360px;
+  grid-template-columns: 272px minmax(680px, 1fr) 336px;
   min-height: 100vh;
+}
+
+.app-shell.is-home {
+  grid-template-columns: 272px minmax(0, 1fr);
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  padding: 24px;
-  background: #17222f;
+  gap: 22px;
+  padding: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(109, 62, 232, 0.28), transparent 34%),
+    var(--sidebar);
   color: #f8fafc;
 }
 
@@ -62,12 +70,12 @@ button {
 
 .brand-mark {
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  border-radius: 8px;
-  background: #234151;
+  border-radius: 12px;
+  background: #f1d78d;
+  color: #111827;
   font-weight: 800;
 }
 
@@ -84,28 +92,43 @@ button {
 }
 
 .brand p {
-  color: #b7c4d4;
+  color: #aeb8ca;
   font-size: 12px;
+}
+
+.new-project-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6d3ee8, #9a5af5);
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 12px 30px rgba(109, 62, 232, 0.35);
 }
 
 .nav-stack {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .nav-item {
   width: 100%;
   border: 1px solid transparent;
   border-radius: 8px;
-  padding: 11px 12px;
+  padding: 12px;
   background: transparent;
-  color: #dce5ef;
+  color: #e5e9f2;
   text-align: left;
+  font-weight: 700;
 }
 
 .nav-item.is-active {
   border-color: rgba(255, 255, 255, 0.24);
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
 }
 
@@ -126,7 +149,7 @@ button {
 }
 
 .workspace {
-  padding: 24px 28px;
+  padding: 36px 32px;
   overflow: auto;
 }
 
@@ -135,7 +158,11 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+}
+
+.app-shell.is-home .topbar-actions {
+  display: none;
 }
 
 .eyebrow {
@@ -147,7 +174,7 @@ button {
 
 .topbar h2 {
   margin: 4px 0 0;
-  font-size: 28px;
+  font-size: 30px;
   line-height: 1.15;
 }
 
@@ -205,12 +232,12 @@ button {
 }
 
 .primary-button {
-  background: var(--accent);
+  background: linear-gradient(135deg, #6d3ee8, #4f2bc7);
   color: #ffffff;
 }
 
 .primary-button:hover {
-  background: var(--accent-strong);
+  background: #5528c9;
 }
 
 .secondary-button {
@@ -238,6 +265,237 @@ button {
 .section-heading h3 {
   margin: 0;
   font-size: 20px;
+}
+
+.home-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 28px;
+}
+
+.home-main,
+.home-side {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.welcome-block {
+  padding: 4px 6px 22px;
+}
+
+.welcome-block h3 {
+  margin: 8px 0 8px;
+  font-size: 30px;
+  line-height: 1.12;
+}
+
+.welcome-block p:last-child {
+  max-width: 760px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.action-card,
+.studio-section,
+.status-card,
+.tip-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--shadow);
+}
+
+.action-card {
+  display: grid;
+  justify-items: center;
+  min-height: 236px;
+  padding: 22px 20px;
+  text-align: center;
+}
+
+.action-icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 18px;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.tone-violet .action-icon {
+  background: #ede7ff;
+  color: #6d3ee8;
+}
+
+.tone-green .action-icon {
+  background: #e7f6ed;
+  color: #24885a;
+}
+
+.tone-amber .action-icon {
+  background: #fff2db;
+  color: #c57a16;
+}
+
+.tone-blue .action-icon {
+  background: #e7f0ff;
+  color: #2f6fdd;
+}
+
+.action-card h4 {
+  margin: 14px 0 6px;
+  font-size: 15px;
+}
+
+.action-card p {
+  min-height: 50px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.action-card button,
+.quick-actions button {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.tone-violet button {
+  border: 0;
+  background: linear-gradient(135deg, #6d3ee8, #6030da);
+  color: #ffffff;
+}
+
+.studio-section {
+  padding: 18px;
+}
+
+.section-title-row,
+.current-project-card,
+.quick-actions,
+.status-row {
+  display: flex;
+  align-items: center;
+}
+
+.section-title-row {
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-title-row h4,
+.status-card h4,
+.tip-card h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.link-button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.current-project-card {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.current-project-card div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.current-project-card span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.project-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.project-badges span {
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: var(--surface-muted);
+  color: #344154;
+  font-weight: 750;
+}
+
+.quick-actions {
+  gap: 14px;
+}
+
+.status-card,
+.tip-card {
+  padding: 18px;
+}
+
+.status-card {
+  display: grid;
+  gap: 13px;
+}
+
+.status-row {
+  gap: 10px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: #ffffff;
+}
+
+.status-row span:nth-child(2) {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.status-row strong {
+  margin-left: auto;
+  font-size: 13px;
+  text-align: right;
+}
+
+.status-marker {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f0ad4e;
+}
+
+.status-marker.is-ok {
+  background: #41b875;
+}
+
+.tip-card {
+  background: linear-gradient(135deg, #fff8e8, #fffdf7);
+}
+
+.tip-card p {
+  margin: 12px 0 0;
+  color: #4d5564;
+  font-size: 14px;
+  line-height: 1.55;
 }
 
 .editor-grid {
@@ -574,7 +832,9 @@ button:focus-visible {
 }
 
 .preview-rail {
-  padding: 24px 24px 24px 0;
+  padding: 36px 24px 24px 0;
+  background: #f7f8fb;
+  border-left: 1px solid var(--line);
 }
 
 .book-preview {
@@ -584,14 +844,14 @@ button:focus-visible {
 
 .page-preview {
   aspect-ratio: 6 / 9;
-  border: 1px solid #c8ced7;
+  border: 1px solid #e2e6ee;
   border-radius: 8px;
   padding: 28px;
   background:
     linear-gradient(135deg, rgba(23, 108, 115, 0.08), transparent 34%),
     linear-gradient(315deg, rgba(155, 59, 85, 0.09), transparent 38%),
     #fffdfa;
-  box-shadow: var(--shadow);
+  box-shadow: 0 22px 48px rgba(15, 23, 42, 0.11);
 }
 
 .page-label {
@@ -658,6 +918,16 @@ button:focus-visible {
     grid-template-columns: 220px minmax(0, 1fr);
   }
 
+  .home-layout,
+  .action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-side {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .preview-rail {
     grid-column: 1 / -1;
     padding: 0 28px 28px 248px;
@@ -670,6 +940,9 @@ button:focus-visible {
 
 @media (max-width: 760px) {
   .app-shell,
+  .home-layout,
+  .home-side,
+  .action-grid,
   .editor-grid,
   .asset-form,
   .run-result,
@@ -692,6 +965,13 @@ button:focus-visible {
 
   .topbar,
   .section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .quick-actions,
+  .content-status,
+  .current-project-card {
     align-items: stretch;
     flex-direction: column;
   }

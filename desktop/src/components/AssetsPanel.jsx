@@ -36,18 +36,18 @@ export function AssetsPanel({
       <div className="section-heading">
         <div>
           <h3 id="assets-heading">Assets</h3>
-          <p>Prepare reviewed images for the renderer manifest.</p>
+          <p>Prepara imágenes revisadas para el manifest del render.</p>
         </div>
       </div>
 
       <div className="asset-status">
-        <strong>Current manifest</strong>
-        <code>{manifestPath}</code>
+        <strong>Manifest actual</strong>
+        <code>{manifestPath === "No manifest selected" ? "Sin manifest seleccionado" : manifestPath}</code>
       </div>
 
       <form className="asset-form" onSubmit={submit}>
         <label>
-          <span>User assets folder</span>
+          <span>Carpeta de imágenes</span>
           <input
             id="user-assets-dir"
             name="userAssetsDir"
@@ -59,7 +59,7 @@ export function AssetsPanel({
         </label>
 
         <label>
-          <span>Output folder</span>
+          <span>Carpeta de salida</span>
           <input
             id="asset-output-dir"
             name="assetOutputDir"
@@ -72,7 +72,7 @@ export function AssetsPanel({
         </label>
 
         <label>
-          <span>Style label</span>
+          <span>Etiqueta de estilo</span>
           <input
             id="asset-style"
             name="assetStyle"
@@ -85,9 +85,9 @@ export function AssetsPanel({
 
         <div className="asset-actions">
           <button id="build-user-assets" className="primary-button" type="submit" disabled={!canBuild}>
-            {isBuildingAssets ? "Building manifest..." : "Build asset manifest"}
+            {isBuildingAssets ? "Construyendo manifest..." : "Crear manifest"}
           </button>
-          {!isRealEngineAvailable ? <span>Desktop runtime required.</span> : null}
+          {!isRealEngineAvailable ? <span>Requiere runtime desktop.</span> : null}
         </div>
       </form>
 
@@ -98,7 +98,7 @@ export function AssetsPanel({
             <code>{assetResult.assets.manifest_path}</code>
           </div>
           <div>
-            <span>Source map</span>
+            <span>Mapa de fuentes</span>
             <code>{assetResult.assets.source_map_path}</code>
           </div>
           <div className="asset-metrics">
