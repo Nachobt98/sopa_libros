@@ -9,6 +9,7 @@ export function RunPanel({
   lastResult,
   onClearEvents,
   onGenerateProject,
+  onOpenPath,
   onValidateProject,
   runningAction,
   validation,
@@ -23,16 +24,26 @@ export function RunPanel({
         <p>Ejecuta el engine real y revisa el resultado.</p>
       </div>
 
-      <div className="command-grid">
-        <div>
-          <h4>Validar</h4>
-          <code id="validate-command">{commands.validate}</code>
-        </div>
-        <div>
-          <h4>Generar</h4>
-          <code id="generate-command">{commands.generate}</code>
-        </div>
+      <div className="run-step-grid">
+        <RunStep label="Contenido" state="ready" />
+        <RunStep label="Assets" state="ready" />
+        <RunStep label="Validacion" state={lastResult && !lastResult.ok ? "warning" : "ready"} />
+        <RunStep label="PDF" state={lastResult?.pdf_path ? "ready" : "pending"} />
       </div>
+
+      <details className="command-details">
+        <summary>Ver comandos</summary>
+        <div className="command-grid">
+          <div>
+            <h4>Validar</h4>
+            <code id="validate-command">{commands.validate}</code>
+          </div>
+          <div>
+            <h4>Generar</h4>
+            <code id="generate-command">{commands.generate}</code>
+          </div>
+        </div>
+      </details>
 
       <div className="run-toolbar">
         <button id="validate-project" className="secondary-button" type="button" onClick={onValidateProject} disabled={!canRun}>
@@ -47,8 +58,27 @@ export function RunPanel({
       </div>
 
       {lastResult ? <RunResultSummary result={lastResult} /> : null}
+      {lastResult?.pdf_path ? (
+        <div className="run-output-actions">
+          <button className="primary-button" type="button" onClick={() => onOpenPath(lastResult.pdf_path)}>
+            Abrir PDF
+          </button>
+          <button className="secondary-button" type="button" onClick={() => onOpenPath(lastResult.pdf_path.replace(/[\\/][^\\/]+$/, ""))}>
+            Abrir carpeta
+          </button>
+        </div>
+      ) : null}
       <EventList events={events} />
     </section>
+  );
+}
+
+function RunStep({ label, state }) {
+  return (
+    <div className={`run-step is-${state}`}>
+      <span></span>
+      <strong>{label}</strong>
+    </div>
   );
 }
 

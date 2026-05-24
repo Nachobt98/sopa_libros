@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 
+import { analyzeThematicContent } from "../model/contentAnalysis.js";
+
 export function AssetsPanel({
   assetResult,
+  content,
   isBuildingAssets,
   isRealEngineAvailable,
   isVisible,
@@ -14,6 +17,8 @@ export function AssetsPanel({
   const [style, setStyle] = useState("reviewed-user-assets");
   const canBuild = validation.ok && !isBuildingAssets && isRealEngineAvailable && userAssetsDir.trim();
   const manifestPath = project.theme_manifest_path || "No manifest selected";
+  const contentAnalysis = analyzeThematicContent(content);
+  const expectedBlocks = contentAnalysis.blocks.length ? contentAnalysis.blocks : [{ name: "Default", slug: "default" }];
   const outputPlaceholder = useMemo(() => {
     const slug = project.book_title
       .toLowerCase()
@@ -90,6 +95,27 @@ export function AssetsPanel({
           {!isRealEngineAvailable ? <span>Requiere runtime desktop.</span> : null}
         </div>
       </form>
+
+      <div className="asset-checklist">
+        <div className="section-title-row">
+          <h4>Nombres esperados</h4>
+          <span>{expectedBlocks.length} bloque{expectedBlocks.length === 1 ? "" : "s"}</span>
+        </div>
+        <div className="asset-name-grid">
+          <div>
+            <strong>Fondo global</strong>
+            <code>default_background.png</code>
+            <code>book_default_background.jpg</code>
+          </div>
+          {expectedBlocks.map((block, index) => (
+            <div key={block.slug}>
+              <strong>{block.name}</strong>
+              <code>block_{String(index + 1).padStart(2, "0")}_{block.slug}_background.png</code>
+              <code>{block.slug}_cover.png</code>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {assetResult?.assets ? (
         <div className="asset-result">

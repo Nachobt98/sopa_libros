@@ -15,16 +15,19 @@ import { useProjectAssets } from "./hooks/useProjectAssets.js";
 import { useProjectDocument } from "./hooks/useProjectDocument.js";
 import { useProjectFileActions } from "./hooks/useProjectFileActions.js";
 import { useProjectRun } from "./hooks/useProjectRun.js";
+import { useRecentProjects } from "./hooks/useRecentProjects.js";
 
 export default function App() {
   const [activePanel, setActivePanel] = useState("home-panel");
   const [toast, setToast] = useState("");
   const projectDocument = useProjectDocument();
   const contentState = useContentFile(showToast);
+  const recentProjectsState = useRecentProjects();
   const { runtimeLabel } = useEngineRuntime();
   const fileActions = useProjectFileActions({
     loadProject: projectDocument.loadProject,
     markSaved: projectDocument.markSaved,
+    onProjectSaved: recentProjectsState.rememberProject,
     projectJson: projectDocument.projectJson,
     projectPath: projectDocument.projectPath,
     showToast,
@@ -116,6 +119,7 @@ export default function App() {
           onNavigate={setActivePanel}
           project={projectDocument.normalizedProject}
           projectDocument={projectDocument}
+          recentProjects={recentProjectsState.recentProjects}
           runState={runState}
           validation={projectDocument.validation}
         />
@@ -137,6 +141,7 @@ export default function App() {
         />
         <AssetsPanel
           assetResult={assetState.assetResult}
+          content={contentState.content}
           isBuildingAssets={assetState.isBuildingAssets}
           isRealEngineAvailable={assetState.isRealEngineAvailable}
           isVisible={activePanel === "assets-panel"}
@@ -151,6 +156,7 @@ export default function App() {
           isRunning={runState.isRunning}
           isVisible={activePanel === "run-panel"}
           lastResult={runState.lastResult}
+          onOpenPath={fileActions.openPath}
           onClearEvents={runState.clearEvents}
           onGenerateProject={() => runState.generateProject(projectDocument.normalizedProject)}
           onValidateProject={() => runState.validateProject(projectDocument.normalizedProject)}

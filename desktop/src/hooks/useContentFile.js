@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createProjectFileBridge } from "../../app/projectFileBridge.js";
+import { starterContentTemplate } from "../model/contentAnalysis.js";
 
 export function useContentFile(showToast) {
   const [content, setContent] = useState("");
@@ -43,6 +44,28 @@ export function useContentFile(showToast) {
     }
   }
 
+  function insertTemplate() {
+    setContent((current) => {
+      const separator = current.trim() ? "\n\n" : "";
+      return `${current}${separator}${starterContentTemplate}`;
+    });
+  }
+
+  function insertPuzzle() {
+    setContent((current) => {
+      const separator = current.trim() ? "\n\n" : "";
+      return `${current}${separator}[Puzzle]
+title: Nuevo puzzle
+fact: Escribe aqui un dato breve para esta sopa de letras.
+words:
+PALABRA
+SEGUNDA
+TERCERA
+[/Puzzle]
+`;
+    });
+  }
+
   return {
     canUseFiles: projectFileBridge.isAvailable(),
     content,
@@ -50,6 +73,8 @@ export function useContentFile(showToast) {
     isLoadingContent,
     isSavingContent,
     loadedPath,
+    insertPuzzle,
+    insertTemplate,
     loadContent,
     saveContent,
     setContent,

@@ -34,5 +34,12 @@ export function createProjectFileBridge({ invoke = getTauriInvoke() } = {}) {
       }
       return invoke("read_text_file", { path });
     },
+
+    async openPath(path) {
+      if (!invoke) {
+        throw new Error("Tauri invoke API is unavailable.");
+      }
+      return invoke("open_path", { path });
+    },
   };
 }

@@ -147,6 +147,28 @@ fn read_text_file(path: String) -> Result<String, String> {
     fs::read_to_string(Path::new(&path)).map_err(|error| format!("Failed to read text file: {error}"))
 }
 
+#[tauri::command]
+fn open_path(path: String) -> Result<(), String> {
+    let path = Path::new(&path);
+    let target = path.display().to_string();
+    let status = if cfg!(windows) {
+        Command::new("cmd")
+            .args(["/C", "start", "", target.as_str()])
+            .status()
+    } else if cfg!(target_os = "macos") {
+        Command::new("open").arg(target.as_str()).status()
+    } else {
+        Command::new("xdg-open").arg(target.as_str()).status()
+    }
+    .map_err(|error| format!("Failed to open path: {error}"))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("Open path exited with status: {status}"))
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -157,7 +179,8 @@ pub fn run() {
             save_project_file,
             read_project_file,
             save_text_file,
-            read_text_file
+            read_text_file,
+            open_path
         ])
         .run(tauri::generate_context!())
         .expect("error while running sopa-libros desktop app");

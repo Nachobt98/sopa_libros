@@ -6,11 +6,12 @@ export function DashboardPanel({
   onNavigate,
   project,
   projectDocument,
+  recentProjects,
   runState,
   validation,
 }) {
   const hasManifest = Boolean(project.theme_manifest_path);
-  const hasContent = Boolean(contentState.loadedPath || project.input_path);
+  const hasContent = Boolean(contentState.loadedPath || contentState.content.trim() || project.input_path);
   const lastRunLabel = runState.lastResult?.pdf_path || (runState.lastResult ? "Revisar incidencias" : "Pendiente");
 
   return (
@@ -78,6 +79,25 @@ export function DashboardPanel({
             </div>
           </div>
 
+          <div className="studio-section">
+            <div className="section-title-row">
+              <h4>Proyectos recientes</h4>
+              <span>{recentProjects.length ? `${recentProjects.length} guardados` : "Sin historial"}</span>
+            </div>
+            {recentProjects.length ? (
+              <div className="recent-projects">
+                {recentProjects.map((item) => (
+                  <button key={item.path} type="button" onClick={() => projectDocument.setProjectPath(item.path)}>
+                    <strong>{item.title}</strong>
+                    <span>{item.path}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="empty-note">Guarda o abre un proyecto para que aparezca aqui.</p>
+            )}
+          </div>
+
           <div className="quick-actions">
             <button type="button" onClick={fileActions.openProject} disabled={!fileActions.canLoad || fileActions.isLoading}>
               Abrir proyecto
@@ -98,7 +118,7 @@ export function DashboardPanel({
           <div className="status-card">
             <h4>Estado rápido</h4>
             <StatusRow label="Proyecto" value={projectDocument.isDirty ? "Cambios sin guardar" : "Guardado"} ok={!projectDocument.isDirty} />
-            <StatusRow label="Contenido" value={hasContent ? "Ruta definida" : "Pendiente"} ok={hasContent} />
+            <StatusRow label="Contenido" value={contentState.loadedPath ? "TXT cargado" : hasContent ? "Ruta definida" : "Pendiente"} ok={hasContent} />
             <StatusRow label="Assets" value={hasManifest ? "Manifest asignado" : "Sin manifest"} ok={hasManifest} />
             <StatusRow label="Validación" value={validation.ok ? "Lista" : `${validation.issues.length} incidencias`} ok={validation.ok} />
             <StatusRow label="Último PDF" value={lastRunLabel} ok={Boolean(runState.lastResult?.ok)} />
@@ -143,8 +163,8 @@ function nextStepText({ contentState, hasManifest, runState, validation }) {
   if (!validation.ok) {
     return "Revisa los ajustes del proyecto antes de validar o generar.";
   }
-  if (!contentState.loadedPath) {
-    return "Carga o guarda el TXT temático para trabajar con contenido real desde la app.";
+  if (!contentState.loadedPath && !contentState.content.trim()) {
+    return "Carga, guarda o crea una plantilla TXT para trabajar con contenido real desde la app.";
   }
   if (!hasManifest) {
     return "Prepara un manifest de assets o deja el render con fondos por defecto.";

@@ -504,6 +504,35 @@ button {
   gap: 16px;
 }
 
+.project-form {
+  display: grid;
+  gap: 18px;
+}
+
+.form-section {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--surface);
+}
+
+.form-section h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.form-section small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.advanced-grid {
+  margin-top: 4px;
+}
+
 .validation-summary {
   margin-bottom: 16px;
   border: 1px solid var(--line);
@@ -683,6 +712,36 @@ button:focus-visible {
   font-size: 18px;
 }
 
+.asset-checklist {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--surface);
+}
+
+.asset-name-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.asset-name-grid div {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface-muted);
+}
+
+.asset-name-grid code {
+  overflow-wrap: anywhere;
+  color: var(--accent-strong);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+}
+
 .content-actions {
   display: flex;
   gap: 10px;
@@ -707,7 +766,7 @@ button:focus-visible {
 
 .content-editor {
   width: 100%;
-  min-height: 540px;
+  min-height: 520px;
   resize: vertical;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -717,6 +776,69 @@ button:focus-visible {
   font-family: "Cascadia Mono", Consolas, monospace;
   font-size: 13px;
   line-height: 1.55;
+}
+
+.content-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+}
+
+.content-inspector {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--surface);
+}
+
+.content-inspector h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.content-inspector p,
+.content-inspector li {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.content-inspector ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.content-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.content-metrics div {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface-muted);
+}
+
+.content-metrics strong {
+  font-size: 20px;
+}
+
+.content-metrics span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.issue-list li {
+  color: var(--rose);
 }
 
 .split-grid {
@@ -758,6 +880,81 @@ button:focus-visible {
 
 .command-grid code {
   min-height: 96px;
+}
+
+.command-details {
+  margin-bottom: 16px;
+}
+
+.command-details summary {
+  width: max-content;
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.recent-projects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.recent-projects button {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface-muted);
+  text-align: left;
+}
+
+.recent-projects span,
+.empty-note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.command-details .command-grid {
+  margin-top: 12px;
+}
+
+.run-step-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.run-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface);
+}
+
+.run-step span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #f0ad4e;
+}
+
+.run-step.is-ready span {
+  background: #41b875;
+}
+
+.run-step.is-warning span {
+  background: var(--rose);
+}
+
+.run-output-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .event-list {
@@ -945,7 +1142,11 @@ button:focus-visible {
   .action-grid,
   .editor-grid,
   .asset-form,
+  .asset-name-grid,
+  .content-workbench,
+  .recent-projects,
   .run-result,
+  .run-step-grid,
   .split-grid,
   .command-grid {
     grid-template-columns: 1fr;
