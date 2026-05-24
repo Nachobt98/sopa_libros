@@ -1,9 +1,9 @@
 import {
   buildProjectCommands,
   defaultProjectPath,
-  parseJsonLines,
   projectToEngineRequest,
 } from "./engineBridge.js";
+import { createStaticEngineRunner } from "./engineRunner.js";
 
 const demoProject = {
   schema_version: 1,
@@ -25,6 +25,7 @@ const sampleWords = ["NILE", "PYRAMID", "PHARAOH", "SCARAB", "TEMPLE", "SCRIBE"]
 const sampleLetters = "NILEPYRAMIDPHARAOHSCARABTEMPLESCRIBEANKHOSIRISRAHORUS".repeat(2);
 let project = { ...demoProject };
 let selectedDifficulty = project.difficulty;
+const engineRunner = createStaticEngineRunner();
 
 const fields = {
   title: document.querySelector("#book-title"),
@@ -49,6 +50,7 @@ const els = {
   previewGrid: document.querySelector("#preview-grid"),
   previewWords: document.querySelector("#preview-words"),
   eventList: document.querySelector("#event-list"),
+  simulateRun: document.querySelector("#simulate-run"),
   toast: document.querySelector("#toast"),
 };
 
@@ -166,30 +168,20 @@ function addEvent({ type, stage, message, current, total }) {
   els.eventList.appendChild(item);
 }
 
-function simulateRun() {
+async function simulateRun() {
   els.eventList.innerHTML = "";
-  const jsonLines = [
-    { type: "event", event: { type: "stage_started", stage: "parsing", message: "Parsing thematic input." } },
-    { type: "event", event: { type: "stage_completed", stage: "validation", message: "Validation completed." } },
-    {
-      type: "event",
-      event: { type: "progress", stage: "grid_generation", message: "Generated puzzle grid.", current: 3, total: 5 },
-    },
-    {
-      type: "event",
-      event: { type: "progress", stage: "rendering", message: "Rendered puzzle page pair.", current: 5, total: 5 },
-    },
-    { type: "event", event: { type: "run_completed", stage: "complete", message: "Thematic generation completed." } },
-    { type: "result", result: { ok: true, pdf_path: "output_puzzles_kdp/ancient_egypt/book.pdf" } },
-  ]
-    .map((record) => JSON.stringify(record))
-    .join("\n");
-  const events = parseJsonLines(jsonLines)
-    .filter((record) => record.type === "event")
-    .map((record) => record.event);
-  events.forEach((event, index) => {
-    window.setTimeout(() => addEvent(event), index * 180);
-  });
+  els.simulateRun.disabled = true;
+  try {
+    const result = await engineRunner.generate(project, {
+      onEvent: addEvent,
+      onResult: (payload) => showToast(payload.ok ? `Generated ${payload.pdf_path}` : "Run failed."),
+    });
+    if (!result?.ok) {
+      showToast("Run finished without a generated PDF.");
+    }
+  } finally {
+    els.simulateRun.disabled = false;
+  }
 }
 
 document.querySelectorAll("[data-panel]").forEach((button) => {

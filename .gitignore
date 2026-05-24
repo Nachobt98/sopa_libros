@@ -182,6 +182,7 @@ cython_debug/
 
 # --- KDP Wordsearch Project ---
 output_puzzles_kdp/
+desktop/node_modules/
 *.png
 *.jpg
 *.jpeg

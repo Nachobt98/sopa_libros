@@ -13,6 +13,8 @@ def test_desktop_scaffold_files_exist():
     assert (DESKTOP_APP / "app.js").exists()
     assert (DESKTOP_APP / "engineBridge.js").exists()
     assert (DESKTOP_APP / "engineBridge.test.mjs").exists()
+    assert (DESKTOP_APP / "engineRunner.js").exists()
+    assert (DESKTOP_APP / "engineRunner.test.mjs").exists()
     assert (DESKTOP / "README.md").exists()
     assert (DESKTOP / "package.json").exists()
     assert (DESKTOP / "src-tauri" / "tauri.conf.json").exists()
@@ -31,10 +33,13 @@ def test_desktop_index_references_local_assets():
 def test_desktop_app_mentions_engine_project_commands():
     html = (DESKTOP_APP / "index.html").read_text(encoding="utf-8")
     bridge = (DESKTOP_APP / "engineBridge.js").read_text(encoding="utf-8")
+    runner = (DESKTOP_APP / "engineRunner.js").read_text(encoding="utf-8")
 
     assert "sopa-libros-engine project validate" in bridge
     assert "sopa-libros-engine project generate" in bridge
     assert "--json-lines" in bridge
+    assert "createStaticEngineRunner" in runner
+    assert "consumeJsonLines" in runner
     assert "Copy project JSON" in html
 
 
