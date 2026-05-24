@@ -238,3 +238,40 @@ The final line is the result:
 In JSON Lines mode, the final result omits the repeated `events` array because
 the events have already been streamed. The process exit code still follows the
 same rule: `0` for success, `1` for failure.
+
+## Project Files
+
+The app can persist editable thematic projects as `.sopa.json` files. These are
+UI/project documents, not generated reports and not the thematic TXT content.
+
+Project file shape:
+
+```json
+{
+  "schema_version": 1,
+  "project_type": "thematic",
+  "book_title": "Ancient Egypt Word Search",
+  "input_path": "wordlists/egypt.txt",
+  "difficulty": "medium",
+  "grid_size": 14,
+  "seed": 1234,
+  "theme_name": "premium-neutral",
+  "format_name": "trade-6x9",
+  "theme_manifest_path": "assets/generated/egypt/asset_manifest.json",
+  "output_dir": "output_puzzles_kdp/egypt",
+  "limit": 5,
+  "preview": true
+}
+```
+
+Python helpers:
+
+```python
+from wordsearch.engine.project import load_thematic_project, save_thematic_project
+
+project = load_thematic_project("projects/egypt.sopa.json")
+request = project.to_engine_request()
+```
+
+`to_engine_request()` returns a payload accepted by both `validate` and
+`generate`.
