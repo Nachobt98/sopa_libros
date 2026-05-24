@@ -19,6 +19,7 @@ export default function App() {
   const projectDocument = useProjectDocument();
   const { runtimeLabel } = useEngineRuntime();
   const fileActions = useProjectFileActions({
+    loadProject: projectDocument.loadProject,
     markSaved: projectDocument.markSaved,
     projectJson: projectDocument.projectJson,
     projectPath: projectDocument.projectPath,
@@ -66,6 +67,25 @@ export default function App() {
             <DocumentStatus isDirty={projectDocument.isDirty} projectPath={projectDocument.projectPath} />
           </div>
           <div className="topbar-actions">
+            <label className="project-path-field">
+              <span>Project path</span>
+              <input
+                id="project-path"
+                name="projectPath"
+                type="text"
+                value={projectDocument.projectPath}
+                onChange={(event) => projectDocument.setProjectPath(event.target.value)}
+              />
+            </label>
+            <button
+              id="open-project"
+              className="secondary-button"
+              type="button"
+              onClick={fileActions.openProject}
+              disabled={!fileActions.canLoad || fileActions.isLoading}
+            >
+              {fileActions.isLoading ? "Opening..." : "Open"}
+            </button>
             <button id="reset-demo" className="secondary-button" type="button" onClick={projectDocument.resetDemoProject}>
               Reset demo
             </button>
