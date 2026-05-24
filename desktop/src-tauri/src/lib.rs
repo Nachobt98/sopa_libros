@@ -128,6 +128,25 @@ fn read_project_file(project_path: String) -> Result<String, String> {
     fs::read_to_string(Path::new(&project_path)).map_err(|error| format!("Failed to read project file: {error}"))
 }
 
+#[tauri::command]
+fn save_text_file(path: String, contents: String) -> Result<ProjectFileOutput, String> {
+    let path = Path::new(&path);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|error| format!("Failed to create text file directory: {error}"))?;
+    }
+
+    fs::write(path, contents).map_err(|error| format!("Failed to write text file: {error}"))?;
+
+    Ok(ProjectFileOutput {
+        path: path.display().to_string(),
+    })
+}
+
+#[tauri::command]
+fn read_text_file(path: String) -> Result<String, String> {
+    fs::read_to_string(Path::new(&path)).map_err(|error| format!("Failed to read text file: {error}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -136,7 +155,9 @@ pub fn run() {
             run_engine_project_command,
             run_engine_project_assets_command,
             save_project_file,
-            read_project_file
+            read_project_file,
+            save_text_file,
+            read_text_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running sopa-libros desktop app");

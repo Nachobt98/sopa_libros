@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import { buildProjectCommands } from "../app/engineBridge.js";
 import { AssetsPanel } from "./components/AssetsPanel.jsx";
+import { ContentPanel } from "./components/ContentPanel.jsx";
 import { DocumentStatus } from "./components/DocumentStatus.jsx";
 import { PreviewRail } from "./components/PreviewRail.jsx";
 import { ProjectPanel } from "./components/ProjectPanel.jsx";
 import { RequestPanel } from "./components/RequestPanel.jsx";
 import { RunPanel } from "./components/RunPanel.jsx";
 import { Sidebar } from "./components/Sidebar.jsx";
+import { useContentFile } from "./hooks/useContentFile.js";
 import { useEngineRuntime } from "./hooks/useEngineRuntime.js";
 import { useProjectAssets } from "./hooks/useProjectAssets.js";
 import { useProjectDocument } from "./hooks/useProjectDocument.js";
@@ -17,6 +19,7 @@ export default function App() {
   const [activePanel, setActivePanel] = useState("project-panel");
   const [toast, setToast] = useState("");
   const projectDocument = useProjectDocument();
+  const contentState = useContentFile(showToast);
   const { runtimeLabel } = useEngineRuntime();
   const fileActions = useProjectFileActions({
     loadProject: projectDocument.loadProject,
@@ -109,6 +112,11 @@ export default function App() {
           project={projectDocument.project}
           setProject={projectDocument.setProject}
           validation={projectDocument.validation}
+        />
+        <ContentPanel
+          contentState={contentState}
+          inputPath={projectDocument.normalizedProject.input_path}
+          isVisible={activePanel === "content-panel"}
         />
         <RequestPanel
           isVisible={activePanel === "request-panel"}
