@@ -26,12 +26,24 @@ export function slugifyName(value) {
 }
 
 export function analyzeThematicContent(content) {
+  const model = parseThematicContent(content);
+  return {
+    blockCount: model.blocks.length,
+    blocks: model.blocks,
+    issueCount: model.issues.length,
+    issues: model.issues,
+    puzzleCount: model.puzzles.length,
+    wordCount: model.puzzles.reduce((total, puzzle) => total + puzzle.words.length, 0),
+  };
+}
+
+export function parseThematicContent(content) {
   const lines = String(content || "").split(/\r?\n/);
   const issues = [];
   const blocks = [];
-  let puzzleCount = 0;
-  let wordCount = 0;
+  const puzzles = [];
   let currentBlock = null;
+  let activeBlockName = "";
   let inPuzzle = false;
   let currentPuzzle = null;
   let readingWords = false;
@@ -48,6 +60,7 @@ export function analyzeThematicContent(content) {
     }
     if (line === "[/Block]") {
       if (currentBlock?.name) {
+        activeBlockName = currentBlock.name;
         blocks.push({ name: currentBlock.name, slug: slugifyName(currentBlock.name) });
       } else {
         issues.push({ line: currentBlock?.line || index + 1, message: "Bloque sin name:." });
@@ -63,7 +76,7 @@ export function analyzeThematicContent(content) {
     if (line === "[Puzzle]") {
       inPuzzle = true;
       readingWords = false;
-      currentPuzzle = { line: index + 1, title: "", fact: "", words: [] };
+      currentPuzzle = { blockName: activeBlockName, line: index + 1, title: "", fact: "", words: [] };
       return;
     }
     if (line === "[/Puzzle]") {
@@ -76,8 +89,14 @@ export function analyzeThematicContent(content) {
       if (!currentPuzzle?.words.length) {
         issues.push({ line: currentPuzzle?.line || index + 1, message: "Puzzle sin palabras." });
       }
-      puzzleCount += 1;
-      wordCount += currentPuzzle?.words.length || 0;
+      if (currentPuzzle) {
+        puzzles.push({
+          blockName: currentPuzzle.blockName,
+          fact: currentPuzzle.fact,
+          title: currentPuzzle.title,
+          words: currentPuzzle.words,
+        });
+      }
       inPuzzle = false;
       readingWords = false;
       currentPuzzle = null;
@@ -114,11 +133,53 @@ export function analyzeThematicContent(content) {
   }
 
   return {
-    blockCount: blocks.length,
     blocks,
-    issueCount: issues.length,
     issues,
-    puzzleCount,
-    wordCount,
+    puzzles,
+  };
+}
+
+export function serializeThematicContent(model) {
+  const blocks = model.blocks?.length ? model.blocks : [{ name: "Default", slug: "default" }];
+  const puzzles = model.puzzles || [];
+  const lines = [];
+
+  blocks.forEach((block) => {
+    lines.push("[Block]");
+    lines.push(`name: ${block.name || "Default"}`);
+    lines.push("[/Block]");
+    lines.push("");
+
+    const blockPuzzles = puzzles.filter((puzzle) => (puzzle.blockName || "Default") === block.name);
+    blockPuzzles.forEach((puzzle) => {
+      lines.push("[Puzzle]");
+      lines.push(`title: ${puzzle.title || "Nuevo puzzle"}`);
+      lines.push(`fact: ${puzzle.fact || "Escribe aqui un dato breve."}`);
+      lines.push("words:");
+      for (const word of puzzle.words || []) {
+        if (String(word).trim()) {
+          lines.push(String(word).trim());
+        }
+      }
+      lines.push("[/Puzzle]");
+      lines.push("");
+    });
+  });
+
+  return `${lines.join("\n").trim()}\n`;
+}
+
+export function createEmptyContentModel() {
+  return {
+    blocks: [{ name: "Nuevo bloque", slug: "nuevo_bloque" }],
+    issues: [],
+    puzzles: [
+      {
+        blockName: "Nuevo bloque",
+        fact: "Escribe aqui un dato breve para este puzzle.",
+        title: "Nuevo puzzle",
+        words: ["PALABRA", "SEGUNDA", "TERCERA"],
+      },
+    ],
   };
 }

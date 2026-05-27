@@ -778,10 +778,103 @@ button:focus-visible {
   line-height: 1.55;
 }
 
+.content-editor.is-raw {
+  min-height: 260px;
+  margin-top: 16px;
+}
+
 .content-workbench {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 18px;
+}
+
+.visual-content-layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 300px;
+  gap: 18px;
+}
+
+.puzzle-list-panel,
+.puzzle-editor-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--surface);
+}
+
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-title-row h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.panel-title-row button {
+  min-width: 32px;
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  font-weight: 900;
+}
+
+.puzzle-list,
+.block-editor-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.puzzle-list button {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface-muted);
+  text-align: left;
+}
+
+.puzzle-list button.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.puzzle-list span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.wide-field {
+  margin-top: 14px;
+}
+
+.fact-editor,
+.words-editor {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.45;
+}
+
+.fact-editor {
+  min-height: 96px;
+}
+
+.words-editor {
+  min-height: 180px;
+  font-family: "Cascadia Mono", Consolas, monospace;
 }
 
 .content-inspector {
@@ -1039,6 +1132,30 @@ button:focus-visible {
   top: 24px;
 }
 
+.preview-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.preview-tabs span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.preview-tabs .is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 .page-preview {
   aspect-ratio: 6 / 9;
   border: 1px solid #e2e6ee;
@@ -1068,7 +1185,6 @@ button:focus-visible {
 
 .preview-grid {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
   gap: 2px;
   margin: 0 auto 16px;
 }
@@ -1096,6 +1212,38 @@ button:focus-visible {
   color: #3a4656;
   font-size: 11px;
   font-weight: 750;
+}
+
+.preview-fact {
+  margin: 14px 0 0;
+  color: #4c5566;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.preview-meta {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.preview-meta div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: var(--surface);
+}
+
+.preview-meta span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.preview-meta strong {
+  font-size: 12px;
 }
 
 .toast {
@@ -1144,6 +1292,7 @@ button:focus-visible {
   .asset-form,
   .asset-name-grid,
   .content-workbench,
+  .visual-content-layout,
   .recent-projects,
   .run-result,
   .run-step-grid,

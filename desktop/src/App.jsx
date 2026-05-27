@@ -165,7 +165,9 @@ export default function App() {
         />
       </main>
 
-      {activePanel === "home-panel" ? null : <PreviewRail title={projectDocument.normalizedProject.book_title} toast={toast} />}
+      {activePanel === "home-panel" ? null : (
+        <PreviewRail content={contentState.content} project={projectDocument.normalizedProject} toast={toast} />
+      )}
     </div>
   );
 }
