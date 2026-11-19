@@ -14,6 +14,20 @@ KDP_GUTTER_151_TO_300_IN = 0.5
 KDP_GUTTER_301_TO_500_IN = 0.625
 
 
+def minimum_gutter_in(page_count: int) -> float:
+    """KDP paperback gutter, using the final count including all front matter.
+
+    Short previews use the first band. KDP rounds odd page counts up to even.
+    """
+    if page_count < 1:
+        raise ValueError("Page count must be positive.")
+    page_count += page_count % 2
+    for maximum, gutter in ((150, 0.375), (300, 0.5), (500, 0.625), (700, 0.75), (828, 0.875)):
+        if page_count <= maximum:
+            return gutter
+    raise ValueError("KDP paperbacks support at most 828 pages.")
+
+
 @dataclass(frozen=True)
 class BookFormatPreset:
     """Physical and editorial layout preset for one book product format."""

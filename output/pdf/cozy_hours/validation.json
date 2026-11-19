@@ -1,0 +1,116 @@
+{
+  "title": "Cozy Hours Word Search",
+  "subtitle": "80 Large-Print Puzzles for Adults with No Backward Words",
+  "author": "Rowan Fernvale",
+  "puzzles": 80,
+  "word_entries": 1200,
+  "distinct_entries": 1156,
+  "most_repeated": [
+    [
+      "FOUNTAIN",
+      3
+    ],
+    [
+      "STRETCH",
+      2
+    ],
+    [
+      "BREAKFAST",
+      2
+    ],
+    [
+      "READING",
+      2
+    ],
+    [
+      "ROAST",
+      2
+    ],
+    [
+      "COUNTER",
+      2
+    ],
+    [
+      "CARAMEL",
+      2
+    ],
+    [
+      "LAVENDER",
+      2
+    ],
+    [
+      "AMBER",
+      2
+    ],
+    [
+      "LULLABY",
+      2
+    ],
+    [
+      "STARLIGHT",
+      2
+    ],
+    [
+      "VANILLA",
+      2
+    ],
+    [
+      "OATMEAL",
+      2
+    ],
+    [
+      "CINNAMON",
+      2
+    ],
+    [
+      "COCOA",
+      2
+    ]
+  ],
+  "pages": 124,
+  "trim_in": [
+    8.5,
+    11
+  ],
+  "interior_ink": "black",
+  "paper": "white",
+  "interior_bleed": false,
+  "inner_margin_in": 0.625,
+  "outer_margin_in": 0.5,
+  "grid_font_pt": 22,
+  "word_list_font_pt": 16,
+  "solution_font_pt": 16,
+  "unique_target_occurrences": true,
+  "directions": [
+    "right",
+    "down"
+  ],
+  "restricted_word_scan": [
+    "COCK",
+    "CUNT",
+    "DICK",
+    "FUCK",
+    "PISS",
+    "PORN",
+    "RAPE",
+    "SHIT",
+    "SLUT"
+  ],
+  "cover": {
+    "width_in": 17.529248,
+    "height_in": 11.25,
+    "spine_in": 0.279248,
+    "bleed_in": 0.125
+  },
+  "files": {
+    "interior.pdf": 452517,
+    "cover_wrap.pdf": 45431
+  },
+  "print_cost_usd": 3.108,
+  "royalty_at_9_99_usd": 2.886,
+  "digital_checks": "passed",
+  "visual_checks": "pending",
+  "physical_proof": "not ordered",
+  "ai_generated_text": true,
+  "ai_generated_artwork": true
+}

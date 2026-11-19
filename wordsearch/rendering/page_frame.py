@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from PIL import Image, ImageDraw, ImageFont
 
 from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
+from wordsearch.config.formats import KDP_MIN_OUTSIDE_MARGIN_NO_BLEED_IN
 from wordsearch.rendering.backgrounds import BACKGROUND_PATH
 from wordsearch.rendering.common import rounded_rectangle, text_size, wrap_text
 
@@ -73,10 +74,13 @@ def draw_page_frame(
     panel_pad_top = int(layout.panel_pad_top_px * scale)
     panel_pad_bottom = int(layout.panel_pad_bottom_px * scale)
 
-    panel_left = max(0, safe_left_hi - panel_pad_x)
-    panel_top = max(0, top_px_hi - panel_pad_top)
-    panel_right = min(page_w_hi, safe_right_hi + panel_pad_x)
-    panel_bottom = min(page_h_hi, safe_bottom_hi + panel_pad_bottom)
+    # The panel must start inside the printed background, not under the white
+    # no-bleed border. Keep a visible decorative gap around its rounded outline.
+    panel_inset = int(round((KDP_MIN_OUTSIDE_MARGIN_NO_BLEED_IN + 0.08) * layout.dpi * scale))
+    panel_left = max(panel_inset, safe_left_hi - panel_pad_x)
+    panel_top = max(panel_inset, top_px_hi - panel_pad_top)
+    panel_right = min(page_w_hi - panel_inset, safe_right_hi + panel_pad_x)
+    panel_bottom = min(page_h_hi - panel_inset, safe_bottom_hi + panel_pad_bottom)
 
     rounded_rectangle(
         draw,

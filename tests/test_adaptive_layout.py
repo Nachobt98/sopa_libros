@@ -1,8 +1,10 @@
 from types import SimpleNamespace
 
+import pytest
 from PIL import Image, ImageDraw
 
-from wordsearch.config.design import DEFAULT_THEME
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME
+from wordsearch.config.formats import FORMAT_PRESETS
 from wordsearch.config.layout import PAGE_H_PX, PAGE_W_PX
 from wordsearch.rendering import adaptive_layout
 from wordsearch.rendering.adaptive_layout import (
@@ -16,6 +18,19 @@ from wordsearch.rendering.page_frame import draw_page_frame
 def make_draw():
     image = Image.new("RGBA", (PAGE_W_PX * 3, PAGE_H_PX * 3), DEFAULT_THEME.page_background_fill)
     return ImageDraw.Draw(image)
+
+
+@pytest.mark.parametrize("layout", [DEFAULT_LAYOUT, *(preset.to_layout_config() for preset in FORMAT_PRESETS.values())])
+def test_page_panel_remains_complete_inside_no_bleed_border(layout):
+    image = Image.new("RGBA", (layout.page_width_px, layout.page_height_px), "red")
+    frame = draw_page_frame(draw=ImageDraw.Draw(image), scale=1, layout=layout)
+    margin = layout.dpi * 0.25
+    assert frame.panel_left > margin
+    assert frame.panel_top > margin
+    assert frame.panel_right < layout.page_width_px - margin
+    assert frame.panel_bottom < layout.page_height_px - margin
+    # A strip of background must remain above the entire rounded panel.
+    assert image.getpixel((layout.page_width_px // 2, int(margin) + 1)) == (255, 0, 0, 255)
 
 
 def test_title_layout_keeps_short_titles_unchanged():

@@ -480,6 +480,22 @@ DPI: 300
 
 La página se renderiza como imagen a 300 DPI y luego se inserta en el PDF final.
 
+Los formatos actuales se exportan **sin sangrado**: el PDF conserva el tamaño
+de corte seleccionado y deja al menos 0,25 pulgadas (6,35 mm) en los bordes
+exteriores. El margen interior depende del total de páginas del PDF, incluidas
+las preliminares y soluciones: 0,375 pulgadas hasta 150 páginas; 0,5 hasta 300;
+0,625 hasta 500; 0,75 hasta 700; 0,875 hasta 828. Se aplica a la izquierda en
+páginas impares y a la derecha en las pares, según su posición real en el PDF.
+La zona imprimible original se reduce proporcionalmente para encajar entre
+esos márgenes, sin deformar cuadrículas ni recortar el diseño. En 6 x 9 y hasta
+150 páginas la reducción es del 2,27 %. Los paneles de ejercicios y soluciones se
+componen dentro de esa zona, dejando espacio para que su borde superior no
+quede cortado. Esto también se aplica al fondo de la página de
+separación de soluciones. Las imágenes PNG intermedias conservan sus fondos
+completos; la franja se aplica al componer el PDF. En KDP debe seleccionarse
+**Sin sangrado**. Los PDF generados anteriormente deben regenerarse para
+incorporar esta corrección.
+
 Parámetros importantes:
 
 - `TRIM_W_IN`

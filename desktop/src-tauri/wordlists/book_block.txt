@@ -1,0 +1,12 @@
+[Block]
+name: Nuevo bloque
+[/Block]
+
+[Puzzle]
+title: Nuevo puzzle
+fact: Escribe aqui un dato breve para este puzzle.
+words:
+PALABRA
+SEGUNDA
+TERCERA
+[/Puzzle]
