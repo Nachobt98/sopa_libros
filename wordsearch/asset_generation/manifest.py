@@ -12,6 +12,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from wordsearch.config.design import DecorationConfig
 from wordsearch.utils.slug import slugify
 
 ASSET_MANIFEST_SCHEMA_VERSION = 1
@@ -48,13 +49,22 @@ class BlockAssetSet:
     background: str | None = None
     cover_background: str | None = None
     motif: str | None = None
+    decorations: DecorationConfig | None = None
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "BlockAssetSet":
+        decoration_payload = payload.get("decorations")
+        if decoration_payload is not None and not isinstance(decoration_payload, dict):
+            raise ValueError("Block 'decorations' must be an object.")
         return cls(
             background=payload.get("background"),
             cover_background=payload.get("cover_background"),
             motif=payload.get("motif"),
+            decorations=(
+                DecorationConfig.from_dict(decoration_payload)
+                if decoration_payload is not None
+                else None
+            ),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -149,6 +159,10 @@ class AssetManifest:
             or self.resolve_asset_path("book_default_background")
             or fallback
         )
+
+    def decorations_for_block(self, block_name: str | None) -> DecorationConfig | None:
+        """Return optional decoration overrides declared for a block."""
+        return self.assets_for_block(block_name).decorations if block_name else None
 
     def declared_asset_paths(self) -> list[str]:
         """Return unique resolved local paths declared by the manifest."""

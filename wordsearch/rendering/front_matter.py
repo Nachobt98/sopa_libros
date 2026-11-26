@@ -6,7 +6,7 @@ from typing import Optional, Sequence, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, PageType, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, DecorationConfig, LayoutConfig, PageType, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_PATH_BOLD,
@@ -17,6 +17,7 @@ from wordsearch.config.fonts import (
 from wordsearch.config.paths import build_default_output_file, build_output_file
 from wordsearch.rendering.backgrounds import create_page_background
 from wordsearch.rendering.common import draw_centered_text, load_font, rounded_rectangle, save_page, text_size, wrap_text
+from wordsearch.rendering.decorations import draw_page_decorations
 
 TocEntry = Tuple[str, int, bool]
 InstructionEntry = str | tuple[str, str]
@@ -242,6 +243,7 @@ def render_table_of_contents(
     *,
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
+    decoration_config: DecorationConfig | None = None,
 ) -> list[str]:
     """Renderiza un índice editorial con jerarquía visual y dot leaders."""
     scale = 3
@@ -255,6 +257,13 @@ def render_table_of_contents(
     )
     draw = ImageDraw.Draw(img)
     panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale, theme=theme, layout=layout)
+    draw_page_decorations(
+        img,
+        decoration_config or theme.decorations,
+        "table_of_contents",
+        layout,
+        scale=scale,
+    )
 
     center_x = layout.page_width_px * scale // 2
     title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 1.02 * visual_scale) * scale)
@@ -383,6 +392,7 @@ def render_instructions_page(
     *,
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
+    decoration_config: DecorationConfig | None = None,
 ) -> str:
     """Renderiza una página de instrucciones con tarjetas compactas y jerarquía editorial."""
     scale = 3
@@ -396,6 +406,13 @@ def render_instructions_page(
     )
     draw = ImageDraw.Draw(img)
     panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale, theme=theme, layout=layout)
+    draw_page_decorations(
+        img,
+        decoration_config or theme.decorations,
+        "instructions",
+        layout,
+        scale=scale,
+    )
 
     center_x = layout.page_width_px * scale // 2
     title_font = load_font(FONT_TITLE, int(TITLE_FONT_SIZE * 0.96 * visual_scale) * scale)

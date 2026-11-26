@@ -2,7 +2,7 @@
 
 import os
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 from wordsearch.config.design import DEFAULT_THEME, PageType, ThemeConfig
 
@@ -24,6 +24,11 @@ def create_page_background(
     if bg_path and os.path.exists(bg_path):
         with Image.open(bg_path) as source:
             background = source.convert("RGBA").resize(size, Image.LANCZOS)
+
+        if theme.background_grayscale:
+            alpha = background.getchannel("A")
+            gray = ImageOps.grayscale(background)
+            background = Image.merge("RGBA", (gray, gray, gray, alpha))
 
         alpha = background.getchannel("A")
         alpha = alpha.point(lambda value: int(value * theme.background_opacity_for(page_type)))

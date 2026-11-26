@@ -6,7 +6,7 @@ from typing import Optional
 
 from PIL import ImageDraw
 
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, DecorationConfig, LayoutConfig, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_TITLE,
@@ -15,6 +15,7 @@ from wordsearch.config.fonts import (
 )
 from wordsearch.config.paths import build_default_output_file
 from wordsearch.rendering.common import draw_centered_lines, load_font, rounded_rectangle, save_page, text_size, wrap_text
+from wordsearch.rendering.decorations import draw_page_decorations
 from wordsearch.rendering.page_frame import create_page_canvas
 
 
@@ -71,6 +72,7 @@ def render_title_page(
     background_path: Optional[str] = None,
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
+    decoration_config: DecorationConfig | None = None,
 ) -> str:
     """Renderiza una portada interior para el libro."""
     scale = 3
@@ -86,6 +88,13 @@ def render_title_page(
     )
     draw = ImageDraw.Draw(img)
     _draw_soft_panel(draw, scale, theme=theme, layout=layout)
+    draw_page_decorations(
+        img,
+        decoration_config or theme.decorations,
+        "title_page",
+        layout,
+        scale=scale,
+    )
 
     center_x = width_hi // 2
     max_width = int(width_hi * 0.70)

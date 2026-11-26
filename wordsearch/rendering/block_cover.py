@@ -6,10 +6,11 @@ from typing import Optional
 
 from PIL import ImageDraw
 
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, DecorationConfig, LayoutConfig, ThemeConfig
 from wordsearch.config.fonts import FONT_PATH, FONT_TITLE, title_font_size as TITLE_FONT_SIZE, wordlist_font_size as WORDLIST_FONT_SIZE
 from wordsearch.config.paths import build_default_output_file
 from wordsearch.rendering.common import load_font, rounded_rectangle, save_page, text_size, wrap_text
+from wordsearch.rendering.decorations import draw_page_decorations
 from wordsearch.rendering.page_frame import create_page_canvas
 
 
@@ -26,6 +27,7 @@ def render_block_cover(
     *,
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
+    decoration_config: DecorationConfig | None = None,
 ) -> str:
     """Generate a themed section cover page."""
     scale = 3
@@ -40,6 +42,13 @@ def render_block_cover(
         page_type="block_cover",
     )
     draw = ImageDraw.Draw(img)
+    draw_page_decorations(
+        img,
+        decoration_config or theme.decorations_for_block(block_name),
+        "block_cover",
+        layout,
+        scale=scale,
+    )
 
     margin_x = int(page_w_hi * 0.10)
     max_text_width = page_w_hi - 2 * margin_x

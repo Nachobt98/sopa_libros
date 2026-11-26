@@ -49,6 +49,23 @@ def test_christmas_vintage_composites_transparent_background_over_page_fill(tmp_
     assert image.getpixel((0, 0)) == (179, 179, 179, 255)
 
 
+def test_christmas_vintage_grayscales_shared_background_image(tmp_path):
+    background_path = tmp_path / "colored_background.png"
+    Image.new("RGBA", (1, 1), (255, 0, 0, 255)).save(background_path)
+
+    image = create_page_background(
+        str(background_path),
+        1,
+        1,
+        theme=CHRISTMAS_VINTAGE_THEME,
+        page_type="puzzle",
+    )
+
+    red, green, blue, alpha = image.getpixel((0, 0))
+    assert red == green == blue
+    assert alpha == 255
+
+
 def test_shared_manifest_background_is_reused_for_book_and_block_pages(tmp_path):
     shared_background = tmp_path / "christmas.png"
     manifest = AssetManifest(

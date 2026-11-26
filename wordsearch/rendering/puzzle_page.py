@@ -6,11 +6,12 @@ from typing import Iterable, Optional, Sequence
 
 from PIL import ImageDraw
 
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, DecorationConfig, LayoutConfig, ThemeConfig
 from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD, wordlist_font_size as WORDLIST_FONT_SIZE
 from wordsearch.config.paths import build_default_output_file
 from wordsearch.rendering.adaptive_layout import plan_fact_layout, plan_title_layout
 from wordsearch.rendering.common import load_font, rounded_rectangle, save_page, text_size
+from wordsearch.rendering.decorations import draw_page_decorations
 from wordsearch.rendering.grid import draw_letter_grid
 from wordsearch.rendering.page_frame import create_page_canvas, draw_page_frame
 from wordsearch.rendering.word_list import draw_word_list
@@ -177,6 +178,7 @@ def render_page(
     solution_page_number: Optional[int] = None,
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
+    decoration_config: DecorationConfig | None = None,
 ) -> str:
     """Renderiza una página de puzzle."""
     scale = 3
@@ -216,14 +218,15 @@ def render_page(
         title_y_hi += int(height * 1.05)
 
     separator_y_hi = title_plan.y_after_title_hi + int(18 * scale)
-    y_cursor_hi = _draw_title_separator(
+    separator_bottom_hi = _draw_title_separator(
         draw,
         content_left_hi=content_left_hi,
         content_right_hi=content_right_hi,
         y_hi=separator_y_hi,
         scale=scale,
         theme=theme,
-    ) + max(int(0.35 * title_plan.title_to_fact_gap_hi), int(18 * scale))
+    )
+    y_cursor_hi = separator_bottom_hi + max(int(0.35 * title_plan.title_to_fact_gap_hi), int(18 * scale))
 
     if fun_fact:
         fact_plan = plan_fact_layout(
@@ -346,6 +349,19 @@ def render_page(
     if words_top_hi > words_bottom_hi:
         words_top_hi = words_bottom_hi
 
+    draw_page_decorations(
+        img,
+        decoration_config or theme.decorations,
+        "puzzle",
+        layout,
+        scale=scale,
+        region_bounds=(
+            content_left_hi,
+            words_top_hi - int(70 * scale),
+            content_right_hi,
+            words_top_hi + int(70 * scale),
+        ),
+    )
     heading_bottom_hi = _draw_word_bank_heading(
         draw,
         words_top_hi=words_top_hi,

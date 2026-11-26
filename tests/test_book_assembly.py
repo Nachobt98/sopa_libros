@@ -1,4 +1,5 @@
-from wordsearch.config.design import PREMIUM_NEUTRAL_THEME
+from wordsearch.asset_generation.manifest import AssetManifest
+from wordsearch.config.design import CHRISTMAS_VINTAGE_THEME, PREMIUM_NEUTRAL_THEME
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.grid import PlacedWord
 from wordsearch.domain.page_plan import build_page_plan
@@ -193,3 +194,74 @@ def test_render_thematic_book_images_orchestrates_pages_in_order(monkeypatch, tm
 
     solution_calls = [call for call in calls if call[0] == "solution"]
     assert [call[-1] for call in solution_calls] == ["premium-neutral"] * 3
+
+
+def test_christmas_assembly_passes_block_overrides_to_renderers(monkeypatch, tmp_path):
+    generated = [make_generated(0, "Puzzle 1", block_name="Christmas Classics")]
+    page_plan = build_page_plan(generated)
+    calls = {}
+
+    def fake_front_matter(*args, **kwargs):
+        calls["front_matter"] = (args, kwargs)
+        return kwargs.get("filename", [])
+
+    def fake_toc(*args, **kwargs):
+        calls["toc"] = (args, kwargs)
+        return []
+
+    def fake_block_cover(**kwargs):
+        calls["cover"] = kwargs["decoration_config"]
+        return kwargs["filename"]
+
+    def fake_puzzle(*args, **kwargs):
+        calls["puzzle"] = (args, kwargs["decoration_config"])
+        return kwargs["filename"]
+
+    def fake_solution(*args, **kwargs):
+        calls["solution"] = (args, kwargs["decoration_config"])
+        return kwargs["filename"]
+
+    monkeypatch.setattr(book_assembly, "render_title_page", fake_front_matter)
+    monkeypatch.setattr(book_assembly, "render_table_of_contents", fake_toc)
+    monkeypatch.setattr(book_assembly, "render_instructions_page", fake_front_matter)
+    monkeypatch.setattr(book_assembly, "render_block_cover", fake_block_cover)
+    monkeypatch.setattr(book_assembly, "render_page", fake_puzzle)
+    monkeypatch.setattr(book_assembly, "render_solution_page", fake_solution)
+
+    manifest = AssetManifest.from_dict(
+        {
+            "book_title": "Christmas Around the World",
+            "theme_id": "christmas-vintage",
+            "blocks": {
+                "christmas_classics": {
+                    "decorations": {
+                        "enabled": True,
+                        "pages": [
+                            {
+                                "page_type": "puzzle",
+                                "region": "separator",
+                                "placements": [{"motif": "compass", "x": 0.22, "y": 0.5}],
+                            }
+                        ],
+                    }
+                }
+            },
+        }
+    )
+
+    book_assembly.render_thematic_book_images(
+        book_title="Christmas Around the World",
+        generated_puzzles=generated,
+        page_plan=page_plan,
+        output_dir=str(tmp_path),
+        theme=CHRISTMAS_VINTAGE_THEME,
+        asset_manifest=manifest,
+    )
+
+    cover = calls["cover"].for_page("block_cover")
+    puzzle = calls["puzzle"][1].for_page("puzzle")
+    assert cover is not None
+    assert puzzle is not None
+    assert {placement.motif for placement in cover.placements} == {"bell", "holly", "star"}
+    assert [placement.motif for placement in puzzle.placements] == ["compass"]
+    assert calls["solution"][1].for_page("solutions") is None

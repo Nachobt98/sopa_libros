@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import List, Tuple
 
 from wordsearch.asset_generation.manifest import AssetManifest
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, DecorationConfig, LayoutConfig, PageType, ThemeConfig
 from wordsearch.config.paths import build_output_file
 from wordsearch.domain.generated_puzzle import GeneratedPuzzle
 from wordsearch.domain.page_plan import PagePlan
@@ -58,6 +58,26 @@ def _block_cover_background(asset_manifest: AssetManifest | None, block_name: st
     return asset_manifest.cover_background_for_block(block_name, fallback=fallback) if asset_manifest else fallback
 
 
+def _block_decorations(
+    asset_manifest: AssetManifest | None,
+    block_name: str,
+    theme: ThemeConfig,
+) -> DecorationConfig:
+    override = asset_manifest.decorations_for_block(block_name) if asset_manifest else None
+    defaults = theme.decorations_for_block(block_name)
+    return defaults.with_overrides(override) if override is not None else defaults
+
+
+def _decoration_kwargs(
+    config: DecorationConfig,
+    page_type: PageType,
+    renderer_default: DecorationConfig,
+) -> dict:
+    if config != renderer_default or config.for_page(page_type):
+        return {"decoration_config": config}
+    return {}
+
+
 def render_thematic_book_images(
     *,
     book_title: str,
@@ -81,6 +101,7 @@ def render_thematic_book_images(
             filename=title_page_filename,
             background_path=global_background,
             theme=theme,
+            **_decoration_kwargs(theme.decorations, "title_page", theme.decorations),
             **layout_kwargs,
         )
     )
@@ -91,6 +112,7 @@ def render_thematic_book_images(
             output_dir=output_dir,
             background_path=global_background,
             theme=theme,
+            **_decoration_kwargs(theme.decorations, "table_of_contents", theme.decorations),
             **layout_kwargs,
         )
     )
@@ -102,6 +124,7 @@ def render_thematic_book_images(
             filename=instr_filename,
             background_path=global_background,
             theme=theme,
+            **_decoration_kwargs(theme.decorations, "instructions", theme.decorations),
             **layout_kwargs,
         )
     )
@@ -112,6 +135,7 @@ def render_thematic_book_images(
     for generated in generated_puzzles:
         spec = generated.spec
         block_name = getattr(spec, "block_name", "") or ""
+        block_decorations = _block_decorations(asset_manifest, block_name, theme)
         declared_bg_path = getattr(spec, "block_background", None)
         bg_path = _block_background(asset_manifest, block_name, declared_bg_path)
 
@@ -129,6 +153,11 @@ def render_thematic_book_images(
                     filename=block_cover_filename,
                     background_path=_block_cover_background(asset_manifest, block_name, declared_bg_path),
                     theme=theme,
+                    **_decoration_kwargs(
+                        block_decorations,
+                        "block_cover",
+                        theme.decorations_for_block(block_name),
+                    ),
                     **layout_kwargs,
                 )
             )
@@ -148,6 +177,7 @@ def render_thematic_book_images(
                 solution_page_number=solution_page_number,
                 background_path=bg_path,
                 theme=theme,
+                **_decoration_kwargs(block_decorations, "puzzle", theme.decorations),
                 **layout_kwargs,
             )
         )
@@ -162,6 +192,7 @@ def render_thematic_book_images(
                 puzzle_title=spec.title,
                 background_path=bg_path,
                 theme=theme,
+                **_decoration_kwargs(block_decorations, "solutions", theme.decorations),
                 **layout_kwargs,
             )
         )

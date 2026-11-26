@@ -316,6 +316,8 @@ sopa-libros-thematic --title "Visual Baseline Premium" --input wordlists/fixture
 
 Los temas afectan al conjunto principal del interior temático: portada interior, índice, instrucciones, portadas de bloque, páginas de puzzle, páginas de solución, paneles, títulos, textos, grids, pills, fun facts y highlights. El objetivo es que cada preset tenga una dirección editorial coherente en todo el libro.
 
+Las decoraciones editoriales procedurales de `christmas-vintage` pueden personalizarse por bloque en el manifiesto de assets. Consulta [docs/design_config.md](docs/design_config.md) para ver los motivos disponibles, el ejemplo de configuración y las vistas previas generadas.
+
 ### Baseline visual reproducible
 
 Para revisar cambios visuales con una entrada pequeña y estable, usa el fixture documentado en:

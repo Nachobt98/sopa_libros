@@ -7,8 +7,9 @@ layer does not intentionally change the generated visual output.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Literal
+from dataclasses import asdict, dataclass
+from math import isfinite
+from typing import Any, Literal
 
 from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD, FONT_TITLE
 from wordsearch.config.layout import (
@@ -28,6 +29,195 @@ from wordsearch.config.layout import (
 ColorRgba = tuple[int, int, int, int]
 ColorValue = ColorRgba | str
 PageType = Literal["title_page", "block_cover", "puzzle", "table_of_contents", "instructions", "solutions"]
+DecorationMotif = Literal[
+    "star",
+    "snowflake",
+    "evergreen_tree",
+    "bell",
+    "botanical_branch",
+    "holly",
+    "lantern",
+    "candle",
+    "gift",
+    "ornament",
+    "flower",
+    "house",
+    "star_lantern",
+    "globe",
+    "compass",
+    "geometric_ornament",
+    "garland",
+]
+DecorationRegion = Literal["page", "separator"]
+PAGE_TYPES = ("title_page", "block_cover", "puzzle", "table_of_contents", "instructions", "solutions")
+DECORATION_MOTIFS = (
+    "star",
+    "snowflake",
+    "evergreen_tree",
+    "bell",
+    "botanical_branch",
+    "holly",
+    "lantern",
+    "candle",
+    "gift",
+    "ornament",
+    "flower",
+    "house",
+    "star_lantern",
+    "globe",
+    "compass",
+    "geometric_ornament",
+    "garland",
+)
+
+
+@dataclass(frozen=True)
+class DecorationPlacement:
+    """A monochrome motif positioned within a normalized page region."""
+
+    motif: DecorationMotif
+    x: float
+    y: float
+    size_ratio: float = 0.04
+    stroke_width_ratio: float = 0.035
+    color: int = 72
+    opacity: float = 0.72
+    rotation_degrees: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.motif not in DECORATION_MOTIFS:
+            raise ValueError(f"Unknown decoration motif: {self.motif}")
+        values = (self.x, self.y, self.size_ratio, self.stroke_width_ratio, self.opacity, self.rotation_degrees)
+        if any(
+            not isinstance(value, (int, float)) or isinstance(value, bool) or not isfinite(value)
+            for value in values
+        ):
+            raise ValueError("Decoration position, size, stroke, opacity, and rotation must be finite numbers.")
+        if not 0 <= self.x <= 1 or not 0 <= self.y <= 1:
+            raise ValueError("Decoration position values must be between 0 and 1.")
+        if not 0 < self.size_ratio <= 0.5:
+            raise ValueError("Decoration size_ratio must be greater than 0 and at most 0.5.")
+        if not 0 < self.stroke_width_ratio <= 0.25:
+            raise ValueError("Decoration stroke_width_ratio must be greater than 0 and at most 0.25.")
+        if not isinstance(self.color, int) or isinstance(self.color, bool) or not 0 <= self.color <= 255:
+            raise ValueError("Decoration color must be a grayscale value between 0 and 255.")
+        if not 0 <= self.opacity <= 1:
+            raise ValueError("Decoration opacity must be between 0 and 1.")
+
+
+@dataclass(frozen=True)
+class PageDecorationConfig:
+    """Decoration settings for one page type and reserved drawing region."""
+
+    page_type: PageType
+    placements: tuple[DecorationPlacement, ...]
+    enabled: bool = True
+    region: DecorationRegion = "page"
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.enabled, bool):
+            raise ValueError("Decoration page 'enabled' must be a boolean.")
+        if not isinstance(self.placements, tuple) or any(
+            not isinstance(placement, DecorationPlacement) for placement in self.placements
+        ):
+            raise ValueError("Decoration page placements must be an immutable tuple of placements.")
+        if self.page_type not in PAGE_TYPES:
+            raise ValueError(f"Unknown decoration page type: {self.page_type}")
+        if self.region not in ("page", "separator"):
+            raise ValueError(f"Unknown decoration region: {self.region}")
+        if self.region == "separator" and self.page_type != "puzzle":
+            raise ValueError("The separator region is currently supported only for puzzle pages.")
+
+
+@dataclass(frozen=True)
+class DecorationConfig:
+    """Immutable optional page and motif configuration."""
+
+    enabled: bool = False
+    pages: tuple[PageDecorationConfig, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.enabled, bool):
+            raise ValueError("Decoration config 'enabled' must be a boolean.")
+        if not isinstance(self.pages, tuple) or any(
+            not isinstance(page, PageDecorationConfig) for page in self.pages
+        ):
+            raise ValueError("Decoration pages must be an immutable tuple of page configs.")
+        page_types = tuple(page.page_type for page in self.pages)
+        if len(page_types) != len(set(page_types)):
+            raise ValueError("Decoration page types must be unique.")
+
+    def for_page(self, page_type: PageType) -> PageDecorationConfig | None:
+        if not self.enabled:
+            return None
+        return next(
+            (page for page in self.pages if page.page_type == page_type and page.enabled and page.placements),
+            None,
+        )
+
+    def with_overrides(self, override: DecorationConfig) -> DecorationConfig:
+        """Return this config with explicitly supplied page settings replaced."""
+        if not override.enabled:
+            return override
+        pages = {page.page_type: page for page in self.pages}
+        pages.update({page.page_type: page for page in override.pages})
+        return DecorationConfig(enabled=True, pages=tuple(pages.values()))
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> DecorationConfig:
+        enabled = payload.get("enabled", False)
+        pages_payload = payload.get("pages", [])
+        if not isinstance(enabled, bool):
+            raise ValueError("Decoration config 'enabled' must be a boolean.")
+        if not isinstance(pages_payload, (list, tuple)):
+            raise ValueError("Decoration config 'pages' must be an array.")
+
+        pages = []
+        for page_payload in pages_payload:
+            if not isinstance(page_payload, dict):
+                raise ValueError("Each decoration page config must be an object.")
+            page_enabled = page_payload.get("enabled", True)
+            placements_payload = page_payload.get("placements", [])
+            if not isinstance(page_enabled, bool):
+                raise ValueError("Decoration page 'enabled' must be a boolean.")
+            if not isinstance(placements_payload, (list, tuple)):
+                raise ValueError("Decoration page 'placements' must be an array.")
+
+            placements = []
+            for placement_payload in placements_payload:
+                if not isinstance(placement_payload, dict):
+                    raise ValueError("Each decoration placement must be an object.")
+                try:
+                    placement = DecorationPlacement(
+                        motif=placement_payload["motif"],
+                        x=float(placement_payload["x"]),
+                        y=float(placement_payload["y"]),
+                        size_ratio=float(placement_payload.get("size_ratio", 0.04)),
+                        stroke_width_ratio=float(placement_payload.get("stroke_width_ratio", 0.035)),
+                        color=int(placement_payload.get("color", 72)),
+                        opacity=float(placement_payload.get("opacity", 0.72)),
+                        rotation_degrees=float(placement_payload.get("rotation_degrees", 0.0)),
+                    )
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise ValueError(f"Invalid decoration placement: {exc}") from exc
+                placements.append(placement)
+
+            try:
+                pages.append(
+                    PageDecorationConfig(
+                        page_type=page_payload["page_type"],
+                        placements=tuple(placements),
+                        enabled=page_enabled,
+                        region=page_payload.get("region", "page"),
+                    )
+                )
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid decoration page config: {exc}") from exc
+
+        return cls(enabled=enabled, pages=tuple(pages))
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -96,6 +286,9 @@ class ThemeConfig:
     highlight_border: ColorRgba
     page_background_opacities: tuple[tuple[PageType, float], ...] = ()
     composite_page_background: bool = False
+    background_grayscale: bool = False
+    decorations: DecorationConfig = DecorationConfig()
+    block_decorations: tuple[tuple[str, DecorationConfig], ...] = ()
 
     def background_opacity_for(self, page_type: PageType | None = None) -> float:
         """Return the configured opacity for a page, falling back to the theme default."""
@@ -103,6 +296,15 @@ class ThemeConfig:
             if configured_page_type == page_type:
                 return opacity
         return self.background_opacity
+
+    def decorations_for_block(self, block_name: str | None) -> DecorationConfig:
+        """Return a case-insensitive block override or the theme's default decorations."""
+        if block_name:
+            normalized_name = block_name.strip().casefold()
+            for configured_name, decoration_config in self.block_decorations:
+                if configured_name.strip().casefold() == normalized_name:
+                    return decoration_config
+        return self.decorations
 
 
 DEFAULT_LAYOUT = LayoutConfig(
@@ -234,6 +436,62 @@ KIDS_THEME = ThemeConfig(
     highlight_border=(190, 24, 93, 235),
 )
 
+
+def _christmas_block_decorations(motifs: tuple[DecorationMotif, ...]) -> DecorationConfig:
+    count = len(motifs)
+    if not count:
+        raise ValueError("Christmas block decorations must include at least one motif.")
+
+    x_positions = tuple(0.14 + (0.72 * index / max(count - 1, 1)) for index in range(count))
+    cover_placements = tuple(
+        DecorationPlacement(
+            motif=motif,
+            x=x,
+            y=y,
+            size_ratio=0.048 if count > 2 else 0.054,
+            stroke_width_ratio=0.028,
+            color=68,
+            opacity=0.68,
+            rotation_degrees=180 if y > 0.5 else 0,
+        )
+        for y in (0.08, 0.92)
+        for motif, x in zip(motifs, x_positions)
+    )
+    separator_motifs = (motifs[0], motifs[-1])
+    puzzle_placements = tuple(
+        DecorationPlacement(
+            motif=motif,
+            x=x,
+            y=0.5,
+            size_ratio=0.018,
+            stroke_width_ratio=0.05,
+            color=68,
+            opacity=0.62,
+        )
+        for motif, x in zip(separator_motifs, (0.22, 0.78))
+    )
+    return DecorationConfig(
+        enabled=True,
+        pages=(
+            PageDecorationConfig("block_cover", cover_placements),
+            PageDecorationConfig("puzzle", puzzle_placements, region="separator"),
+        ),
+    )
+
+
+_CHRISTMAS_BLOCK_MOTIFS: tuple[tuple[str, tuple[DecorationMotif, ...]], ...] = (
+    ("Christmas Classics", ("bell", "holly", "star")),
+    ("Western European Christmas", ("lantern", "garland", "house")),
+    ("Nordic Christmas Magic", ("snowflake", "evergreen_tree")),
+    ("Central and Eastern European Traditions", ("star", "geometric_ornament")),
+    ("Mediterranean Christmas", ("botanical_branch", "candle", "star")),
+    ("A North American Christmas", ("gift", "evergreen_tree", "ornament")),
+    ("Latin American Christmas", ("star_lantern", "flower", "lantern")),
+    ("Christmas Across Asia and Oceania", ("star_lantern", "botanical_branch", "flower")),
+    ("Christmas in Africa and the Middle East", ("candle", "star", "geometric_ornament")),
+    ("Global Christmas Treasures", ("globe", "compass", "star")),
+)
+
 CHRISTMAS_VINTAGE_THEME = ThemeConfig(
     name="christmas-vintage",
     background_opacity=0.12,
@@ -268,6 +526,12 @@ CHRISTMAS_VINTAGE_THEME = ThemeConfig(
         ("solutions", 0.00),
     ),
     composite_page_background=True,
+    background_grayscale=True,
+    decorations=_christmas_block_decorations(("star",)),
+    block_decorations=tuple(
+        (block_name, _christmas_block_decorations(motifs))
+        for block_name, motifs in _CHRISTMAS_BLOCK_MOTIFS
+    ),
 )
 
 THEME_PRESETS: dict[str, ThemeConfig] = {

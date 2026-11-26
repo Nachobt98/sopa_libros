@@ -6,11 +6,12 @@ from typing import Iterable, Optional, Sequence
 
 from PIL import ImageDraw
 
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, DecorationConfig, LayoutConfig, ThemeConfig
 from wordsearch.config.fonts import FONT_PATH, FONT_TITLE, title_font_size as TITLE_FONT_SIZE, wordlist_font_size as WORDLIST_FONT_SIZE
 from wordsearch.config.paths import build_default_output_file
 from wordsearch.domain.grid import PlacedWord
 from wordsearch.rendering.common import load_font, save_page
+from wordsearch.rendering.decorations import draw_page_decorations
 from wordsearch.rendering.grid import draw_letter_grid
 from wordsearch.rendering.page_frame import create_page_canvas, draw_page_frame, draw_wrapped_centered_title
 from wordsearch.rendering.word_list import draw_word_list
@@ -27,6 +28,7 @@ def render_solution_page(
     puzzle_title: Optional[str] = None,
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
+    decoration_config: DecorationConfig | None = None,
 ) -> str:
     """Render a solution page with highlighted placed words."""
     scale = 3
@@ -39,6 +41,13 @@ def render_solution_page(
     )
     draw = ImageDraw.Draw(img)
     frame = draw_page_frame(draw=draw, scale=scale, theme=theme, layout=layout)
+    draw_page_decorations(
+        img,
+        decoration_config or theme.decorations,
+        "solutions",
+        layout,
+        scale=scale,
+    )
 
     safe_bottom_hi = frame.safe_bottom_hi
     content_left_hi = frame.content_left_hi
