@@ -53,6 +53,8 @@ def test_desktop_index_references_local_assets():
     assert '<script type="module" src="/src/main.jsx"></script>' in html
     assert '<script type="module" src="./app.js"></script>' in legacy_html
     assert 'id="project-form"' in project_form
+    assert 'value="christmas-vintage"' in project_form
+    assert 'value="christmas-vintage"' in legacy_html
     assert 'id="request-json"' in request_panel
     assert 'id="event-list"' in event_list
     assert 'id="validation-summary"' in validation_summary

@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from typing import Optional, Sequence, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, PageType, ThemeConfig
 from wordsearch.config.fonts import (
     FONT_PATH,
     FONT_PATH_BOLD,
@@ -16,7 +15,7 @@ from wordsearch.config.fonts import (
     wordlist_font_size as WORDLIST_FONT_SIZE,
 )
 from wordsearch.config.paths import build_default_output_file, build_output_file
-from wordsearch.rendering.backgrounds import BACKGROUND_PATH
+from wordsearch.rendering.backgrounds import create_page_background
 from wordsearch.rendering.common import draw_centered_text, load_font, rounded_rectangle, save_page, text_size, wrap_text
 
 TocEntry = Tuple[str, int, bool]
@@ -36,19 +35,17 @@ def _make_background(
     *,
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
+    page_type: PageType | None = None,
 ) -> Image.Image:
     width_hi = layout.page_width_px * scale
     height_hi = layout.page_height_px * scale
-    bg_path = background_path or BACKGROUND_PATH
-
-    if bg_path and os.path.exists(bg_path):
-        img = Image.open(bg_path).convert("RGBA")
-        img = img.resize((width_hi, height_hi), Image.LANCZOS)
-        r, g, b, a = img.split()
-        a = a.point(lambda value: int(value * theme.background_opacity))
-        return Image.merge("RGBA", (r, g, b, a))
-
-    return Image.new("RGBA", (width_hi, height_hi), theme.page_background_fill)
+    return create_page_background(
+        background_path,
+        width_hi,
+        height_hi,
+        theme=theme,
+        page_type=page_type,
+    )
 
 
 def _draw_main_panel(
@@ -249,7 +246,13 @@ def render_table_of_contents(
     """Renderiza un índice editorial con jerarquía visual y dot leaders."""
     scale = 3
     visual_scale = _format_visual_scale(layout)
-    img = _make_background(background_path, scale, theme=theme, layout=layout)
+    img = _make_background(
+        background_path,
+        scale,
+        theme=theme,
+        layout=layout,
+        page_type="table_of_contents",
+    )
     draw = ImageDraw.Draw(img)
     panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale, theme=theme, layout=layout)
 
@@ -384,7 +387,13 @@ def render_instructions_page(
     """Renderiza una página de instrucciones con tarjetas compactas y jerarquía editorial."""
     scale = 3
     visual_scale = _format_visual_scale(layout)
-    img = _make_background(background_path, scale, theme=theme, layout=layout)
+    img = _make_background(
+        background_path,
+        scale,
+        theme=theme,
+        layout=layout,
+        page_type="instructions",
+    )
     draw = ImageDraw.Draw(img)
     panel_left, panel_top, panel_right, panel_bottom = _draw_main_panel(draw, scale, theme=theme, layout=layout)
 

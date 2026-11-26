@@ -1,12 +1,12 @@
 # Design configuration foundation
 
-The renderer now has explicit immutable design config objects in:
+Immutable renderer configuration is defined in:
 
 ```text
 wordsearch/config/design.py
 ```
 
-This is a foundation for future theme and layout presets. It does not introduce a user-facing `--theme` option yet and should not intentionally change the generated visual output.
+These objects drive page layout and named visual themes. Existing theme presets retain their established visual behavior.
 
 ## Config objects
 
@@ -36,7 +36,7 @@ Groups font paths and base sizes:
 
 ### `ThemeConfig`
 
-Groups visual tokens that can later vary by editorial theme:
+Groups visual tokens that vary by editorial theme:
 
 - background opacity;
 - page background fill;
@@ -45,21 +45,16 @@ Groups visual tokens that can later vary by editorial theme:
 - title color;
 - body color;
 - panel radius;
-- panel border width.
+- panel border width;
+- page-specific background opacity overrides;
+- optional compositing of translucent backgrounds over the configured page fill.
 
 ## Current integration
 
-The shared puzzle/solution page frame uses `DEFAULT_LAYOUT` and `DEFAULT_THEME` for page bounds, background opacity, panel styling and title color.
+Named presets are available through the thematic CLI and desktop theme selectors. The shared background helper applies page-specific opacity where configured; legacy presets retain their previous rendering behavior.
 
-Other renderers can be migrated incrementally as visual changes become necessary.
+The opt-in `christmas-vintage` preset uses a grayscale palette and page-specific background opacities: title `0.60`, block cover `0.35`, puzzle `0.12`, contents and instructions `0.08`, and solutions `0.00`. It reuses the existing user-supplied asset manifest and does not change the project-file schema.
 
-## Future work
+## Visual baselines
 
-Recommended next steps:
-
-1. Move more repeated renderer constants into these configs.
-2. Add named theme presets such as `classic`, `premium-neutral`, `bold-modern`, `kids` and `large-print`.
-3. Add CLI support for selecting a theme.
-4. Add visual-regression checks against `wordlists/fixtures/visual_baseline.txt`.
-
-Keep visual refactors separate from intentional visual redesigns so baseline changes remain reviewable.
+`christmas-vintage` is opt-in. Existing presets keep their previous rendering behavior, and no existing visual baseline files need to change for this preset.

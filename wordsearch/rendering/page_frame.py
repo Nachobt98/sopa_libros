@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 
 from PIL import Image, ImageDraw, ImageFont
 
-from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, ThemeConfig
+from wordsearch.config.design import DEFAULT_LAYOUT, DEFAULT_THEME, LayoutConfig, PageType, ThemeConfig
 from wordsearch.config.formats import KDP_MIN_OUTSIDE_MARGIN_NO_BLEED_IN
-from wordsearch.rendering.backgrounds import BACKGROUND_PATH
+from wordsearch.rendering.backgrounds import create_page_background
 from wordsearch.rendering.common import rounded_rectangle, text_size, wrap_text
 
 
@@ -34,24 +33,18 @@ def create_page_canvas(
     *,
     theme: ThemeConfig = DEFAULT_THEME,
     layout: LayoutConfig = DEFAULT_LAYOUT,
+    page_type: PageType | None = None,
 ) -> Image.Image:
     """Create a high-resolution page canvas with optional translucent background."""
     page_w_hi = layout.page_width_px * scale
     page_h_hi = layout.page_height_px * scale
-    bg_path = background_path or BACKGROUND_PATH
-
-    if bg_path and os.path.exists(bg_path):
-        bg = Image.open(bg_path).convert("RGBA")
-        bg = bg.resize((page_w_hi, page_h_hi), Image.LANCZOS)
-
-        if bg.mode == "RGBA":
-            red, green, blue, alpha = bg.split()
-            alpha = alpha.point(lambda value: int(value * theme.background_opacity))
-            bg = Image.merge("RGBA", (red, green, blue, alpha))
-
-        return bg
-
-    return Image.new("RGBA", (page_w_hi, page_h_hi), theme.page_background_fill)
+    return create_page_background(
+        background_path,
+        page_w_hi,
+        page_h_hi,
+        theme=theme,
+        page_type=page_type,
+    )
 
 
 def draw_page_frame(

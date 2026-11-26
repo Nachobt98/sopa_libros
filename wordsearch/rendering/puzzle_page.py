@@ -181,7 +181,13 @@ def render_page(
     """Renderiza una página de puzzle."""
     scale = 3
     visual_scale = _format_visual_scale(layout)
-    img = create_page_canvas(background_path, scale, theme=theme, layout=layout)
+    img = create_page_canvas(
+        background_path,
+        scale,
+        theme=theme,
+        layout=layout,
+        page_type="puzzle",
+    )
     draw = ImageDraw.Draw(img)
     frame = draw_page_frame(draw=draw, scale=scale, theme=theme, layout=layout)
 

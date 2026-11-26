@@ -32,7 +32,13 @@ def render_block_cover(
     page_w_hi = layout.page_width_px * scale
     page_h_hi = layout.page_height_px * scale
 
-    img = create_page_canvas(background_path, scale, theme=theme, layout=layout)
+    img = create_page_canvas(
+        background_path,
+        scale,
+        theme=theme,
+        layout=layout,
+        page_type="block_cover",
+    )
     draw = ImageDraw.Draw(img)
 
     margin_x = int(page_w_hi * 0.10)

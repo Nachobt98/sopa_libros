@@ -95,6 +95,7 @@ export function ProjectForm({ project, setProject }) {
               <option value="premium-neutral">Premium neutral</option>
               <option value="bold-modern">Bold modern</option>
               <option value="kids">Kids</option>
+              <option value="christmas-vintage">Christmas vintage</option>
             </select>
           </label>
 

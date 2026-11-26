@@ -306,6 +306,7 @@ Temas disponibles:
 - `premium-neutral`: estilo más sobrio, cálido y editorial.
 - `bold-modern`: estilo más limpio, moderno y con más contraste.
 - `kids`: estilo más amable e infantil.
+- `christmas-vintage`: estilo navideño vintage en escala de grises, con fondo configurable por página para impresión en blanco y negro.
 
 Ejemplo:
 

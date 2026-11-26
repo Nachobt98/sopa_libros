@@ -1,6 +1,7 @@
 import pytest
 
 from wordsearch.config.design import (
+    CHRISTMAS_VINTAGE_THEME,
     DEFAULT_LAYOUT,
     DEFAULT_THEME,
     DEFAULT_TYPOGRAPHY,
@@ -74,6 +75,7 @@ def test_theme_presets_are_registered_by_name():
     assert get_theme("premium-neutral").name == "premium-neutral"
     assert get_theme("bold-modern").name == "bold-modern"
     assert get_theme("kids").name == "kids"
+    assert get_theme("christmas-vintage") is CHRISTMAS_VINTAGE_THEME
 
 
 def test_non_default_themes_have_distinct_component_tokens():
@@ -91,3 +93,53 @@ def test_non_default_themes_have_distinct_component_tokens():
 def test_get_theme_rejects_unknown_theme():
     with pytest.raises(ValueError, match="Tema no soportado"):
         get_theme("unknown")
+
+
+def test_christmas_vintage_theme_uses_grayscale_and_page_specific_opacities():
+    theme = CHRISTMAS_VINTAGE_THEME
+    grid_line_color = theme.grid_line_color
+    assert isinstance(grid_line_color, tuple)
+    color_tokens = (
+        theme.page_background_fill,
+        theme.panel_fill,
+        theme.panel_border,
+        theme.title_color,
+        theme.body_color,
+        theme.fact_card_fill,
+        theme.fact_card_border,
+        theme.fact_header_fill,
+        theme.fact_header_text,
+        theme.pill_fill,
+        theme.pill_border,
+        theme.pill_text,
+        theme.letter_color,
+        theme.solution_letter_color,
+        theme.highlight_fill,
+        theme.highlight_border,
+        grid_line_color,
+    )
+
+    assert all(len(set(color[:3])) == 1 for color in color_tokens)
+    assert theme.title_color[0] <= 48
+    assert theme.body_color[0] <= 64
+    assert 100 <= theme.panel_border[0] <= 200
+    assert set(theme.page_background_opacities) == {
+        ("title_page", 0.60),
+        ("block_cover", 0.35),
+        ("puzzle", 0.12),
+        ("table_of_contents", 0.08),
+        ("instructions", 0.08),
+        ("solutions", 0.00),
+    }
+    assert {
+        page_type: theme.background_opacity_for(page_type)
+        for page_type, _opacity in theme.page_background_opacities
+    } == {
+        "title_page": 0.60,
+        "block_cover": 0.35,
+        "puzzle": 0.12,
+        "table_of_contents": 0.08,
+        "instructions": 0.08,
+        "solutions": 0.00,
+    }
+    assert theme.page_background_fill == (255, 255, 255, 255)

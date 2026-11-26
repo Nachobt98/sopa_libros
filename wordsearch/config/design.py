@@ -8,6 +8,7 @@ layer does not intentionally change the generated visual output.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 from wordsearch.config.fonts import FONT_PATH, FONT_PATH_BOLD, FONT_TITLE
 from wordsearch.config.layout import (
@@ -26,6 +27,7 @@ from wordsearch.config.layout import (
 
 ColorRgba = tuple[int, int, int, int]
 ColorValue = ColorRgba | str
+PageType = Literal["title_page", "block_cover", "puzzle", "table_of_contents", "instructions", "solutions"]
 
 
 @dataclass(frozen=True)
@@ -92,6 +94,15 @@ class ThemeConfig:
     solution_letter_color: ColorRgba
     highlight_fill: ColorRgba
     highlight_border: ColorRgba
+    page_background_opacities: tuple[tuple[PageType, float], ...] = ()
+    composite_page_background: bool = False
+
+    def background_opacity_for(self, page_type: PageType | None = None) -> float:
+        """Return the configured opacity for a page, falling back to the theme default."""
+        for configured_page_type, opacity in self.page_background_opacities:
+            if configured_page_type == page_type:
+                return opacity
+        return self.background_opacity
 
 
 DEFAULT_LAYOUT = LayoutConfig(
@@ -223,11 +234,48 @@ KIDS_THEME = ThemeConfig(
     highlight_border=(190, 24, 93, 235),
 )
 
+CHRISTMAS_VINTAGE_THEME = ThemeConfig(
+    name="christmas-vintage",
+    background_opacity=0.12,
+    page_background_fill=(255, 255, 255, 255),
+    panel_fill=(255, 255, 255, 240),
+    panel_border=(176, 176, 176, 255),
+    title_color=(35, 35, 35, 255),
+    body_color=(54, 54, 54, 255),
+    panel_radius_px=24,
+    panel_border_width_px=2,
+    fact_card_fill=(248, 248, 248, 255),
+    fact_card_border=(172, 172, 172, 255),
+    fact_header_fill=(62, 62, 62, 255),
+    fact_header_text=(255, 255, 255, 255),
+    fact_card_radius_px=18,
+    fact_card_border_width_px=2,
+    pill_fill=(239, 239, 239, 255),
+    pill_border=(155, 155, 155, 255),
+    pill_text=(42, 42, 42, 255),
+    pill_border_width_px=2,
+    grid_line_color=(125, 125, 125, 255),
+    letter_color=(28, 28, 28, 255),
+    solution_letter_color=(24, 24, 24, 255),
+    highlight_fill=(188, 188, 188, 90),
+    highlight_border=(85, 85, 85, 230),
+    page_background_opacities=(
+        ("title_page", 0.60),
+        ("block_cover", 0.35),
+        ("puzzle", 0.12),
+        ("table_of_contents", 0.08),
+        ("instructions", 0.08),
+        ("solutions", 0.00),
+    ),
+    composite_page_background=True,
+)
+
 THEME_PRESETS: dict[str, ThemeConfig] = {
     DEFAULT_THEME.name: DEFAULT_THEME,
     PREMIUM_NEUTRAL_THEME.name: PREMIUM_NEUTRAL_THEME,
     BOLD_MODERN_THEME.name: BOLD_MODERN_THEME,
     KIDS_THEME.name: KIDS_THEME,
+    CHRISTMAS_VINTAGE_THEME.name: CHRISTMAS_VINTAGE_THEME,
 }
 
 DEFAULT_THEME_NAME = DEFAULT_THEME.name

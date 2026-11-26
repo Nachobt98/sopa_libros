@@ -351,8 +351,8 @@ def interior(puzzles):
         ('1. Choose your puzzle','Each page has a 15 x 15 grid and 15 words or phrases to find.'),
         ('2. Look across and down','Words read from left to right or from top to bottom. There are no backward or diagonal words.'),
         ('3. Ignore the spaces','Phrases appear without spaces in the grid. For example, WARM DRINK appears as WARMDRINK.'),
-        ('4. Mark each find','Circle the letters and tick the box beside the word. Words can cross or share letters.'),
-        ('5. Check when you like','The solution page number is printed above every puzzle. Answers use shaded lines, with two solutions per page.')]:
+        ('4. Mark each find','Circle or underline each word in the list when you find it. Words can cross or share letters.'),
+        ('5. Check when you like','The answer page is printed in the footer of each puzzle. Answers use shaded lines, with two puzzles per page.')]:
         text(c,54,y,heading,17,'Bold')
         y=paragraph(c,54,y-28,body,485,14,22)-30
     text(c,54,123,'There is no timer. Enjoy the search at your own pace.',13,'Medium')
@@ -384,20 +384,18 @@ def interior(puzzles):
         title_size=min(29, (right-left)*29/pdfmetrics.stringWidth(p['title'],'Display',29))
         text(c,cx,706,p['title'],title_size,'Display',align='center')
         title_flourish(c,cx,691)
-        text(c,cx,677,f'Across and down only  |  Solution on page {85+i//2}',10,align='center')
         cozy_note(c,p['fact'],left,right)
         grid(c,p,cx,615)
         word_bank_heading(c,cx,142)
         column_width=(right-left)/3
         for j,word in enumerate(sorted(p['words'])):
             col,row=divmod(j,5)
-            entry_width=13+pdfmetrics.stringWidth(word,'Sans',16)
+            entry_width=pdfmetrics.stringWidth(word,'Sans',16)
             assert entry_width <= column_width, word
             x=left+(col+.5)*column_width-entry_width/2
             y=124-row*19
-            c.setLineWidth(.75)
-            c.rect(x,y+2,7,7)
-            text(c,x+14,y,word,16)
+            text(c,x,y,word,16)
+        text(c,right,31,f'Answers p. {85+i//2}',8,align='right')
         footer(c,page)
         c.showPage()
     for pair in range(40):
@@ -496,7 +494,7 @@ def cover(page_count):
     text(c,backx,658,'starts here.',31,'Display',color=cream)
     y=paragraph(c,backx,604,'Put the kettle on, find your favorite chair, and settle into 80 themed word searches inspired by the small pleasures of everyday life.',W-96,17,27,cream)
     y=paragraph(c,backx,y-20,'From a reading nook and a village bakery to garden paths and a lakeside stroll, each puzzle offers a fresh little escape.',W-96,17,27,cream)
-    for label in ['80 puzzles, with 15 words to find in each', 'Large 22-point puzzle letters', 'Across and down only - no diagonal words', 'Clear word lists with checkboxes', 'Complete solutions included']:
+    for label in ['80 puzzles, with 15 words to find in each', 'Large 22-point puzzle letters', 'Across and down only - no diagonal words', 'Clear word lists in centered columns', 'Complete solutions included']:
         y-=31
         text(c,backx,y,'+  '+label,13,'Medium',color=cream)
     text(c,backx,211,'A thoughtful gift. A pleasure all year round.',13,'Medium',color=gold)
@@ -522,7 +520,8 @@ def verify_pdf(path, expected_pages, puzzles):
             assert descriptor and descriptor.get_object().get('/FontFile2'),f
     for i in range(80):
         content=reader.pages[i+4].extract_text()
-        assert f'Solution on page {85+i//2}' in content
+        assert 'Across and down only' not in content
+        assert f'Answers p. {85+i//2}' in content
         assert puzzles[i]['fact'] in content
         assert 'A COZY NOTE' in content
         assert 'WORDS TO FIND' in content

@@ -77,7 +77,13 @@ def render_title_page(
     width_hi = layout.page_width_px * scale
     height_hi = layout.page_height_px * scale
 
-    img = create_page_canvas(background_path, scale, theme=theme, layout=layout)
+    img = create_page_canvas(
+        background_path,
+        scale,
+        theme=theme,
+        layout=layout,
+        page_type="title_page",
+    )
     draw = ImageDraw.Draw(img)
     _draw_soft_panel(draw, scale, theme=theme, layout=layout)
 

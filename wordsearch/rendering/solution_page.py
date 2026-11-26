@@ -30,7 +30,13 @@ def render_solution_page(
 ) -> str:
     """Render a solution page with highlighted placed words."""
     scale = 3
-    img = create_page_canvas(background_path, scale, theme=theme, layout=layout)
+    img = create_page_canvas(
+        background_path,
+        scale,
+        theme=theme,
+        layout=layout,
+        page_type="solutions",
+    )
     draw = ImageDraw.Draw(img)
     frame = draw_page_frame(draw=draw, scale=scale, theme=theme, layout=layout)
 

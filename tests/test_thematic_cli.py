@@ -83,6 +83,12 @@ def test_resolve_options_accepts_theme():
     assert options.theme_name == "premium-neutral"
 
 
+def test_resolve_options_accepts_christmas_vintage_theme():
+    options = thematic._resolve_options(make_args(theme="christmas-vintage"))
+
+    assert options.theme_name == "christmas-vintage"
+
+
 def test_resolve_options_accepts_validate_only():
     options = thematic._resolve_options(make_args(title="Validation Book", seed=None, validate_only=True))
 
